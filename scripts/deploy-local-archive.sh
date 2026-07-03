@@ -143,7 +143,7 @@ EOF
       cat > "$EXAMPLE_FILE" <<EOF
 DATABASE_URL=postgresql://regora:password@localhost:5432/regora
 JWT_SECRET=change-me-to-a-long-random-string
-PORT=3400
+PORT=3600
 NODE_ENV=production
 REDIS_URL=redis://localhost:6379
 OPENAI_API_KEY=

@@ -4,8 +4,8 @@
 # Ctrl-C 中断会恢复终端（光标/颜色），不残留不可见光标
 # 用法:
 #   value=$(prompt_menu "标题" --default=1 \
-#     "production:生产环境 (/var/www/regora, 端口 3400)" \
-#     "test:测试环境 (/var/www/regora_test, 端口 3402)")
+#     "production:生产环境 (/var/www/regora, 端口 3600)" \
+#     "test:测试环境 (/var/www/regora_test, 端口 3602)")
 # 输出选中项的 value（冒号前）到 stdout，菜单到 stderr
 
 prompt_menu() {

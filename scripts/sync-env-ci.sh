@@ -8,7 +8,7 @@
 #   TENANT_SECRET_ENCRYPTION_KEY 租户 secret AES-GCM 密钥（32 字节 hex；bootstrap 可自动生成）
 #   BOOTSTRAP_UPSERT              true 时仅 upsert bootstrap 密钥（re-bootstrap 不抹掉其他配置）
 # 可选环境变量:
-#   PORT                         服务端口（默认 production=3400，test=3402）
+#   PORT                         服务端口（默认 production=3600，test=3602）
 #   SYNC_FORCE                   true 时覆盖已有 env 文件（sync-env 运维任务）
 #   OPENAI_API_KEY / OPENAI_EMBEDDING_API_KEY / OPENAI_* / REDIS_PASSWORD
 #   TENCENT_SECRET_ID / TENCENT_SECRET_KEY / TENCENT_TMT_*

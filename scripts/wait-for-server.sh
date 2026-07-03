@@ -6,7 +6,7 @@
 set -euo pipefail
 
 HOST="${1:-127.0.0.1}"
-PORT="${2:-3400}"
+PORT="${2:-3600}"
 INTERVAL=1
 
 # shellcheck source=scripts/lib/log.sh

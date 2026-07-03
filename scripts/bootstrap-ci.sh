@@ -5,7 +5,7 @@
 #   DB_PASSWORD=xxx \
 #   JWT_SECRET=xxx \
 #   OPENAI_API_KEY=xxx \
-#   PORT=3400 \
+#   PORT=3600 \
 #   DOMAIN=example.com \
 #   SSL_EMAIL=admin@example.com \
 #   bash /tmp/regora-deploy/scripts/bootstrap-ci.sh /tmp/regora-deploy/regora-v1.0.0.tar.gz
@@ -16,7 +16,7 @@
 #   JWT_SECRET                   JWT 签名密钥（建议 64 字符随机串）
 #   TENANT_SECRET_ENCRYPTION_KEY 租户 secret AES-GCM 密钥（32 字节 hex；留空则保留已有或自动生成）
 # 可选环境变量:
-#   PORT                         服务端口（production 默认 3400，test 默认 3402）
+#   PORT                         服务端口（production 默认 3600，test 默认 3602）
 #   OPENAI_API_KEY               LLM API Key（合规分析 Agent 需要）
 #   OPENAI_EMBEDDING_API_KEY     Embedding API Key（默认回退 OPENAI_API_KEY）
 #   DOMAIN             Nginx 域名（留空跳过 Nginx 配置）

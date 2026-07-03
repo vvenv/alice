@@ -55,9 +55,9 @@ YES=0
 
 default_port_for_env() {
   if [ "$1" = "test" ]; then
-    echo "3402"
+    echo "3602"
   else
-    echo "3400"
+    echo "3600"
   fi
 }
 
@@ -342,8 +342,8 @@ run_interactive() {
 
   if [ "$ENV_PRESET" -eq 0 ]; then
     ENVIRONMENT="$(prompt_menu "部署环境" --default=1 \
-      "production:生产环境 (端口 3400)" \
-      "test:测试环境 (端口 3402)" \
+      "production:生产环境 (端口 3600)" \
+      "test:测试环境 (端口 3602)" \
       "edge:Harvest Edge 圣保罗 (cron 采集)")"
   fi
 

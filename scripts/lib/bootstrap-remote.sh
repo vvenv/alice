@@ -151,8 +151,8 @@ for dir in ${health_dirs}; do
   fi
 done
 if [ -z \"\$HEALTH_SCRIPT\" ]; then
-  PORT=3400
-  [ '${environment}' = 'test' ] && PORT=3402
+  PORT=3600
+  [ '${environment}' = 'test' ] && PORT=3602
   curl -fsS \"http://127.0.0.1:\${PORT}/health\"
   exit \$?
 fi
