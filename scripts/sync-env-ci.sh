@@ -1,9 +1,9 @@
 #!/bin/bash
-# 从 CI Secrets 写入共享 env（/etc/regora/env.production 或 env.test）
+# 从 CI Secrets 写入共享 env（/etc/alice/env.production 或 env.test）
 #
 # 必填环境变量:
 #   ENVIRONMENT                  production | test
-#   DB_PASSWORD                  PostgreSQL regora 用户密码
+#   DB_PASSWORD                  PostgreSQL alice 用户密码
 #   JWT_SECRET                   JWT 签名密钥
 #   TENANT_SECRET_ENCRYPTION_KEY 租户 secret AES-GCM 密钥（32 字节 hex；bootstrap 可自动生成）
 #   BOOTSTRAP_UPSERT              true 时仅 upsert bootstrap 密钥（re-bootstrap 不抹掉其他配置）
@@ -39,12 +39,12 @@ fi
 source "${SCRIPT_DIR}/lib/blue-green.sh"
 bg_load_env "$ENVIRONMENT"
 
-DB_USER="regora"
+DB_USER="alice"
 
 if [ "$ENVIRONMENT" = "test" ]; then
   DB_NAME="regora_test"
 else
-  DB_NAME="regora"
+  DB_NAME="alice"
 fi
 
 target="$BG_SHARED_ENV_FILE"

@@ -20,8 +20,8 @@ source "$ROOT/scripts/lib/log.sh"
 # shellcheck source=scripts/lib/deploy-remote.sh
 source "$ROOT/scripts/lib/deploy-remote.sh"
 
-REGORA_OPS_DIR="/etc/regora/scripts"
-REMOTE_RESTORE_STAGING="/tmp/regora-restore-staging"
+REGORA_OPS_DIR="/etc/alice/scripts"
+REMOTE_RESTORE_STAGING="/tmp/alice-restore-staging"
 
 usage() {
   sed -n '3,13p' "$0"
@@ -31,7 +31,7 @@ usage() {
 remote_backup_dir_for() {
   case "$1" in
     test) echo "/backups/test" ;;
-    *)    echo "/var/backups/regora" ;;
+    *)    echo "/var/backups/alice" ;;
   esac
 }
 
@@ -42,7 +42,7 @@ validate_env() {
   esac
 }
 
-# 同步 backup.sh / restore.sh / lib/log.sh 到远程 /etc/regora/scripts/
+# 同步 backup.sh / restore.sh / lib/log.sh 到远程 /etc/alice/scripts/
 sync_remote_scripts() {
   log_info "同步脚本到远程 ${REGORA_OPS_DIR} ..."
   _run_ssh "mkdir -p '${REGORA_OPS_DIR}/lib'"

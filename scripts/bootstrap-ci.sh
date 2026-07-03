@@ -8,7 +8,7 @@
 #   PORT=3600 \
 #   DOMAIN=example.com \
 #   SSL_EMAIL=admin@example.com \
-#   bash /tmp/regora-deploy/scripts/bootstrap-ci.sh /tmp/regora-deploy/regora-v1.0.0.tar.gz
+#   bash /tmp/alice-deploy/scripts/bootstrap-ci.sh /tmp/alice-deploy/alice-v1.0.0.tar.gz
 #
 # 必填环境变量:
 #   ENVIRONMENT        production | test
@@ -53,7 +53,7 @@ ENVIRONMENT="${ENVIRONMENT:-production}"
 [ -n "${JWT_SECRET:-}" ]  || log_die "必须设置 JWT_SECRET"
 
 if [ -z "$ARCHIVE" ] || [ ! -f "$ARCHIVE" ]; then
-  log_die "请传入有效的 tarball 路径，例如: $0 /tmp/regora-deploy/regora-v1.0.0.tar.gz"
+  log_die "请传入有效的 tarball 路径，例如: $0 /tmp/alice-deploy/alice-v1.0.0.tar.gz"
 fi
 
 # shellcheck source=lib/blue-green.sh
@@ -67,24 +67,24 @@ APP_NAME="$(bg_slot_app a)"
 DEFAULT_PORT="$(bg_slot_port a)"
 PORT="${PORT:-$DEFAULT_PORT}"
 
-DB_USER="regora"
+DB_USER="alice"
 
 if [ "$ENVIRONMENT" = "test" ]; then
   DB_NAME="regora_test"
   BACKUP_DIR="/backups/test"
   ENV_FILE=".env.test"
 else
-  DB_NAME="regora"
-  BACKUP_DIR="/var/backups/regora"
+  DB_NAME="alice"
+  BACKUP_DIR="/var/backups/alice"
   ENV_FILE=".env.production"
 fi
 
 if [ -z "${VERSION:-}" ]; then
   VERSION="$(basename "$ARCHIVE" .tar.gz)"
-  VERSION="${VERSION#regora-}"
+  VERSION="${VERSION#alice-}"
 fi
 
-log_info "===== Regora 0-1 Bootstrap ====="
+log_info "===== Alice 0-1 Bootstrap ====="
 log_info "版本:       $VERSION"
 log_info "环境:       $ENVIRONMENT"
 log_info "目标目录:   $APP_DIR"
@@ -402,7 +402,7 @@ setup_nginx() {
 
   local conf="/etc/nginx/sites-available/${DOMAIN}"
 
-  if [ -f "$conf" ] && grep -q "regora-managed-v3" "$conf" 2>/dev/null; then
+  if [ -f "$conf" ] && grep -q "alice-managed-v3" "$conf" 2>/dev/null; then
     log_info "Nginx 蓝绿配置已存在（${DOMAIN}），跳过重写"
   else
     log_info "写入 Nginx 蓝绿配置 for ${DOMAIN}..."

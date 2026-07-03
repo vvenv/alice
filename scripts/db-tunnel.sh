@@ -21,7 +21,7 @@ source "$ROOT/scripts/lib/deploy-remote.sh"
 
 DEFAULT_PG_PORT=15432
 DEFAULT_REDIS_PORT=16379
-PID_DIR="${TMPDIR:-/tmp}/regora-tunnel"
+PID_DIR="${TMPDIR:-/tmp}/alice-tunnel"
 
 usage() {
   sed -n '3,14p' "$0"
@@ -190,7 +190,7 @@ cmd_start() {
   _clear_stale_pid "$TUNNEL_PG_PORT"
   _start_tunnel "$TUNNEL_PG_PORT" "$TUNNEL_REDIS_PORT" "$TUNNEL_WITH_REDIS"
 
-  log_info "使用 .env.tunnel：DATABASE_URL=postgresql://regora:regora@localhost:${TUNNEL_PG_PORT}/regora"
+  log_info "使用 .env.tunnel：DATABASE_URL=postgresql://alice:alice@localhost:${TUNNEL_PG_PORT}/alice"
   if [ "$TUNNEL_WITH_REDIS" = "1" ]; then
     log_info "REDIS_HOST=localhost REDIS_PORT=${TUNNEL_REDIS_PORT}"
   fi

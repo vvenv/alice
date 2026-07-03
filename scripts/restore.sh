@@ -14,7 +14,7 @@
 #
 # 行为:
 #   - 默认在还原前自动做一次「安全备份」(regora_backup_safety_<ts>.dump)，作为回滚兜底。
-#   - PG 还原：终止连接 → DROP/CREATE DATABASE（WITH FORCE）→ pg_restore → 把对象 re-own 给 regora。
+#   - PG 还原：终止连接 → DROP/CREATE DATABASE（WITH FORCE）→ pg_restore → 把对象 re-own 给 alice。
 #     （不用 --clean，避免 pgvector 扩展的 DROP EXTENSION 依赖冲突；清库重建最干净。）
 #   - Redis 还原：停服 → 用备份 RDB 替换 dump.rdb → 启服。
 #   - 破坏性操作前要求交互确认（输入大写 YES），非交互终端需 --yes。
@@ -35,8 +35,8 @@ ASSUME_YES=0
 NO_SAFETY_BACKUP=0
 LIST_ONLY=0
 
-# 应用 DB 用户恒为 regora（与 bootstrap-ci.sh 一致），库按环境区分
-DB_USER="regora"
+# 应用 DB 用户恒为 alice（与 bootstrap-ci.sh 一致），库按环境区分
+DB_USER="alice"
 
 usage() {
   sed -n '3,21p' "$0"
@@ -68,8 +68,8 @@ parse_args() {
     DB_NAME="regora_test"
     BACKUP_DIR="/backups/test"
   else
-    DB_NAME="regora"
-    BACKUP_DIR="/var/backups/regora"
+    DB_NAME="alice"
+    BACKUP_DIR="/var/backups/alice"
   fi
 
   if [ "$ONLY_PG" = "1" ] && [ "$ONLY_REDIS" = "1" ]; then

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 管理 regora 备份定时任务
+# 管理 alice 备份定时任务
 # 用法:
 #   ./scripts/backup-cron.sh install --env production|test
 #   ./scripts/backup-cron.sh disable --env production|test
@@ -12,8 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=lib/log.sh
 source "${SCRIPT_DIR}/lib/log.sh"
 
-CRON_TAG_PREFIX="regora-backup"
-REGORA_OPS_DIR="/etc/regora/scripts"
+CRON_TAG_PREFIX="alice-backup"
+REGORA_OPS_DIR="/etc/alice/scripts"
 ACTION=""
 ENVIRONMENT="production"
 
@@ -67,12 +67,12 @@ set_env_vars() {
         BACKUP_DIR="/backups/test"
         LOCK_FILE="/tmp/regora_backup_test.lock"
     else
-        BACKUP_DIR="/var/backups/regora"
+        BACKUP_DIR="/var/backups/alice"
         LOCK_FILE="/tmp/regora_backup.lock"
     fi
 
     CRON_TAG="# ${CRON_TAG_PREFIX}-${ENVIRONMENT}"
-    LOG_FILE="/var/log/regora-backup-${ENVIRONMENT}.log"
+    LOG_FILE="/var/log/alice-backup-${ENVIRONMENT}.log"
     BACKUP_SCRIPT="${REGORA_OPS_DIR}/backup.sh"
 }
 
@@ -128,7 +128,7 @@ remove_cron_for_env() {
 
     filtered=$(printf '%s\n' "$current" | grep -vF "$CRON_TAG" || true)
     filtered=$(printf '%s\n' "$filtered" | grep -vF "$BACKUP_SCRIPT" || true)
-    filtered=$(printf '%s\n' "$filtered" | grep -vF "/var/www/regora/scripts/backup.sh" || true)
+    filtered=$(printf '%s\n' "$filtered" | grep -vF "/var/www/alice/scripts/backup.sh" || true)
     filtered=$(printf '%s\n' "$filtered" | grep -vF "/var/www/regora_test/scripts/backup.sh" || true)
 
     if [ -n "$filtered" ]; then
@@ -179,11 +179,11 @@ show_status() {
 
     matches=$(printf '%s\n' "$current" | grep -F "$CRON_TAG_PREFIX" || true)
     if [ -z "$matches" ]; then
-        log_warn "未找到 regora 备份定时任务"
+        log_warn "未找到 alice 备份定时任务"
         exit 0
     fi
 
-    log_info "当前 regora 备份定时任务:"
+    log_info "当前 alice 备份定时任务:"
     printf '%s\n' "$matches"
 }
 

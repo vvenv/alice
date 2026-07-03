@@ -8,10 +8,10 @@ _SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=lib/blue-green.sh
 source "${_SCRIPT_DIR}/lib/blue-green.sh"
 
-if [ -f /etc/regora/deploy.env ]; then
+if [ -f /etc/alice/deploy.env ]; then
   set -a
   # shellcheck source=/dev/null
-  . /etc/regora/deploy.env
+  . /etc/alice/deploy.env
   set +a
 fi
 
@@ -59,7 +59,7 @@ fi
 
 if [ -z "$VERSION" ]; then
   VERSION="$(basename "$ARCHIVE" .tar.gz)"
-  VERSION="${VERSION#regora-}"
+  VERSION="${VERSION#alice-}"
 fi
 
 bg_load_env "$ENVIRONMENT"
@@ -67,7 +67,7 @@ bg_load_env "$ENVIRONMENT"
 if [ "$ENVIRONMENT" = "test" ]; then
   BACKUP_DIR="/backups/test"
 else
-  BACKUP_DIR="/var/backups/regora"
+  BACKUP_DIR="/var/backups/alice"
 fi
 
 log_info "蓝绿部署: $ENVIRONMENT"
@@ -132,7 +132,7 @@ if ! bg_link_shared_env "$DEPLOY_DIR"; then
   if [ ! -f "$EXAMPLE_FILE" ]; then
     if [ "$ENVIRONMENT" = "test" ]; then
       cat > "$EXAMPLE_FILE" <<EOF
-DATABASE_URL=postgresql://regora:password@localhost:5432/regora_test
+DATABASE_URL=postgresql://alice:password@localhost:5432/regora_test
 JWT_SECRET=change-me-to-a-long-random-string
 PORT=3001
 NODE_ENV=test
@@ -141,7 +141,7 @@ OPENAI_API_KEY=
 EOF
     else
       cat > "$EXAMPLE_FILE" <<EOF
-DATABASE_URL=postgresql://regora:password@localhost:5432/regora
+DATABASE_URL=postgresql://alice:password@localhost:5432/alice
 JWT_SECRET=change-me-to-a-long-random-string
 PORT=3600
 NODE_ENV=production

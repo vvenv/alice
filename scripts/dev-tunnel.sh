@@ -29,7 +29,7 @@ WATCH_PID=$!
 
 export REGORA_ENV_FILE=.env.tunnel
 
-pnpm --filter @regora/shared build
+pnpm --filter @alice/shared build
 
 REGORA_ENV_FILE=.env.tunnel concurrently \
   --names "server,client" \

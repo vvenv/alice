@@ -10,7 +10,7 @@
 #   ./scripts/bootstrap-remote.sh --yes
 #
 # 默认用当前仓库代码构建 tarball（package.json 版本号仅作产物命名）。
-# --reuse 才复用本地已有 regora-vX.tar.gz。
+# --reuse 才复用本地已有 alice-vX.tar.gz。
 # 凭证与密钥：复制 scripts/env.production.example → .env.production（或 env.test.example → .env.test）
 # 必填（主站）: DEPLOY_HOST/SSH_USER/SSH_PASSWORD、DB_PASSWORD、JWT_SECRET
 
@@ -320,7 +320,7 @@ run_interactive() {
   local custom_version build_choice
 
   echo ""
-  log_info "Regora 服务器 bootstrap / 重新 bootstrap"
+  log_info "Alice 服务器 bootstrap / 重新 bootstrap"
   echo ""
 
   if [ "$ENV_PRESET" -eq 0 ]; then
@@ -349,7 +349,7 @@ run_interactive() {
 
   if [ "$DOMAIN_PRESET" -eq 0 ]; then
     local domain_input
-    read -r -p "Nginx 域名 (留空跳过，如 app.regora.example): " domain_input </dev/tty
+    read -r -p "Nginx 域名 (留空跳过，如 app.alice.example): " domain_input </dev/tty
     domain_input="${domain_input// /}"
     DOMAIN="$domain_input"
   fi
@@ -424,7 +424,7 @@ if [ "$PROMPT_CODE_SOURCE" -eq 1 ] && [ "$INTERACTIVE" -eq 0 ]; then
   # shellcheck source=scripts/lib/prompt-menu.sh
   source "$ROOT/scripts/lib/prompt-menu.sh"
   echo ""
-  log_info "Regora 服务器 bootstrap / 重新 bootstrap（其余配置来自 .env.${ENVIRONMENT}）"
+  log_info "Alice 服务器 bootstrap / 重新 bootstrap（其余配置来自 .env.${ENVIRONMENT}）"
   echo ""
   prompt_code_source
   show_bootstrap_preview_and_confirm

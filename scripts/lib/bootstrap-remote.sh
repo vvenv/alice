@@ -1,7 +1,7 @@
 # 主应用本地 SSH bootstrap（与 .github/actions/bootstrap-server 行为一致）
 # 用法:
 #   ROOT=/path/to/repo source scripts/lib/bootstrap-remote.sh
-#   bootstrap_release_server /path/to/regora-v1.0.0.tar.gz v1.0.0 production
+#   bootstrap_release_server /path/to/alice-v1.0.0.tar.gz v1.0.0 production
 
 if [ -z "${ROOT:-}" ]; then
   ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -153,9 +153,9 @@ chmod +x \"\$HEALTH_SCRIPT\"
 if ! bash \"\$HEALTH_SCRIPT\" --env '${environment}' --attempts 30 --interval 3; then
   echo '--- PM2 diagnostics ---'
   pm2 list || true
-  pm2 logs regora-a --nostream --lines 40 2>/dev/null || true
-  pm2 logs regora-b --nostream --lines 20 2>/dev/null || true
-  pm2 logs regora-test-a --nostream --lines 20 2>/dev/null || true
+  pm2 logs alice-a --nostream --lines 40 2>/dev/null || true
+  pm2 logs alice-b --nostream --lines 20 2>/dev/null || true
+  pm2 logs alice-test-a --nostream --lines 20 2>/dev/null || true
   exit 1
 fi"
 

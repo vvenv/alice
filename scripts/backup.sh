@@ -12,7 +12,7 @@
 #   Redis:      <BACKUP_DIR>/regora_redis_backup_<时间戳>.rdb.gz
 #
 # 备份目录:
-#   production → /var/backups/regora
+#   production → /var/backups/alice
 #   test       → /backups/test
 #
 # 文件名模式 regora_backup_*.dump / regora_redis_*.rdb.gz 被 backup-cron.sh 的保留策略引用，
@@ -57,8 +57,8 @@ parse_args() {
     DB_NAME="regora_test"
     BACKUP_DIR="/backups/test"
   else
-    DB_NAME="regora"
-    BACKUP_DIR="/var/backups/regora"
+    DB_NAME="alice"
+    BACKUP_DIR="/var/backups/alice"
   fi
 
   log_info "备份环境: $ENVIRONMENT"

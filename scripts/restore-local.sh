@@ -18,11 +18,11 @@
 #   - 无 sudo -u postgres；systemctl → brew services
 #   - 备份来源: ./backups/<env>/（db:pull 产物）
 #   - 安全备份目录: ./backups/local-safety/
-#   - 目标库默认 regora（--db-name 覆盖），应用用户恒为 regora
+#   - 目标库默认 alice（--db-name 覆盖），应用用户恒为 alice
 #
 # 行为:
 #   - 默认还原前对本地目标库做安全备份（regora_backup_safety_<ts>.dump）
-#   - PG: 终止连接 → DROP/CREATE DATABASE → pg_restore → re-own 给 regora
+#   - PG: 终止连接 → DROP/CREATE DATABASE → pg_restore → re-own 给 alice
 #   - Redis: brew services stop → 替换 dump.rdb → brew services start
 #   - 破坏性操作前要求交互确认（大写 YES），非交互需 --yes
 
@@ -34,8 +34,8 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "${SCRIPT_DIR}/lib/log.sh"
 
 BACKUP_ENV="production"
-DB_NAME="regora"
-DB_USER="regora"
+DB_NAME="alice"
+DB_USER="alice"
 PG_FILE=""
 REDIS_FILE=""
 USE_LATEST=0
@@ -83,7 +83,7 @@ parse_args() {
   SAFETY_DIR="$ROOT/backups/local-safety"
 }
 
-# 校验本地前置：psql/pg_restore/pg_dump 可用，当前用户是 superuser，regora 角色存在
+# 校验本地前置：psql/pg_restore/pg_dump 可用，当前用户是 superuser，alice 角色存在
 check_prereqs() {
   command -v psql >/dev/null 2>&1 || log_die "未安装 psql (Homebrew: brew install postgresql@18)"
   command -v pg_restore >/dev/null 2>&1 || log_die "未安装 pg_restore"

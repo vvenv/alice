@@ -27,7 +27,7 @@ source "$ROOT/scripts/lib/log.sh"
 ENVIRONMENT="production"
 UPSERT=1
 RESTART_AFTER_SYNC=1
-REMOTE_SYNC_DIR=/tmp/regora-sync-env
+REMOTE_SYNC_DIR=/tmp/alice-sync-env
 
 usage() {
   sed -n '3,14p' "$0"

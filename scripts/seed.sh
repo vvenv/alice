@@ -84,7 +84,7 @@ psql_exec() {
         if [ "$ENVIRONMENT" = "test" ]; then
             DB_NAME="regora_test"
         else
-            DB_NAME="regora"
+            DB_NAME="alice"
         fi
         sudo -u postgres psql -d $DB_NAME "$@"
     fi

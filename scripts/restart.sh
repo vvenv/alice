@@ -19,8 +19,8 @@ while [[ $# -gt 0 ]]; do
       ENVIRONMENT="$2"
       shift 2
       ;;
-    regora|regora-test)
-      if [ "$1" = "regora-test" ]; then
+    alice|alice-test)
+      if [ "$1" = "alice-test" ]; then
         ENVIRONMENT="test"
       else
         ENVIRONMENT="production"
