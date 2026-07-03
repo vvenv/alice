@@ -74,7 +74,7 @@ ensure_release_builder_image() {
 
   log_info "确保 release 构建镜像已就绪（apt/pnpm 层可跨次复用）..."
   # 不指定 --platform：用宿主原生架构（Apple Silicon = arm64）。
-  # release tarball 仅含 JS dist / 源码 / prisma / 静态资源，架构无关；
+  # release tarball 仅含 JS dist / 源码 / 静态资源，架构无关；
   # 原生依赖（bcrypt 等）在目标 amd64 服务器 pnpm install 时安装。
   # 跨架构 QEMU 模拟会让 tsc/Vite 慢 3-10x，本地构建务必用原生架构。
   DOCKER_BUILDKIT=1 docker build \

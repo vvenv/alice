@@ -27,7 +27,7 @@ bash "$SCRIPT"
 
 if [ "$RESTART_AFTER_SYNC" = "1" ]; then
   BG_SCRIPT=""
-  for dir in /var/www/regora_a /var/www/regora_b /var/www/regora_test_a /var/www/regora_test_b; do
+  for dir in /var/www/alice_a /var/www/alice_b /var/www/alice_test_a /var/www/alice_test_b; do
     if [ -f "${dir}/scripts/lib/blue-green.sh" ]; then
       BG_SCRIPT="${dir}/scripts/lib/blue-green.sh"
       break

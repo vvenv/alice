@@ -2,8 +2,6 @@
 # 从 0 到 1 的 CI 非交互式首次引导部署
 # 用法:
 #   ENVIRONMENT=production \
-#   DB_PASSWORD=xxx \
-#   JWT_SECRET=xxx \
 #   OPENAI_API_KEY=xxx \
 #   PORT=3600 \
 #   DOMAIN=example.com \
@@ -12,13 +10,10 @@
 #
 # 必填环境变量:
 #   ENVIRONMENT        production | test
-#   DB_PASSWORD        数据库密码
-#   JWT_SECRET                   JWT 签名密钥（建议 64 字符随机串）
-#   TENANT_SECRET_ENCRYPTION_KEY 租户 secret AES-GCM 密钥（32 字节 hex；留空则保留已有或自动生成）
 # 可选环境变量:
 #   PORT                         服务端口（production 默认 3600，test 默认 3602）
-#   OPENAI_API_KEY               LLM API Key（合规分析 Agent 需要）
-#   OPENAI_EMBEDDING_API_KEY     Embedding API Key（默认回退 OPENAI_API_KEY）
+#   OPENAI_API_KEY               智谱 API Key
+#   OPENAI_BASE_URL / OPENAI_TTS_* / OPENAI_VISION_*
 #   DOMAIN             Nginx 域名（留空跳过 Nginx 配置）
 #   SSL_EMAIL          SSL 证书邮箱（有 DOMAIN 时必填，留空跳过申请证书）
 
@@ -49,17 +44,12 @@ done
 ENVIRONMENT="${ENVIRONMENT:-production}"
 [[ "$ENVIRONMENT" =~ ^(production|test)$ ]] || log_die "ENVIRONMENT 必须是 production 或 test"
 
-[ -n "${DB_PASSWORD:-}" ] || log_die "必须设置 DB_PASSWORD"
-[ -n "${JWT_SECRET:-}" ]  || log_die "必须设置 JWT_SECRET"
-
 if [ -z "$ARCHIVE" ] || [ ! -f "$ARCHIVE" ]; then
   log_die "请传入有效的 tarball 路径，例如: $0 /tmp/alice-deploy/alice-v1.0.0.tar.gz"
 fi
 
 # shellcheck source=lib/blue-green.sh
 source "${SCRIPT_DIR}/lib/blue-green.sh"
-# shellcheck source=lib/prisma-migrate.sh
-source "${SCRIPT_DIR}/lib/prisma-migrate.sh"
 bg_load_env "$ENVIRONMENT"
 
 APP_DIR="$(bg_slot_dir a)"
@@ -67,16 +57,10 @@ APP_NAME="$(bg_slot_app a)"
 DEFAULT_PORT="$(bg_slot_port a)"
 PORT="${PORT:-$DEFAULT_PORT}"
 
-DB_USER="alice"
-
 if [ "$ENVIRONMENT" = "test" ]; then
-  DB_NAME="regora_test"
-  BACKUP_DIR="/backups/test"
-  ENV_FILE=".env.test"
+  RELEASE_BACKUP_DIR="/backups/test"
 else
-  DB_NAME="alice"
-  BACKUP_DIR="/var/backups/alice"
-  ENV_FILE=".env.production"
+  RELEASE_BACKUP_DIR="/var/backups/alice"
 fi
 
 if [ -z "${VERSION:-}" ]; then
@@ -88,7 +72,6 @@ log_info "===== Alice 0-1 Bootstrap ====="
 log_info "版本:       $VERSION"
 log_info "环境:       $ENVIRONMENT"
 log_info "目标目录:   $APP_DIR"
-log_info "数据库:     $DB_NAME"
 log_info "端口:       $PORT"
 [ -n "${DOMAIN:-}" ] && log_info "域名:       $DOMAIN"
 
@@ -103,20 +86,16 @@ install_system_deps() {
   done
 
   local pkgs=""
-  dpkg -l postgresql &>/dev/null || pkgs="$pkgs postgresql postgresql-contrib"
-  dpkg -l postgresql-16 &>/dev/null || pkgs="$pkgs postgresql-16"  # pgvector 需要 PostgreSQL 16+
-  dpkg -l postgresql-16-pgvector &>/dev/null || pkgs="$pkgs postgresql-16-pgvector"
-  dpkg -l nginx      &>/dev/null || pkgs="$pkgs nginx"
-  dpkg -l redis-server &>/dev/null || pkgs="$pkgs redis-server"
-  dpkg -l ufw        &>/dev/null || pkgs="$pkgs ufw"
-  dpkg -l certbot    &>/dev/null || pkgs="$pkgs certbot python3-certbot-nginx"
+  dpkg -l nginx   &>/dev/null || pkgs="$pkgs nginx"
+  dpkg -l ufw     &>/dev/null || pkgs="$pkgs ufw"
+  dpkg -l certbot &>/dev/null || pkgs="$pkgs certbot python3-certbot-nginx"
 
   if [ -n "$pkgs" ]; then
     # shellcheck disable=SC2086
     apt-get install -y -qq $pkgs
   fi
 
-  systemctl enable --now redis-server postgresql nginx
+  systemctl enable --now nginx
   log_info "系统依赖就绪"
 }
 
@@ -154,86 +133,11 @@ install_pm2() {
   fi
   log_info "安装 PM2..."
   npm install -g pm2
-  pm2 startup systemd -u root --hp /root | tail -n 1 | bash || true
-}
-
-# ── 数据库 ────────────────────────────────────────────────────────────────────
-
-grant_database_privileges() {
-  sudo -u postgres psql -c "ALTER DATABASE $DB_NAME OWNER TO $DB_USER;"
-  sudo -u postgres psql -d "$DB_NAME" -c "ALTER SCHEMA public OWNER TO $DB_USER;"
-  sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
-  sudo -u postgres psql -d "$DB_NAME" -c "GRANT ALL ON SCHEMA public TO $DB_USER;"
-  sudo -u postgres psql -d "$DB_NAME" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;"
-  sudo -u postgres psql -d "$DB_NAME" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;"
-}
-
-enable_pgvector_extension() {
-  log_info "启用 pgvector 扩展..."
-  if ! sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS vector;"; then
-    log_die "无法启用 pgvector 扩展，请确认已安装 postgresql-16-pgvector"
+  local startup_cmd
+  startup_cmd="$(pm2 startup systemd -u root --hp /root 2>/dev/null | grep -E '^sudo env PATH' || true)"
+  if [ -n "$startup_cmd" ]; then
+    bash -c "$startup_cmd" || true
   fi
-}
-
-recreate_database() {
-  log_warn "重建数据库 ${DB_NAME}（清除未完成的 migration 残留 schema）..."
-  sudo -u postgres psql -tAc \
-    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" \
-    >/dev/null 2>&1 || true
-  sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$DB_NAME\";"
-  sudo -u postgres psql -c "CREATE DATABASE \"$DB_NAME\";"
-  grant_database_privileges
-  enable_pgvector_extension
-}
-
-# Bootstrap 重试时：库中已有 app schema，但没有任何成功 migration → 清空后重来。
-maybe_reset_stale_bootstrap_database() {
-  local has_app_schema migration_applied
-  has_app_schema="$(
-    sudo -u postgres psql -d "$DB_NAME" -tAc \
-      "SELECT 1 FROM pg_type WHERE typname = 'Role' LIMIT 1;" 2>/dev/null || true
-  )"
-  [ "$has_app_schema" = "1" ] || return 0
-
-  migration_applied="$(
-    sudo -u postgres psql -d "$DB_NAME" -tAc \
-      "SELECT EXISTS (SELECT 1 FROM \"_prisma_migrations\" WHERE finished_at IS NOT NULL);" \
-      2>/dev/null || echo 'f'
-  )"
-  [ "$migration_applied" = "t" ] && return 0
-
-  recreate_database
-}
-
-setup_database() {
-  log_info "配置 PostgreSQL 数据库..."
-  systemctl start postgresql
-
-  local user_exists db_exists
-  user_exists="$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" || echo '')"
-  db_exists="$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" || echo '')"
-
-  if [ "$user_exists" = "1" ]; then
-    log_info "用户 $DB_USER 已存在，更新密码..."
-    sudo -u postgres psql -c "ALTER USER $DB_USER WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';"
-  else
-    log_info "创建用户 $DB_USER..."
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';"
-    sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
-  fi
-
-  if [ "$db_exists" = "1" ]; then
-    log_info "数据库 $DB_NAME 已存在"
-  else
-    log_info "创建数据库 $DB_NAME..."
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;"
-  fi
-
-  grant_database_privileges
-  enable_pgvector_extension
-  maybe_reset_stale_bootstrap_database
-
-  log_info "数据库配置完成"
 }
 
 # ── 部署目录 + env ────────────────────────────────────────────────────────────
@@ -246,11 +150,10 @@ deploy_archive() {
 
   if [ -d "$APP_DIR" ] && [ -f "${APP_DIR}/package.json" ]; then
     local bak="${APP_NAME}-$(date +%Y%m%d-%H%M%S)"
-    mkdir -p "$BACKUP_DIR"
-    log_info "备份当前版本 -> ${BACKUP_DIR}/${bak}.tar.gz"
-    tar -czf "${BACKUP_DIR}/${bak}.tar.gz" \
+    mkdir -p "$RELEASE_BACKUP_DIR"
+    log_info "备份当前版本 -> ${RELEASE_BACKUP_DIR}/${bak}.tar.gz"
+    tar -czf "${RELEASE_BACKUP_DIR}/${bak}.tar.gz" \
       --exclude='node_modules' \
-      --exclude='packages/server/src/generated' \
       -C "$APP_DIR" . 2>/dev/null || true
   fi
 
@@ -279,100 +182,19 @@ sync_env_file() {
   if [ ! -f "${SCRIPT_DIR}/sync-env-ci.sh" ]; then
     log_die "未找到 ${SCRIPT_DIR}/sync-env-ci.sh"
   fi
-  resolve_tenant_secret_encryption_key
   BOOTSTRAP_UPSERT=true SYNC_FORCE=true bash "${SCRIPT_DIR}/sync-env-ci.sh"
-}
-
-_read_env_var_from_file() {
-  local file="$1" key="$2"
-  if [ ! -f "$file" ]; then
-    return 1
-  fi
-  local line
-  line="$(grep -E "^${key}=" "$file" | tail -1 || true)"
-  [ -n "$line" ] || return 1
-  printf '%s' "${line#*=}"
-}
-
-resolve_tenant_secret_encryption_key() {
-  local target="$BG_SHARED_ENV_FILE"
-
-  if [ -n "${TENANT_SECRET_ENCRYPTION_KEY:-}" ]; then
-    return 0
-  fi
-
-  local existing=""
-  existing="$(_read_env_var_from_file "$target" "TENANT_SECRET_ENCRYPTION_KEY" || true)"
-  if [ -n "$existing" ]; then
-    TENANT_SECRET_ENCRYPTION_KEY="$existing"
-    log_info "保留已有 TENANT_SECRET_ENCRYPTION_KEY"
-    return 0
-  fi
-
-  if ! command -v openssl >/dev/null 2>&1; then
-    log_die "未设置 TENANT_SECRET_ENCRYPTION_KEY 且无法自动生成（缺少 openssl）"
-  fi
-
-  TENANT_SECRET_ENCRYPTION_KEY="$(openssl rand -hex 32)"
-  log_info "已自动生成 TENANT_SECRET_ENCRYPTION_KEY"
-}
-
-seed_default_tenant_if_missing() {
-  log_info "检查默认租户..."
-  local count
-  count="$(sudo -u postgres psql -d "$DB_NAME" -tAc \
-    "SELECT COUNT(*) FROM \"Tenant\" WHERE id = '00000000-0000-0000-0000-000000000001';" \
-    | tr -d '[:space:]')"
-  if [ "$count" != "0" ]; then
-    log_info "默认租户已存在"
-    return 0
-  fi
-
-  log_info "插入默认租户（自托管首次 bootstrap）..."
-  sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'EOSQL'
-INSERT INTO "Tenant" (
-  "id",
-  "slug",
-  "name",
-  "status",
-  "plan",
-  "onboarding_completed",
-  "created_at",
-  "updated_at"
-)
-VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  'default',
-  '默认租户',
-  'active',
-  'free',
-  false,
-  CURRENT_TIMESTAMP,
-  CURRENT_TIMESTAMP
-)
-ON CONFLICT ("id") DO NOTHING;
-EOSQL
-  log_info "默认租户已就绪"
 }
 
 link_env_file() {
   bg_set_active_slot "a"
 }
 
-# ── install-production（依赖 + migration）────────────────────────────────────
+# ── install-production（依赖安装）────────────────────────────────────────────
 
 run_install_production() {
   if [ ! -f "${APP_DIR}/scripts/install-production.sh" ]; then
     log_die "未找到 ${APP_DIR}/scripts/install-production.sh，Release 包可能不完整"
   fi
-
-  if [ -f "${APP_DIR}/.env" ]; then
-    set -a
-    # shellcheck source=/dev/null
-    . "${APP_DIR}/.env"
-    set +a
-  fi
-  prisma_recover_failed_migrations "$APP_DIR"
 
   ENVIRONMENT="$ENVIRONMENT" APP_DIR="$APP_DIR" \
     bash "${APP_DIR}/scripts/install-production.sh"
@@ -428,15 +250,6 @@ setup_nginx() {
   log_info "Nginx 配置完成"
 }
 
-# ── 备份定时任务 ──────────────────────────────────────────────────────────────
-
-setup_backup() {
-  if [ -f "${APP_DIR}/scripts/backup-cron.sh" ]; then
-    log_info "安装备份定时任务..."
-    bash "${APP_DIR}/scripts/backup-cron.sh" install --env "$ENVIRONMENT"
-  fi
-}
-
 # ── 主流程 ────────────────────────────────────────────────────────────────────
 
 main() {
@@ -444,16 +257,13 @@ main() {
   install_nodejs
   install_pnpm
   install_pm2
-  setup_database
   deploy_archive
   sync_env_file
   link_env_file
   run_install_production
-  seed_default_tenant_if_missing
   start_app
   setup_firewall
   setup_nginx
-  setup_backup
 
   bg_load_env "$ENVIRONMENT"
   if ! bg_wait_health "$(bg_slot_port a)" 30 2; then

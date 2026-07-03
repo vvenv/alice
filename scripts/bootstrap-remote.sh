@@ -12,7 +12,7 @@
 # 默认用当前仓库代码构建 tarball（package.json 版本号仅作产物命名）。
 # --reuse 才复用本地已有 alice-vX.tar.gz。
 # 凭证与密钥：复制 scripts/env.production.example → .env.production（或 env.test.example → .env.test）
-# 必填（主站）: DEPLOY_HOST/SSH_USER/SSH_PASSWORD、DB_PASSWORD、JWT_SECRET
+# 必填（主站）: DEPLOY_HOST/SSH_USER/SSH_PASSWORD
 
 set -euo pipefail
 
@@ -147,13 +147,6 @@ if [ -t 0 ]; then
     [ "$SSL_EMAIL_PRESET" -eq 0 ] && needs_interactive=1
   fi
   [ "$PORT_PRESET" -eq 0 ] && needs_interactive=1
-  if ! deploy_env_has "${DB_PASSWORD:-}" || ! deploy_env_has "${JWT_SECRET:-}"; then
-    needs_interactive=1
-  fi
-  if deploy_env_is_placeholder_db_password "${DB_PASSWORD:-}" \
-    || deploy_env_is_placeholder_jwt_secret "${JWT_SECRET:-}"; then
-    needs_interactive=1
-  fi
 fi
 
 if [ "$needs_interactive" -eq 1 ]; then
@@ -163,14 +156,6 @@ fi
 if [ "$YES" -eq 0 ] && [ -t 0 ] \
   && [ "$REUSE_PRESET" -eq 0 ] && [ "$BUILD_PRESET" -eq 0 ] && [ "$VERSION_PRESET" -eq 0 ]; then
   PROMPT_CODE_SOURCE=1
-fi
-
-_placeholder_secrets=()
-while IFS= read -r _secret_name; do
-  [ -n "$_secret_name" ] && _placeholder_secrets+=("$_secret_name")
-done < <(deploy_env_collect_placeholder_secrets)
-if [ "${#_placeholder_secrets[@]}" -gt 0 ] && [ "$INTERACTIVE" -eq 0 ]; then
-  log_die ".env.${ENVIRONMENT} 中以下项仍为示例值，请填入真实密钥: ${_placeholder_secrets[*]}"
 fi
 
 prompt_confirm() {
@@ -197,27 +182,6 @@ prompt_confirm() {
     [Yy]|[Yy][Ee][Ss]) return 0 ;;
     *) return 1 ;;
   esac
-}
-
-prompt_secret() {
-  local var_name="$1"
-  local prompt="$2"
-  local value
-
-  if [ -n "${!var_name:-}" ]; then
-    return 0
-  fi
-
-  while true; do
-    read -r -s -p "$prompt: " value </dev/tty
-    echo "" >/dev/tty
-    value="${value// /}"
-    if [ -n "$value" ]; then
-      printf -v "$var_name" '%s' "$value"
-      return 0
-    fi
-    echo "不能为空" >&2
-  done
 }
 
 prompt_code_source() {
@@ -383,18 +347,6 @@ run_interactive() {
     fi
   fi
 
-  prompt_secret DB_PASSWORD "PostgreSQL 密码 (DB_PASSWORD)"
-  prompt_secret JWT_SECRET "JWT 签名密钥 (JWT_SECRET)"
-
-  if [ -z "${TENANT_SECRET_ENCRYPTION_KEY:-}" ]; then
-    read -r -s -p "租户加密密钥 TENANT_SECRET_ENCRYPTION_KEY (32 字节 hex，留空由服务器自动生成): " _tenant_key </dev/tty
-    echo "" >/dev/tty
-    _tenant_key="${_tenant_key// /}"
-    if [ -n "$_tenant_key" ]; then
-      TENANT_SECRET_ENCRYPTION_KEY="$_tenant_key"
-    fi
-  fi
-
   if ! deploy_env_has "${OPENAI_API_KEY:-}"; then
     local openai_choice
     openai_choice="$(prompt_menu "OpenAI API Key" --default=1 \
@@ -410,7 +362,6 @@ run_interactive() {
 }
 
 if [ "$INTERACTIVE" -eq 1 ]; then
-  deploy_env_clear_placeholder_secrets
   # shellcheck source=scripts/lib/prompt-menu.sh
   source "$ROOT/scripts/lib/prompt-menu.sh"
   run_interactive
@@ -428,10 +379,6 @@ if [ "$PROMPT_CODE_SOURCE" -eq 1 ] && [ "$INTERACTIVE" -eq 0 ]; then
   echo ""
   prompt_code_source
   show_bootstrap_preview_and_confirm
-fi
-
-if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
-  log_die "缺少 DB_PASSWORD 或 JWT_SECRET。请在 .env.${ENVIRONMENT} 中配置，或使用交互式 bootstrap"
 fi
 
 TAG="v${VERSION}"

@@ -25,13 +25,6 @@ _bootstrap_env_append() {
 load_bootstrap_secrets() {
   local environment="${1:-production}"
   load_deploy_credentials "$environment"
-
-  if [ -z "${DB_PASSWORD:-}" ]; then
-    deploy_remote_error "未配置 DB_PASSWORD。请在 .env.${environment} 中设置，或通过交互式 bootstrap 输入"
-  fi
-  if [ -z "${JWT_SECRET:-}" ]; then
-    deploy_remote_error "未配置 JWT_SECRET。请在 .env.${environment} 中设置，或通过交互式 bootstrap 输入"
-  fi
 }
 
 _write_bootstrap_env_file() {
@@ -45,27 +38,16 @@ _write_bootstrap_env_file() {
   {
     printf 'ENVIRONMENT=%s\n' "$environment"
     printf 'DEPLOY_VERSION=%s\n' "$version"
-    printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
-    printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
-    printf 'TENANT_SECRET_ENCRYPTION_KEY=%s\n' "${TENANT_SECRET_ENCRYPTION_KEY:-}"
     printf 'PORT=%s\n' "$port"
     printf 'DOMAIN=%s\n' "$domain"
     printf 'SSL_EMAIL=%s\n' "$ssl_email"
+    _bootstrap_env_append "HOST" "${HOST:-0.0.0.0}"
+    _bootstrap_env_append "LOG_LEVEL" "${LOG_LEVEL:-info}"
     _bootstrap_env_append "OPENAI_API_KEY" "${OPENAI_API_KEY:-}"
     _bootstrap_env_append "OPENAI_BASE_URL" "${OPENAI_BASE_URL:-}"
-    _bootstrap_env_append "OPENAI_MODEL" "${OPENAI_MODEL:-}"
-    _bootstrap_env_append "OPENAI_EMBEDDING_API_KEY" "${OPENAI_EMBEDDING_API_KEY:-}"
-    _bootstrap_env_append "OPENAI_EMBEDDING_BASE_URL" "${OPENAI_EMBEDDING_BASE_URL:-}"
-    _bootstrap_env_append "OPENAI_EMBEDDING_MODEL" "${OPENAI_EMBEDDING_MODEL:-}"
-    _bootstrap_env_append "OPENAI_EMBEDDING_DIMENSIONS" "${OPENAI_EMBEDDING_DIMENSIONS:-}"
-    _bootstrap_env_append "TENCENT_SECRET_ID" "${TENCENT_SECRET_ID:-}"
-    _bootstrap_env_append "TENCENT_SECRET_KEY" "${TENCENT_SECRET_KEY:-}"
-    _bootstrap_env_append "TENCENT_TMT_REGION" "${TENCENT_TMT_REGION:-}"
-    _bootstrap_env_append "TENCENT_TMT_TARGET_LANG" "${TENCENT_TMT_TARGET_LANG:-}"
-    _bootstrap_env_append "REDIS_PASSWORD" "${REDIS_PASSWORD:-}"
-    _bootstrap_env_append "PLATFORM_ADMIN_USERNAME" "${PLATFORM_ADMIN_USERNAME:-}"
-    _bootstrap_env_append "PLATFORM_ADMIN_PASSWORD" "${PLATFORM_ADMIN_PASSWORD:-}"
-    _bootstrap_env_append "PLATFORM_ADMIN_PASSWORD_HASH" "${PLATFORM_ADMIN_PASSWORD_HASH:-}"
+    _bootstrap_env_append "OPENAI_TTS_MODEL" "${OPENAI_TTS_MODEL:-}"
+    _bootstrap_env_append "OPENAI_TTS_VOICE" "${OPENAI_TTS_VOICE:-}"
+    _bootstrap_env_append "OPENAI_VISION_MODEL" "${OPENAI_VISION_MODEL:-}"
   } >"$path"
   chmod 600 "$path"
 }
@@ -106,7 +88,6 @@ bootstrap_release_server() {
   _run_scp "$ROOT/scripts/bootstrap-ci.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/bootstrap-ci.sh"
   _run_scp "$ROOT/scripts/sync-env-ci.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/sync-env-ci.sh"
   _run_scp "$ROOT/scripts/lib/blue-green.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/lib/blue-green.sh"
-  _run_scp "$ROOT/scripts/lib/prisma-migrate.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/lib/prisma-migrate.sh"
   _run_scp "$ROOT/scripts/lib/log.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/lib/log.sh"
   _run_scp "$local_env" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${remote_dir}/bootstrap.env"
   rm -f "$local_env"

@@ -8,7 +8,7 @@
 #   ./scripts/sync-env-remote.sh --force              # 全量覆盖共享 env（等同 CI SYNC_FORCE）
 #   ./scripts/sync-env-remote.sh --no-restart         # 不同步后重启 PM2
 #
-# 凭证与密钥：复制 scripts/env.production.example → .env.production（test 同理）
+# 凭证：复制 scripts/env.production.example → .env.production（test 同理）
 
 set -euo pipefail
 
@@ -60,7 +60,6 @@ case "$ENVIRONMENT" in
 esac
 
 load_deploy_credentials "$ENVIRONMENT"
-deploy_env_clear_placeholder_secrets
 
 _write_quoted_env_file() {
   local dest="$1"
@@ -76,16 +75,6 @@ _write_quoted_env_file() {
 }
 
 _sync_main_env() {
-  local missing=()
-  [ -n "${DB_PASSWORD:-}" ] || missing+=("DB_PASSWORD")
-  [ -n "${JWT_SECRET:-}" ] || missing+=("JWT_SECRET")
-  if [ "$UPSERT" -eq 0 ] && [ -z "${TENANT_SECRET_ENCRYPTION_KEY:-}" ]; then
-    missing+=("TENANT_SECRET_ENCRYPTION_KEY")
-  fi
-  if [ "${#missing[@]}" -gt 0 ]; then
-    deploy_remote_error "缺少必填项: ${missing[*]}。请在 $(deploy_env_file_for "$ROOT" "$ENVIRONMENT") 中配置"
-  fi
-
   export ENVIRONMENT
   if [ "$UPSERT" -eq 1 ]; then
     export BOOTSTRAP_UPSERT=true
@@ -99,13 +88,10 @@ _sync_main_env() {
   local sync_vars
   sync_vars="$(mktemp)"
   _write_quoted_env_file "$sync_vars" \
-    ENVIRONMENT DB_PASSWORD JWT_SECRET TENANT_SECRET_ENCRYPTION_KEY PORT \
+    ENVIRONMENT PORT HOST LOG_LEVEL \
     SYNC_FORCE BOOTSTRAP_UPSERT \
-    OPENAI_API_KEY OPENAI_BASE_URL OPENAI_MODEL \
-    OPENAI_EMBEDDING_API_KEY OPENAI_EMBEDDING_BASE_URL OPENAI_EMBEDDING_MODEL OPENAI_EMBEDDING_DIMENSIONS \
-    REDIS_PASSWORD \
-    PLATFORM_ADMIN_USERNAME PLATFORM_ADMIN_PASSWORD PLATFORM_ADMIN_PASSWORD_HASH \
-    TENCENT_SECRET_ID TENCENT_SECRET_KEY TENCENT_TMT_REGION TENCENT_TMT_TARGET_LANG
+    OPENAI_API_KEY OPENAI_BASE_URL \
+    OPENAI_TTS_MODEL OPENAI_TTS_VOICE OPENAI_VISION_MODEL
 
   deploy_remote_info "目标: ${DEPLOY_SSH_USER}@${DEPLOY_HOST} (${ENVIRONMENT})"
   if [ "$UPSERT" -eq 1 ]; then

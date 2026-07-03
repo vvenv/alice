@@ -65,9 +65,9 @@ fi
 bg_load_env "$ENVIRONMENT"
 
 if [ "$ENVIRONMENT" = "test" ]; then
-  BACKUP_DIR="/backups/test"
+  RELEASE_BACKUP_DIR="/backups/test"
 else
-  BACKUP_DIR="/var/backups/alice"
+  RELEASE_BACKUP_DIR="/var/backups/alice"
 fi
 
 log_info "蓝绿部署: $ENVIRONMENT"
@@ -95,9 +95,9 @@ tar -xzf "$ARCHIVE" -C "$EXTRACT_DIR"
 
 if bg_slot_has_release "$DEPLOY_SLOT"; then
   BACKUP_NAME="$(bg_slot_app "$DEPLOY_SLOT")-$(date +%Y%m%d-%H%M%S)"
-  mkdir -p "$BACKUP_DIR"
-  log_info "备份槽位 ${DEPLOY_SLOT} -> ${BACKUP_DIR}/${BACKUP_NAME}.tar.gz"
-  tar -czf "${BACKUP_DIR}/${BACKUP_NAME}.tar.gz" \
+  mkdir -p "$RELEASE_BACKUP_DIR"
+  log_info "备份槽位 ${DEPLOY_SLOT} -> ${RELEASE_BACKUP_DIR}/${BACKUP_NAME}.tar.gz"
+  tar -czf "${RELEASE_BACKUP_DIR}/${BACKUP_NAME}.tar.gz" \
     --exclude='node_modules' \
     --exclude='packages/server/src/generated' \
     -C "$DEPLOY_DIR" . 2>/dev/null || true
@@ -132,21 +132,27 @@ if ! bg_link_shared_env "$DEPLOY_DIR"; then
   if [ ! -f "$EXAMPLE_FILE" ]; then
     if [ "$ENVIRONMENT" = "test" ]; then
       cat > "$EXAMPLE_FILE" <<EOF
-DATABASE_URL=postgresql://alice:password@localhost:5432/regora_test
-JWT_SECRET=change-me-to-a-long-random-string
-PORT=3001
+PORT=3602
+HOST=0.0.0.0
+LOG_LEVEL=info
 NODE_ENV=test
-REDIS_URL=redis://localhost:6379
 OPENAI_API_KEY=
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+OPENAI_TTS_MODEL=glm-tts
+OPENAI_TTS_VOICE=female
+OPENAI_VISION_MODEL=glm-4v-flash
 EOF
     else
       cat > "$EXAMPLE_FILE" <<EOF
-DATABASE_URL=postgresql://alice:password@localhost:5432/alice
-JWT_SECRET=change-me-to-a-long-random-string
 PORT=3600
+HOST=0.0.0.0
+LOG_LEVEL=info
 NODE_ENV=production
-REDIS_URL=redis://localhost:6379
 OPENAI_API_KEY=
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+OPENAI_TTS_MODEL=glm-tts
+OPENAI_TTS_VOICE=female
+OPENAI_VISION_MODEL=glm-4v-flash
 EOF
     fi
     log_warn "已创建 .env.example，请配置 ${BG_SHARED_ENV_FILE} 后重新部署"
@@ -154,7 +160,7 @@ EOF
   fi
 fi
 
-log_info "执行平台相关初始化（依赖安装 + 数据库迁移）..."
+log_info "执行平台相关初始化（依赖安装）..."
 ENVIRONMENT="$ENVIRONMENT" APP_DIR="$DEPLOY_DIR" bash "${DEPLOY_DIR}/scripts/install-production.sh"
 
 if ! command -v pm2 &>/dev/null; then
@@ -183,11 +189,6 @@ bg_set_active_slot "$DEPLOY_SLOT"
 if [ "$PREVIOUS_SLOT" != "$DEPLOY_SLOT" ] && bg_slot_has_release "$PREVIOUS_SLOT"; then
   log_info "停止旧槽位 ${PREVIOUS_SLOT}"
   bg_stop_slot_app "$PREVIOUS_SLOT"
-fi
-
-if [ "$(id -u)" -eq 0 ] && [ -f "${DEPLOY_DIR}/scripts/backup-cron.sh" ] && [ -f "${DEPLOY_DIR}/scripts/backup.sh" ]; then
-  log_info "同步备份脚本并刷新 cron..."
-  bash "${DEPLOY_DIR}/scripts/backup-cron.sh" install --env "$ENVIRONMENT"
 fi
 
 log_info "蓝绿部署完成: ${VERSION} (${ENVIRONMENT})"
