@@ -4,8 +4,5 @@
 PROJECT_SLUG=alice
 REMOTE_STAGING_DIR=/tmp/alice-deploy
 BOOTSTRAP_REMOTE_STAGING_DIR=/tmp/alice-bootstrap
-EDGE_REMOTE_STAGING_DIR=/tmp/alice-edge-deploy
-EDGE_BOOTSTRAP_STAGING_DIR=/tmp/alice-edge-bootstrap
-EDGE_APP_DIR=/var/www/alice
 HEALTH_CHECK_SLOT_DIRS="/var/www/alice_a /var/www/alice_b /var/www/alice_test_a /var/www/alice_test_b"
 DEPLOY_OVERRIDE_PREFIX=ALICE

@@ -10,7 +10,6 @@
 #   ./scripts/release.sh patch --deploy-local              # 本地构建 + SSH 部署 + 推送 tag
 #   ./scripts/release.sh patch --deploy-local --no-push    # 仅本地部署，不推送
 #   ./scripts/release.sh patch --deploy-local --env test   # 部署到测试环境
-#   ./scripts/release.sh patch --deploy-local --env edge   # 部署到 Edge
 #   ./scripts/release.sh patch --deploy-local --env test,production  # 一次部署多个环境
 #
 # 推送 v* 标签后会自动触发 .github/workflows/release.yml（构建 + GitHub Release + 部署）
@@ -184,8 +183,7 @@ run_interactive() {
   if [ "$DEPLOY_LOCAL" -eq 1 ] && [ "$DEPLOY_LOCAL_PRESET" -eq 0 ]; then
     DEPLOY_ENV="$(prompt_multi_menu "部署环境（空格多选，回车确认）" --default=1 \
       "production:生产环境" \
-      "test:测试环境" \
-      "edge:Harvest Edge（圣保罗）")"
+      "test:测试环境"
   fi
 
   TAG="v${NEW_VERSION}"

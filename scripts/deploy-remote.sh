@@ -4,12 +4,11 @@
 # 用法:
 #   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz
 #   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz --env test
-#   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz --env edge
 #   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz --env test,production   # 一次部署多个环境
-#   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz --env test --env edge   # 重复 --env 等价
+#   ./scripts/deploy-remote.sh ${PROJECT_SLUG}-v1.0.0.tar.gz --env test --env production   # 重复 --env 等价
 #
 # 多环境按给定顺序串行部署，前序环境失败则中止（fail-fast）。
-# 凭证：复制 scripts/env.production.example → .env.production（test/edge 同理）
+# 凭证：复制 scripts/env.production.example → .env.production（test 同理）
 
 set -euo pipefail
 
@@ -104,8 +103,8 @@ fi
 # 部署前统一校验所有环境（fail fast：任一无效立即中止，避免部署到一半才失败）
 for _env in "${ENVS[@]}"; do
   case "$_env" in
-    production|test|edge) ;;
-    *) deploy_remote_error "无效环境: ${_env}（仅支持 production / test / edge）" ;;
+    production|test) ;;
+    *) deploy_remote_error "无效环境: ${_env}（仅支持 production / test）" ;;
   esac
 done
 

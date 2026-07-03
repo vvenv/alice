@@ -6,7 +6,6 @@
 #   ./scripts/deploy.sh                          # 交互式选择版本 / 环境
 #   ./scripts/deploy.sh v1.2.3                   # 部署指定版本（非交互）
 #   ./scripts/deploy.sh --env test              # 部署到测试环境
-#   ./scripts/deploy.sh --env edge              # 部署到 Edge（读 .env.edge）
 #   ./scripts/deploy.sh --env test,production   # 一次部署多个环境（串行 fail-fast）
 #   ./scripts/deploy.sh v1.2.3 --reuse           # 复用已存在的 tarball，跳过构建
 #   ./scripts/deploy.sh --via-docker             # 强制使用 Docker (linux/amd64) 构建
@@ -123,8 +122,7 @@ run_interactive() {
   if [ "$ENV_PRESET" -eq 0 ]; then
     DEPLOY_ENV="$(prompt_multi_menu "部署环境（空格多选，回车确认）" --default=1 \
       "production:生产环境" \
-      "test:测试环境" \
-      "edge:Harvest Edge（圣保罗）")"
+      "test:测试环境""
   fi
 
   local candidate_tarball="$ROOT/${PROJECT_SLUG}-v${VERSION}.tar.gz"

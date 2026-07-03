@@ -2,7 +2,6 @@
 # 用法: ROOT=/path/to/repo source scripts/lib/deploy-env.sh
 #       load_deploy_env "$ROOT" production   # → .env.production
 #       load_deploy_env "$ROOT" test         # → .env.test
-#       load_deploy_env "$ROOT" edge         # → .env.edge
 
 if [ -z "${ROOT:-}" ]; then
   ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -18,7 +17,6 @@ deploy_env_file_for() {
     env="${DEPLOY_ENV:-${ENVIRONMENT:-production}}"
   fi
   case "$env" in
-    edge) echo "$root/.env.edge" ;;
     test) echo "$root/.env.test" ;;
     production) echo "$root/.env.production" ;;
     *)
@@ -140,30 +138,6 @@ deploy_env_db_port_from_url() {
   local port
   port="$(echo "${1}" | sed -nE 's|^postgresql://[^@]+@[^:/]+:([0-9]+).*|\1|p')"
   echo "${port:-5432}"
-}
-
-deploy_env_validate_edge_runtime() {
-  local root="${1:-$ROOT}"
-  load_deploy_env "$root" edge
-
-  local errors=()
-  if [ "${HARVEST_EXECUTION_REGION:-}" != "BR" ]; then
-    errors+=("HARVEST_EXECUTION_REGION 必须为 BR（当前: ${HARVEST_EXECUTION_REGION:-未设置}）")
-  fi
-  if ! deploy_env_has "${DATABASE_URL:-}"; then
-    errors+=("缺少 DATABASE_URL")
-  fi
-  if ! deploy_env_has "${ATTACHMENT_BASE_DIR:-}"; then
-    errors+=("缺少 ATTACHMENT_BASE_DIR")
-  fi
-
-  if [ "${#errors[@]}" -gt 0 ]; then
-    for err in "${errors[@]}"; do
-      log_error "$err"
-    done
-    log_warn "请对照 packages/server/scripts/harvest-edge.env.example 补全 .env.edge"
-    return 1
-  fi
 }
 
 deploy_env_collect_placeholder_secrets() {

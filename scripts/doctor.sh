@@ -83,26 +83,6 @@ _scan_main_env() {
   fi
 }
 
-_scan_edge_env() {
-  local file="$1"
-  local path="$ROOT/$file"
-  if [ ! -f "$path" ]; then
-    _warn "$file" "未创建（部署 edge 前需复制 packages/server/scripts/harvest-edge.env.example 并填入主库 DATABASE_URL）"
-    return
-  fi
-  _pass "$file" "已创建"
-
-  unset HARVEST_EXECUTION_REGION DATABASE_URL ATTACHMENT_BASE_DIR
-  load_deploy_env "$ROOT" edge
-
-  if [ "${HARVEST_EXECUTION_REGION:-}" != "BR" ]; then
-    _warn "${file} HARVEST_EXECUTION_REGION" "需为 BR（当前: ${HARVEST_EXECUTION_REGION:-未设置}）"
-  fi
-  if [ -z "${DATABASE_URL:-}" ]; then
-    _warn "${file} DATABASE_URL" "未设置（Edge 采集需要主库连接）"
-  fi
-}
-
 # ── 核心工具链（FAIL） ─────────────────────────────────────────
 
 _section "核心工具链"
@@ -153,7 +133,7 @@ _check_tool redis-cli "redis-cli（Redis 备份验证）"
 
 _section "env 模板（随仓库提交）"
 
-for tmpl in scripts/env.production.example scripts/env.test.example packages/server/scripts/harvest-edge.env.example; do
+for tmpl in scripts/env.production.example scripts/env.test.example; do
   if [ -f "$ROOT/$tmpl" ]; then
     _pass "$tmpl" "存在"
   else
@@ -167,7 +147,6 @@ _section "已配置 env 文件（部署前应补全）"
 
 _scan_main_env ".env.production" production
 _scan_main_env ".env.test" test
-_scan_edge_env ".env.edge"
 
 # ── 工作区状态（WARN） ───────────────────────────────────────
 

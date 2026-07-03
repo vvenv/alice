@@ -82,15 +82,8 @@ bootstrap_release_server() {
     deploy_remote_error "找不到 tarball: $tarball"
   fi
 
-  if [ "$environment" != "production" ] && [ "$environment" != "test" ] && [ "$environment" != "edge" ]; then
-    deploy_remote_error "无效环境: ${environment}（仅支持 production / test / edge）"
-  fi
-
-  if [ "$environment" = "edge" ]; then
-    # shellcheck source=scripts/lib/edge-remote.sh
-    source "$ROOT/scripts/lib/edge-remote.sh"
-    bootstrap_edge_server "$tarball" "$version"
-    return
+  if [ "$environment" != "production" ] && [ "$environment" != "test" ]; then
+    deploy_remote_error "无效环境: ${environment}（仅支持 production / test）"
   fi
 
   load_bootstrap_secrets "$environment"

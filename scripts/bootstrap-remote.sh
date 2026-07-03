@@ -4,7 +4,6 @@
 # 用法:
 #   ./scripts/bootstrap-remote.sh
 #   ./scripts/bootstrap-remote.sh --env production
-#   ./scripts/bootstrap-remote.sh --env edge
 #   ./scripts/bootstrap-remote.sh v0.2.1 --domain app.example.com --ssl-email you@example.com
 #   ./scripts/bootstrap-remote.sh --build
 #   ./scripts/bootstrap-remote.sh --reuse
@@ -13,9 +12,7 @@
 # 默认用当前仓库代码构建 tarball（package.json 版本号仅作产物命名）。
 # --reuse 才复用本地已有 regora-vX.tar.gz。
 # 凭证与密钥：复制 scripts/env.production.example → .env.production（或 env.test.example → .env.test）
-# Edge：复制 packages/server/scripts/harvest-edge.env.example → .env.edge
 # 必填（主站）: DEPLOY_HOST/SSH_USER/SSH_PASSWORD、DB_PASSWORD、JWT_SECRET
-# 必填（edge）: .env.edge 中的 SSH 三件套 + HARVEST_EXECUTION_REGION=BR + DATABASE_URL
 
 set -euo pipefail
 
@@ -118,7 +115,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 按 --env 加载对应 .env.production / .env.test / .env.edge
+# 按 --env 加载对应 .env.production / .env.test
 load_deploy_env "$ROOT" "$ENVIRONMENT"
 
 if [ "$ENV_PRESET" -eq 0 ] && deploy_env_has "${DEPLOY_ENV:-}"; then
@@ -151,18 +148,11 @@ if [ -t 0 ]; then
   fi
   [ "$PORT_PRESET" -eq 0 ] && needs_interactive=1
   if ! deploy_env_has "${DB_PASSWORD:-}" || ! deploy_env_has "${JWT_SECRET:-}"; then
-    if [ "$ENVIRONMENT" != "edge" ]; then
-      needs_interactive=1
-    fi
-  fi
-  if [ "$ENVIRONMENT" = "edge" ] && [ ! -f "$ROOT/.env.edge" ]; then
     needs_interactive=1
   fi
-  if [ "$ENVIRONMENT" != "edge" ]; then
-    if deploy_env_is_placeholder_db_password "${DB_PASSWORD:-}" \
-      || deploy_env_is_placeholder_jwt_secret "${JWT_SECRET:-}"; then
-      needs_interactive=1
-    fi
+  if deploy_env_is_placeholder_db_password "${DB_PASSWORD:-}" \
+    || deploy_env_is_placeholder_jwt_secret "${JWT_SECRET:-}"; then
+    needs_interactive=1
   fi
 fi
 
@@ -294,7 +284,7 @@ prompt_code_source() {
 }
 
 show_bootstrap_preview_and_confirm() {
-  if [ -z "$PORT" ] && [ "$ENVIRONMENT" != "edge" ]; then
+  if [ -z "$PORT" ]; then
     PORT="$(default_port_for_env "$ENVIRONMENT")"
   fi
   TAG="v${VERSION}"
@@ -303,11 +293,7 @@ show_bootstrap_preview_and_confirm() {
   log_info "Bootstrap 预览"
   log_info "  版本: ${TAG}"
   log_info "  环境: ${ENVIRONMENT}"
-  if [ "$ENVIRONMENT" = "edge" ]; then
-    log_info "  Nginx: 跳过（Edge 无 Web）"
-    log_info "  采集: HARVEST_EXECUTION_REGION=BR + cron"
-    log_info "  运行时配置: .env.edge → Edge:/var/www/regora/.env"
-  elif [ -n "$DOMAIN" ]; then
+  if [ -n "$DOMAIN" ]; then
     log_info "  域名: ${DOMAIN}"
     if [ -n "$SSL_EMAIL" ]; then
       log_info "  SSL: ${SSL_EMAIL}"
@@ -316,9 +302,6 @@ show_bootstrap_preview_and_confirm() {
     fi
   else
     log_info "  Nginx: 跳过"
-  fi
-  if [ "$ENVIRONMENT" != "edge" ]; then
-    log_info "  端口: ${PORT}"
   fi
   if [ "$REUSE" -eq 1 ]; then
     log_info "  构建: 复用已有 tarball"
@@ -343,8 +326,7 @@ run_interactive() {
   if [ "$ENV_PRESET" -eq 0 ]; then
     ENVIRONMENT="$(prompt_menu "部署环境" --default=1 \
       "production:生产环境 (端口 3600)" \
-      "test:测试环境 (端口 3602)" \
-      "edge:Harvest Edge 圣保罗 (cron 采集)")"
+      "test:测试环境 (端口 3602)")"
   fi
 
   if [ "$VERSION_PRESET" -eq 0 ] && [ "$REUSE_PRESET" -eq 0 ] && [ "$BUILD_PRESET" -eq 0 ]; then
@@ -365,14 +347,14 @@ run_interactive() {
     BUILD=1
   fi
 
-  if [ "$DOMAIN_PRESET" -eq 0 ] && [ "$ENVIRONMENT" != "edge" ]; then
+  if [ "$DOMAIN_PRESET" -eq 0 ]; then
     local domain_input
     read -r -p "Nginx 域名 (留空跳过，如 app.regora.example): " domain_input </dev/tty
     domain_input="${domain_input// /}"
     DOMAIN="$domain_input"
   fi
 
-  if [ -n "$DOMAIN" ] && [ "$SSL_EMAIL_PRESET" -eq 0 ] && [ "$ENVIRONMENT" != "edge" ]; then
+  if [ -n "$DOMAIN" ] && [ "$SSL_EMAIL_PRESET" -eq 0 ]; then
     local email_input
     while true; do
       read -r -p "SSL 证书邮箱 (Let's Encrypt，留空跳过 HTTPS): " email_input </dev/tty
@@ -389,7 +371,7 @@ run_interactive() {
     done
   fi
 
-  if [ "$PORT_PRESET" -eq 0 ] && [ "$ENVIRONMENT" != "edge" ]; then
+  if [ "$PORT_PRESET" -eq 0 ]; then
     local default_port port_input
     default_port="$(default_port_for_env "$ENVIRONMENT")"
     read -r -p "应用监听端口 [${default_port}]: " port_input </dev/tty
@@ -401,15 +383,8 @@ run_interactive() {
     fi
   fi
 
-  if [ "$ENVIRONMENT" = "edge" ]; then
-    if [ ! -f "$ROOT/.env.edge" ]; then
-      log_die "未找到 .env.edge。复制 packages/server/scripts/harvest-edge.env.example 为仓库根 .env.edge 并填入主库 DATABASE_URL"
-    fi
-    log_info "Edge 运行时配置: $ROOT/.env.edge"
-  else
-    prompt_secret DB_PASSWORD "PostgreSQL 密码 (DB_PASSWORD)"
-    prompt_secret JWT_SECRET "JWT 签名密钥 (JWT_SECRET)"
-  fi
+  prompt_secret DB_PASSWORD "PostgreSQL 密码 (DB_PASSWORD)"
+  prompt_secret JWT_SECRET "JWT 签名密钥 (JWT_SECRET)"
 
   if [ -z "${TENANT_SECRET_ENCRYPTION_KEY:-}" ]; then
     read -r -s -p "租户加密密钥 TENANT_SECRET_ENCRYPTION_KEY (32 字节 hex，留空由服务器自动生成): " _tenant_key </dev/tty
@@ -420,7 +395,7 @@ run_interactive() {
     fi
   fi
 
-  if ! deploy_env_has "${OPENAI_API_KEY:-}" && [ "$ENVIRONMENT" != "edge" ]; then
+  if ! deploy_env_has "${OPENAI_API_KEY:-}"; then
     local openai_choice
     openai_choice="$(prompt_menu "OpenAI API Key" --default=1 \
       "skip:跳过（稍后手动配置）" \
@@ -455,19 +430,14 @@ if [ "$PROMPT_CODE_SOURCE" -eq 1 ] && [ "$INTERACTIVE" -eq 0 ]; then
   show_bootstrap_preview_and_confirm
 fi
 
-if [ "$ENVIRONMENT" = "edge" ]; then
-  if [ ! -f "$ROOT/.env.edge" ]; then
-    log_die "缺少 .env.edge。复制 packages/server/scripts/harvest-edge.env.example 为仓库根 .env.edge 并填入主库 DATABASE_URL"
-  fi
-  deploy_env_validate_edge_runtime "$ROOT" || log_die "Edge 运行时配置不完整"
-elif [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
+if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
   log_die "缺少 DB_PASSWORD 或 JWT_SECRET。请在 .env.${ENVIRONMENT} 中配置，或使用交互式 bootstrap"
 fi
 
 TAG="v${VERSION}"
 TARBALL="$ROOT/${PROJECT_SLUG}-${TAG}.tar.gz"
 
-if [ -z "$PORT" ] && [ "$ENVIRONMENT" != "edge" ]; then
+if [ -z "$PORT" ]; then
   PORT="$(default_port_for_env "$ENVIRONMENT")"
 fi
 
@@ -482,9 +452,7 @@ if [ "$INTERACTIVE" -eq 0 ] && [ "$PROMPT_CODE_SOURCE" -eq 0 ]; then
     log_info "域名: ${DOMAIN}"
     deploy_env_has "${SSL_EMAIL:-}" && log_info "SSL: ${SSL_EMAIL}"
   fi
-  if [ "$ENVIRONMENT" != "edge" ]; then
-    log_info "端口: ${PORT}"
-  fi
+  log_info "端口: ${PORT}"
   if [ "$REUSE" -eq 1 ]; then
     log_info "构建: 复用已有 tarball"
   else

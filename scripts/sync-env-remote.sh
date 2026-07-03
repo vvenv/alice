@@ -1,15 +1,14 @@
 #!/bin/bash
-# 从本机 .env.production / .env.test / .env.edge 同步运行时 env 到远程服务器
-# 行为与 GitHub Actions「Sync env」一致（主站写共享 env + 可选 PM2 重启；Edge 写 /var/www/regora/.env）
+# 从本机 .env.production / .env.test 同步运行时 env 到远程服务器
+# 行为与 GitHub Actions「Sync env」一致（主站写共享 env + 可选 PM2 重启）
 #
 # 用法:
 #   ./scripts/sync-env-remote.sh                      # production，增量 upsert（默认）
 #   ./scripts/sync-env-remote.sh --env test
-#   ./scripts/sync-env-remote.sh --env edge
 #   ./scripts/sync-env-remote.sh --force              # 全量覆盖共享 env（等同 CI SYNC_FORCE）
 #   ./scripts/sync-env-remote.sh --no-restart         # 不同步后重启 PM2
 #
-# 凭证与密钥：复制 scripts/env.production.example → .env.production（test/edge 同理）
+# 凭证与密钥：复制 scripts/env.production.example → .env.production（test 同理）
 
 set -euo pipefail
 
@@ -54,9 +53,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$ENVIRONMENT" in
-  production|test|edge) ;;
+  production|test) ;;
   *)
-    deploy_remote_error "无效环境: ${ENVIRONMENT}（仅支持 production / test / edge）"
+    deploy_remote_error "无效环境: ${ENVIRONMENT}（仅支持 production / test）"
     ;;
 esac
 
@@ -130,31 +129,4 @@ bash '${REMOTE_SYNC_DIR}/run-sync-env.sh' '${REMOTE_SYNC_DIR}' '${ENVIRONMENT}' 
   deploy_remote_info "共享 env 已同步到 ${ENVIRONMENT}"
 }
 
-_sync_edge_env() {
-  local env_file runtime_env
-  env_file="$(deploy_env_file_for "$ROOT" edge)"
-  [ -f "$env_file" ] || deploy_remote_error "未找到 ${env_file}"
-
-  runtime_env="$(mktemp)"
-  deploy_env_write_runtime_file "$env_file" "$runtime_env"
-
-  deploy_remote_info "目标: ${DEPLOY_SSH_USER}@${DEPLOY_HOST} (edge)"
-
-  _run_ssh "rm -rf '${REMOTE_SYNC_DIR}' && mkdir -p '${REMOTE_SYNC_DIR}/scripts/lib'"
-  _run_scp "$runtime_env" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${REMOTE_SYNC_DIR}/edge.env"
-  _run_scp "$ROOT/scripts/lib/edge-deploy.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${REMOTE_SYNC_DIR}/scripts/lib/edge-deploy.sh"
-  _run_scp "$ROOT/scripts/sync-env-remote-edge-run.sh" "${DEPLOY_SSH_USER}@${DEPLOY_HOST}:${REMOTE_SYNC_DIR}/run-sync-env-edge.sh"
-  rm -f "$runtime_env"
-
-  _run_ssh "set -euo pipefail
-chmod +x '${REMOTE_SYNC_DIR}/run-sync-env-edge.sh'
-bash '${REMOTE_SYNC_DIR}/run-sync-env-edge.sh' '${REMOTE_SYNC_DIR}' '${EDGE_APP_DIR}'"
-
-  deploy_remote_info "Edge env 已同步"
-}
-
-if [ "$ENVIRONMENT" = "edge" ]; then
-  _sync_edge_env
-else
-  _sync_main_env
-fi
+_sync_main_env

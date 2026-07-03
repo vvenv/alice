@@ -9,8 +9,6 @@ fi
 
 # shellcheck source=scripts/lib/release-deploy-config.sh
 source "$ROOT/scripts/lib/release-deploy-config.sh"
-# shellcheck source=scripts/lib/edge-deploy.sh
-source "$ROOT/scripts/lib/edge-deploy.sh"
 # shellcheck source=scripts/lib/deploy-env.sh
 source "$ROOT/scripts/lib/deploy-env.sh"
 # shellcheck source=scripts/lib/log.sh
@@ -29,7 +27,7 @@ _ssh_auth_failure_in_stderr() {
   grep -qiE 'permission denied.*(publickey|password|keyboard|please try again)|authentication fail' "$stderr_file"
 }
 
-# 加载目标环境 dotenv（.env.production / .env.test / .env.edge）
+# 加载目标环境 dotenv（.env.production / .env.test）
 # 凭证统一使用 DEPLOY_HOST / DEPLOY_SSH_USER / DEPLOY_SSH_PASSWORD
 load_deploy_credentials() {
   local environment="${1:-production}"
@@ -49,9 +47,6 @@ load_deploy_credentials() {
   if [ -z "$DEPLOY_HOST" ]; then
     local env_file
     env_file="$(deploy_env_file_for "$ROOT" "$environment")"
-    if edge_is_valid_environment "$environment"; then
-      deploy_remote_error "未配置 Edge SSH。复制 packages/server/scripts/harvest-edge.env.example 为 .env.edge，设置 DEPLOY_HOST / DEPLOY_SSH_USER / DEPLOY_SSH_PASSWORD"
-    fi
     deploy_remote_error "未配置 SSH 主机。复制 scripts/env.${environment}.example 为 ${env_file}，设置 DEPLOY_HOST / DEPLOY_SSH_USER / DEPLOY_SSH_PASSWORD"
   fi
 }
@@ -67,7 +62,7 @@ _require_sshpass() {
 _ssh_auth_failure_hint() {
   deploy_remote_error "SSH 认证失败: ${DEPLOY_SSH_USER}@${DEPLOY_HOST}
 
-请检查对应环境文件（.env.production / .env.test / .env.edge）中的 DEPLOY_SSH_PASSWORD 是否正确。
+请检查对应环境文件（.env.production / .env.test）中的 DEPLOY_SSH_PASSWORD 是否正确。
 也可手动验证:
   ssh ${DEPLOY_SSH_USER}@${DEPLOY_HOST}
 若已配置 SSH 密钥，可删除或注释 DEPLOY_SSH_PASSWORD（脚本会优先使用密钥）。"
@@ -169,15 +164,8 @@ deploy_release_tarball() {
     deploy_remote_error "找不到 tarball: $tarball"
   fi
 
-  if [ "$environment" != "production" ] && [ "$environment" != "test" ] && [ "$environment" != "edge" ]; then
-    deploy_remote_error "无效环境: ${environment}（仅支持 production / test / edge）"
-  fi
-
-  if [ "$environment" = "edge" ]; then
-    # shellcheck source=scripts/lib/edge-remote.sh
-    source "$ROOT/scripts/lib/edge-remote.sh"
-    deploy_edge_tarball "$tarball" "$version"
-    return
+  if [ "$environment" != "production" ] && [ "$environment" != "test" ]; then
+    deploy_remote_error "无效环境: ${environment}（仅支持 production / test）"
   fi
 
   load_deploy_credentials "$environment"

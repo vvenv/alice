@@ -204,8 +204,7 @@ prompt_menu() {
 # 用法:
 #   values=$(prompt_multi_menu "部署环境" --default=1 \
 #     "production:生产环境" \
-#     "test:测试环境" \
-#     "edge:Edge 环境")
+#     "test:测试环境")
 prompt_multi_menu() {
   local title="$1"
   shift
@@ -444,6 +443,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   echo "---"
   prompt_multi_menu "示例菜单（多选）" --default=1 \
     "production:生产环境" \
-    "test:测试环境" \
-    "edge:Edge 环境"
+    "test:测试环境"
 fi
