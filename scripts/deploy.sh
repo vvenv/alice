@@ -122,7 +122,7 @@ run_interactive() {
   if [ "$ENV_PRESET" -eq 0 ]; then
     DEPLOY_ENV="$(prompt_multi_menu "部署环境（空格多选，回车确认）" --default=1 \
       "production:生产环境" \
-      "test:测试环境""
+      "test:测试环境")"
   fi
 
   local candidate_tarball="$ROOT/${PROJECT_SLUG}-v${VERSION}.tar.gz"
