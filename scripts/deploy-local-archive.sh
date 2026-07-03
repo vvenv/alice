@@ -184,11 +184,21 @@ if ! bg_switch_nginx_slot "$DEPLOY_SLOT"; then
   exit 1
 fi
 
+# 检测是否有 Nginx alice-managed 配置（无 Nginx 时蓝绿无法切换流量）
+_HAS_NGINX=0
+if bg_find_nginx_conf &>/dev/null; then
+  _HAS_NGINX=1
+fi
+
 bg_set_active_slot "$DEPLOY_SLOT"
 
 if [ "$PREVIOUS_SLOT" != "$DEPLOY_SLOT" ] && bg_slot_has_release "$PREVIOUS_SLOT"; then
-  log_info "停止旧槽位 ${PREVIOUS_SLOT}"
-  bg_stop_slot_app "$PREVIOUS_SLOT"
+  if [ "$_HAS_NGINX" = "1" ]; then
+    log_info "停止旧槽位 ${PREVIOUS_SLOT}"
+    bg_stop_slot_app "$PREVIOUS_SLOT"
+  else
+    log_info "未配置 Nginx，跳过停止旧槽位 ${PREVIOUS_SLOT}（保留端口 $(bg_slot_port "$PREVIOUS_SLOT") 服务）"
+  fi
 fi
 
 log_info "蓝绿部署完成: ${VERSION} (${ENVIRONMENT})"
