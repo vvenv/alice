@@ -265,13 +265,13 @@ export default function App() {
       return <span className="text-indigo-600">🎉 全部完成</span>;
     }
     if (!isActive && wordList.length === 0) {
-      return <span className="text-[#c7c7cf] font-normal">准备就绪</span>;
+      return <span className="text-soft font-normal">准备就绪</span>;
     }
     if (currentIndex >= wordList.length) {
-      return <span className="text-[#c7c7cf] font-normal">完成</span>;
+      return <span className="text-soft font-normal">完成</span>;
     }
     if (isHidden) {
-      return <span className="tracking-[0.35em] text-[#c7c7cf]">• • •</span>;
+      return <span className="tracking-[0.35em] text-soft">• • •</span>;
     }
     return wordList[currentIndex];
   })();
@@ -286,98 +286,69 @@ export default function App() {
       : "0 / 0";
   const sliderPct = ((intervalSec - 1) / (10 - 1)) * 100;
 
-  const rootCls = [
-    "w-full mx-auto bg-white px-[14px] pt-[14px] border border-[#ececf0]",
-    "shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)]",
-    isActive
-      ? "pb-[max(16px,env(safe-area-inset-bottom))]"
-      : "pb-[max(20px,env(safe-area-inset-bottom))]",
-  ].join(" ");
-
-  const fileLabelBase =
-    "relative inline-flex items-center justify-center overflow-hidden cursor-pointer transition-all active:scale-[0.98]";
-  const cameraCls = `${fileLabelBase} w-full gap-[10px] min-h-[54px] px-5 py-[14px] text-[17px] font-semibold text-white rounded-[16px] bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_6px_18px_-6px_rgba(79,70,229,0.6)] hover:from-indigo-500 hover:to-indigo-700${
-    ocrBusy ? " opacity-50 pointer-events-none" : ""
-  }`;
-  const albumCls = `${fileLabelBase} shrink-0 min-h-[54px] px-[18px] text-sm font-medium text-[#4a4a52] border border-[#e5e5ea] rounded-[16px] bg-white hover:bg-[#f7f7f9]${
-    ocrBusy ? " opacity-50 pointer-events-none" : ""
-  }`;
-  const fileInputCls =
-    "absolute inset-0 w-full h-full m-0 p-0 opacity-0 cursor-pointer text-base";
-
   const ocrModeBtn = (active: boolean) =>
-    `flex-1 rounded-[9px] text-[13px] font-medium cursor-pointer transition-all disabled:opacity-40 disabled:pointer-events-none ${
+    `flex-1 rounded-9 text-13 font-medium cursor-pointer transition-all disabled:opacity-40 disabled:pointer-events-none ${
       active
-        ? "bg-white text-[#1a1a1a] shadow-[0_1px_4px_rgba(0,0,0,0.1)]"
-        : "text-[#8a8a92] hover:text-[#55555c]"
+        ? "bg-white text-overlay shadow-[0_1px_4px_rgba(0,0,0,0.1)]"
+        : "text-subtle hover:text-secondary"
     }`;
 
-  const smBtn =
-    "px-3 py-[4px] text-xs font-medium text-[#55555c] border border-[#e5e5ea] rounded-full cursor-pointer transition-colors hover:bg-[#f5f5f7] active:bg-[#ececf0] disabled:opacity-40 disabled:pointer-events-none";
-
-  const lgBase =
-    "inline-flex items-center justify-center gap-1.5 px-5 font-semibold rounded-[15px] cursor-pointer transition-all active:scale-[0.98]";
-  const lgActiveSize =
-    "min-h-[56px] text-[18px] min-[520px]:min-h-[52px] min-[520px]:text-[17px]";
-  const lgIdleSize = "min-h-[52px] text-[17px]";
-  const barBtnSize = isActive ? lgActiveSize : lgIdleSize;
-
-  const playCls = `flex-1 ${lgBase} ${barBtnSize} ${
-    playState === "playing"
-      ? "bg-white text-[#1a1a1a] border border-[#e5e5ea] hover:bg-[#f7f7f9]"
-      : "text-white bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_6px_18px_-6px_rgba(79,70,229,0.6)] hover:from-indigo-500 hover:to-indigo-700"
-  }`;
-  const stopCls = `flex-1 ${lgBase} ${barBtnSize} border border-[#e5e5ea] text-[#55555c] bg-white hover:bg-[#f7f7f9] disabled:opacity-40 disabled:pointer-events-none`;
-  const markCls = `w-full ${lgBase} ${
-    markEnabled ? lgActiveSize : lgIdleSize
-  } bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-30 disabled:pointer-events-none`;
-
-  const playbackCls = isActive
-    ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-white/90 backdrop-blur rounded-[20px] p-3 mx-[-4px] mb-[14px] border border-[#ececf0] shadow-[0_-6px_28px_-8px_rgba(0,0,0,0.12)] min-[520px]:static min-[520px]:shadow-none min-[520px]:border-none min-[520px]:bg-transparent min-[520px]:p-0 min-[520px]:mx-0 min-[520px]:mb-[14px]"
-    : "mb-4";
-
   return (
-    <div className={rootCls}>
+    <div
+      className={`w-full mx-auto bg-white px-4 pt-4 border border-border-subtle shadow-card ${
+        isActive
+          ? "pb-[max(16px,env(safe-area-inset-bottom))]"
+          : "pb-[max(20px,env(safe-area-inset-bottom))]"
+      }`}
+    >
       {wrongWords.length > 0 ? (
         <header className="flex items-center justify-between mb-4">
-          <span className="text-xs font-medium text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-medium text-rose-600 bg-rose-50 px-4 py-1 rounded-full">
             错词 {wrongWords.length}
           </span>
         </header>
       ) : null}
 
       {!isActive ? (
-        <div className="mb-4 space-y-2.5">
-          <div className="flex gap-2.5">
-            <label className={cameraCls}>
+        <div className="mb-4 space-y-3">
+          <div className="flex gap-3">
+            <label
+              className={`relative btn-primary btn-lg w-full gap-3 py-4 text-17 ${
+                ocrBusy ? "opacity-50 pointer-events-none" : ""
+              }`}
+            >
               <input
                 type="file"
                 accept="image/*"
                 capture="environment"
-                className={fileInputCls}
+                className="absolute inset-0 w-full h-full m-0 p-0 opacity-0 cursor-pointer text-base"
                 disabled={ocrBusy}
                 onChange={handleFileInputSelect}
               />
-              <span className="text-[20px] leading-none" aria-hidden>
+              <span className="text-xl leading-none" aria-hidden>
                 📷
               </span>
               {ocrBusy ? "识别中…" : "拍照识别"}
             </label>
-            <label className={albumCls}>
+            <label
+              className={`relative flex items-center justify-center overflow-hidden cursor-pointer w-full min-h-14 px-4 text-sm font-medium text-[#4a4a52] border border-border rounded-16 bg-white hover:bg-surface-soft ${
+                ocrBusy ? "opacity-50 pointer-events-none" : ""
+              }`}
+            >
               <input
                 type="file"
                 accept="image/*"
-                className={fileInputCls}
+                className="absolute inset-0 w-full h-full m-0 p-0 opacity-0 cursor-pointer text-base"
                 disabled={ocrBusy}
                 onChange={handleFileInputSelect}
               />
               相册
             </label>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-[#9a9aa2] shrink-0">识别后</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted shrink-0">识别后</span>
             <div
-              className="flex flex-1 bg-[#f2f2f5] rounded-[11px] p-[3px] gap-[2px]"
+              className="flex flex-1 bg-surface-active rounded-11 p-3 gap-1"
               role="group"
               aria-label="识别后处理方式"
             >
@@ -400,7 +371,7 @@ export default function App() {
             </div>
           </div>
           {ocrStatus ? (
-            <div className="text-[13px] text-[#8a8a92] text-center bg-[#f7f7f9] rounded-[10px] py-2 px-3">
+            <div className="text-13 text-subtle text-center bg-surface-soft rounded-10 py-2 px-3">
               {ocrStatus}
             </div>
           ) : null}
@@ -408,20 +379,20 @@ export default function App() {
       ) : null}
 
       {showInputSection ? (
-        <div className="mb-[14px]">
+        <div className="mb-4">
           <textarea
-            className="w-full h-[72px] border border-[#e8e8ec] rounded-[14px] px-[14px] py-3 text-base bg-[#fafafa] resize-y text-[#1a1a1a] leading-normal transition-all focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:bg-white"
+            className="w-full h-18 border border-border rounded-14 px-4 py-3 text-base bg-surface resize-y text-overlay leading-normal transition-all focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:bg-white"
             value={wordInput}
             onChange={(event) => setWordInput(event.target.value)}
             placeholder={"每行一个，或用逗号/空格分隔\n例：apple banana cat"}
             disabled={isActive}
           />
-          <div className="flex justify-between items-center mt-[7px] text-xs text-[#aaa]">
-            <span className="text-[#9a9aa2]">共 {wordCount} 个单词</span>
-            <div className="flex gap-[6px]">
+          <div className="flex justify-between items-center mt-2 text-xs text-faint">
+            <span className="text-muted">共 {wordCount} 个单词</span>
+            <div className="flex gap-2">
               <button
                 type="button"
-                className={smBtn}
+                className={"btn-sm"}
                 disabled={isActive}
                 onClick={() => setWordInput(SAMPLE_WORDS)}
               >
@@ -429,7 +400,7 @@ export default function App() {
               </button>
               <button
                 type="button"
-                className={smBtn}
+                className={"btn-sm"}
                 disabled={isActive}
                 onClick={() => setWordInput("")}
               >
@@ -440,7 +411,7 @@ export default function App() {
         </div>
       ) : null}
 
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#fafafb] to-[#f4f4f7] rounded-[18px] mb-[14px] border border-[#eeeef2]">
+      <div className="card mb-4">
         <div className="h-1 w-full bg-[#e8e8ee]">
           <div
             className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-r-full transition-[width] duration-300 ease-out"
@@ -449,25 +420,25 @@ export default function App() {
         </div>
         <div className="px-4 pt-3 pb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-[#9a9aa2] tabular-nums">
+            <span className="text-xs text-muted tabular-nums">
               {positionText}
             </span>
             <button
               type="button"
               onClick={() => setShowWord((v) => !v)}
-              className={`flex items-center gap-1.5 text-[13px] font-medium select-none px-3 py-1.5 rounded-full border transition-colors ${
+              className={`flex items-center gap-2 text-13 font-medium select-none px-4 py-2 rounded-full border transition-colors ${
                 showWord
                   ? "bg-indigo-50 text-indigo-600 border-indigo-600"
-                  : "bg-white text-[#8a8a92] border-[#eaeaef]"
+                  : "bg-white text-subtle border-border-subtle"
               }`}
             >
               {showWord ? "👁 显示中" : "🙈 已隐藏"}
             </button>
           </div>
-          <div className="min-h-[76px] flex items-center justify-center text-center px-2">
+          <div className="min-h-20 flex items-center justify-center text-center px-2">
             <span
-              className={`text-[40px] font-semibold tracking-tight leading-tight break-words transition-all duration-200 ${
-                markedFlash ? "text-rose-600 scale-105" : "text-[#111]"
+              className={`text-40 font-semibold tracking-tight leading-tight break-words transition-all duration-200 ${
+                markedFlash ? "text-rose-600 scale-105" : "text-overlay"
               }`}
             >
               {displayWord}
@@ -476,16 +447,20 @@ export default function App() {
         </div>
       </div>
 
-      <div className={playbackCls}>
+      <div
+        className={
+          isActive
+            ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-white/90 backdrop-blur rounded-20 p-3 -mx-1 mb-4 border border-border-subtle shadow-sticky min-[520px]:static min-[520px]:shadow-none min-[520px]:border-none min-[520px]:bg-transparent min-[520px]:p-0 min-[520px]:mx-0 min-[520px]:mb-4"
+            : "mb-4"
+        }
+      >
         {!isActive ? (
-          <div className="flex flex-wrap items-center gap-y-[10px] gap-x-[14px] mb-3">
-            <span className="text-[13px] text-[#9a9aa2] min-w-[30px]">
-              间隔
-            </span>
-            <div className="flex-1 min-w-[100px] flex items-center gap-[10px]">
+          <div className="flex flex-wrap items-center gap-y-3 gap-x-4 mb-3">
+            <span className="text-13 text-muted min-w-8">间隔</span>
+            <div className="flex-1 min-w-24 flex items-center gap-3">
               <input
                 type="range"
-                className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer"
+                className="flex-1 h-2 appearance-none rounded-full cursor-pointer"
                 style={{
                   background: `linear-gradient(to right, #4f46e5 ${sliderPct}%, #e5e5ea ${sliderPct}%)`,
                 }}
@@ -495,11 +470,11 @@ export default function App() {
                 value={intervalSec}
                 onChange={(event) => setIntervalSec(Number(event.target.value))}
               />
-              <span className="text-sm font-semibold text-indigo-600 min-w-[34px] text-center tabular-nums">
+              <span className="text-sm font-semibold text-indigo-600 min-w-9 text-center tabular-nums">
                 {intervalSec}s
               </span>
             </div>
-            <label className="flex items-center gap-[6px] text-sm text-[#8a8a92] cursor-pointer select-none min-h-[36px]">
+            <label className="flex items-center gap-2 text-sm text-subtle cursor-pointer select-none min-h-9">
               <input
                 type="checkbox"
                 className="accent-indigo-600 w-4 h-4"
@@ -511,15 +486,23 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="flex gap-[10px] mb-[10px]">
-          <button type="button" className={playCls} onClick={handlePlayToggle}>
+        <div className="flex gap-3 mb-3">
+          <button
+            type="button"
+            className={`flex-1 btn-lg ${isActive ? "btn-lg--active" : "btn-lg--idle"} ${
+              playState === "playing"
+                ? "bg-white text-overlay border border-border hover:bg-surface-soft"
+                : "btn-primary"
+            }`}
+            onClick={handlePlayToggle}
+          >
             {playState === "idle" && "▶ 开始"}
             {playState === "playing" && "⏸ 暂停"}
             {playState === "paused" && "▶ 继续"}
           </button>
           <button
             type="button"
-            className={stopCls}
+            className={`flex-1 btn-lg ${isActive ? "btn-lg--active" : "btn-lg--idle"} btn-ghost`}
             disabled={!isActive}
             onClick={stopDictation}
           >
@@ -529,7 +512,9 @@ export default function App() {
 
         <button
           type="button"
-          className={markCls}
+          className={`w-full btn-lg ${
+            markEnabled ? "btn-lg--active" : "btn-lg--idle"
+          } btn-marker`}
           disabled={!isActive || currentIndex >= wordList.length}
           onClick={markWrong}
         >
@@ -537,38 +522,38 @@ export default function App() {
         </button>
       </div>
 
-      <div className="border-t border-[#f0f0f3] pt-[14px]">
-        <div className="flex justify-between items-center mb-[10px] text-sm text-[#8a8a92]">
+      <div className="border-t border-border-softer pt-4">
+        <div className="flex justify-between items-center mb-3 text-sm text-subtle">
           <span className="font-medium">错词本</span>
-          <div className="flex gap-[6px]">
+          <div className="flex gap-2">
             <button
               type="button"
-              className={smBtn}
+              className={"btn-sm"}
               onClick={() => void exportWrong()}
             >
               导出
             </button>
-            <button type="button" className={smBtn} onClick={clearWrong}>
+            <button type="button" className={"btn-sm"} onClick={clearWrong}>
               清空
             </button>
           </div>
         </div>
         {wrongWords.length === 0 ? (
-          <div className="text-[13px] text-[#c2c2ca] py-2 text-center bg-[#fafafb] rounded-[12px]">
+          <div className="text-13 text-faint py-2 text-center bg-surface rounded-12">
             尚无错词
           </div>
         ) : (
-          <div className="flex flex-wrap gap-[6px]">
+          <div className="flex flex-wrap gap-2">
             {wrongWords.map((word) => (
               <button
                 key={word}
                 type="button"
                 onClick={() => removeWrongWord(word)}
                 title="点击移除"
-                className="group inline-flex items-center gap-1.5 bg-[#f4f4f7] text-[#33333a] hover:bg-rose-50 hover:text-rose-600 pl-[14px] pr-[10px] py-[5px] rounded-full text-sm font-normal transition-colors cursor-pointer"
+                className="group inline-flex items-center gap-2 bg-surface-active text-[#33333a] hover:bg-rose-50 hover:text-rose-600 pl-4 pr-3 py-1 rounded-full text-sm font-normal transition-colors cursor-pointer"
               >
                 {word}
-                <span className="text-[#c2c2ca] group-hover:text-rose-400 leading-none text-[15px]">
+                <span className="text-faint group-hover:text-rose-400 leading-none text-base">
                   ×
                 </span>
               </button>
@@ -577,26 +562,13 @@ export default function App() {
         )}
       </div>
 
-      <div className="hidden min-[520px]:block text-[11px] text-[#c2c2ca] text-center mt-4 pt-3 border-t border-[#f0f0f3]">
-        <kbd className="bg-[#f4f4f7] px-[6px] rounded text-[10px] text-[#8a8a92]">
-          空格
-        </kbd>{" "}
-        播放/暂停 ·{" "}
-        <kbd className="bg-[#f4f4f7] px-[6px] rounded text-[10px] text-[#8a8a92]">
-          M
-        </kbd>{" "}
-        标记错词 ·{" "}
-        <kbd className="bg-[#f4f4f7] px-[6px] rounded text-[10px] text-[#8a8a92]">
-          Esc
-        </kbd>{" "}
-        结束
+      <div className="hidden min-[520px]:block text-11 text-faint text-center mt-4 pt-3 border-t border-border-softer">
+        <kbd>空格</kbd> 播放/暂停 · <kbd>M</kbd> 标记错词 · <kbd>Esc</kbd> 结束
       </div>
 
       {toast ? (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[max(24px,env(safe-area-inset-bottom))] z-50 animate-toast">
-          <div className="bg-[#1a1a1a] text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-[0_8px_24px_-6px_rgba(0,0,0,0.4)] whitespace-nowrap">
-            {toast}
-          </div>
+          <div className="toast">{toast}</div>
         </div>
       ) : null}
     </div>

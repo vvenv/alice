@@ -214,6 +214,7 @@ setup_firewall() {
   ufw allow 22/tcp  2>/dev/null || true
   ufw allow 80/tcp  2>/dev/null || true
   ufw allow 443/tcp 2>/dev/null || true
+  ufw allow "${PORT}"/tcp 2>/dev/null || true
   ufw --force enable 2>/dev/null || true
 }
 
