@@ -1,0 +1,40 @@
+/**
+ * 服务器配置 — 从 monorepo 根目录加载 .env
+ */
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { config as dotenvConfig } from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.resolve(__dirname, "../../../..");
+
+dotenvConfig({ path: path.resolve(monorepoRoot, ".env") });
+dotenvConfig({
+  path: path.resolve(monorepoRoot, process.env.ALICE_ENV_FILE ?? ".env.local"),
+  override: true,
+});
+
+function strEnv(name: string, fallback: string): string {
+  return process.env[name] ?? fallback;
+}
+
+function intEnv(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+export const config = {
+  server: {
+    port: intEnv("PORT", 3600),
+    host: strEnv("HOST", "0.0.0.0"),
+    logLevel: strEnv("LOG_LEVEL", "info"),
+  },
+  openai: {
+    apiKey: strEnv("OPENAI_API_KEY", ""),
+    baseUrl: strEnv("OPENAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),
+    ttsModel: strEnv("OPENAI_TTS_MODEL", "glm-tts"),
+    ttsVoice: strEnv("OPENAI_TTS_VOICE", "female"),
+    visionModel: strEnv("OPENAI_VISION_MODEL", "glm-4v-flash"),
+  },
+} as const;

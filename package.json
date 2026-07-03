@@ -1,29 +1,23 @@
 {
   "name": "alice",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
-  },
-  "dependencies": {
-    "@react-router/node": "8.0.0",
-    "@react-router/serve": "8.0.0",
-    "isbot": "^5.1.36",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-router": "8.0.0"
+    "dev": "pnpm --filter @alice/shared build && concurrently --names \"server,client\" --prefix-colors \"blue,green\" --kill-others-on-fail \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
+    "build": "pnpm --filter @alice/shared build && pnpm --filter client build && pnpm --filter server build",
+    "start": "pnpm --filter server start",
+    "lint": "pnpm --filter server lint && pnpm --filter client lint && pnpm --filter shared lint",
+    "test": "pnpm --filter @alice/shared build && pnpm --filter server test",
+    "check": "pnpm lint && pnpm test",
+    "release": "bash scripts/release.sh",
+    "deploy": "bash scripts/deploy.sh",
+    "bootstrap": "bash scripts/bootstrap-remote.sh",
+    "sync-env": "bash scripts/sync-env-remote.sh"
   },
   "devDependencies": {
-    "@react-router/dev": "8.0.0",
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/node": "^22",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.3"
-  }
+    "concurrently": "^10.0.3",
+    "prettier": "^3.9.4"
+  },
+  "packageManager": "pnpm@11.9.0"
 }
