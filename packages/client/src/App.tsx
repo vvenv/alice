@@ -295,7 +295,7 @@ export default function App() {
 
   return (
     <div
-      className={`w-full mx-auto bg-white px-4 pt-4 border border-border-subtle shadow-card ${
+      className={`bg-white px-4 pt-4 ${
         isActive
           ? "pb-[max(16px,env(safe-area-inset-bottom))]"
           : "pb-[max(20px,env(safe-area-inset-bottom))]"
@@ -310,10 +310,10 @@ export default function App() {
       ) : null}
 
       {!isActive ? (
-        <div className="mb-4 space-y-3">
-          <div className="flex gap-3">
+        <div className="mb-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
             <label
-              className={`relative btn-primary btn-lg w-full gap-3 py-4 text-17 ${
+              className={`relative btn-primary btn-lg w-full flex items-center gap-3 p-4 text-xl ${
                 ocrBusy ? "opacity-50 pointer-events-none" : ""
               }`}
             >
@@ -321,34 +321,37 @@ export default function App() {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                className="absolute inset-0 w-full h-full m-0 p-0 opacity-0 cursor-pointer text-base"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 disabled={ocrBusy}
                 onChange={handleFileInputSelect}
               />
-              <span className="text-xl leading-none" aria-hidden>
+              <span className="text-3xl leading-none" aria-hidden>
                 📷
               </span>
               {ocrBusy ? "识别中…" : "拍照识别"}
             </label>
             <label
-              className={`relative flex items-center justify-center overflow-hidden cursor-pointer w-full min-h-14 px-4 text-sm font-medium text-[#4a4a52] border border-border rounded-16 bg-white hover:bg-surface-soft ${
+              className={`relative w-full flex items-center justify-center gap-3 p-4 font-medium border border-border rounded-2xl bg-white hover:bg-surface-soft ${
                 ocrBusy ? "opacity-50 pointer-events-none" : ""
               }`}
             >
               <input
                 type="file"
                 accept="image/*"
-                className="absolute inset-0 w-full h-full m-0 p-0 opacity-0 cursor-pointer text-base"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 disabled={ocrBusy}
                 onChange={handleFileInputSelect}
               />
+              <span className="text-lg leading-none" aria-hidden>
+                🖼️
+              </span>
               相册
             </label>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted shrink-0">识别后</span>
             <div
-              className="flex flex-1 bg-surface-active rounded-11 p-3 gap-1"
+              className="flex flex-1 bg-surface-active rounded-xl p-3 gap-1"
               role="group"
               aria-label="识别后处理方式"
             >
@@ -371,7 +374,7 @@ export default function App() {
             </div>
           </div>
           {ocrStatus ? (
-            <div className="text-13 text-subtle text-center bg-surface-soft rounded-10 py-2 px-3">
+            <div className="text-sm text-subtle text-center bg-surface-soft rounded-xl py-2 px-3">
               {ocrStatus}
             </div>
           ) : null}
@@ -414,7 +417,7 @@ export default function App() {
       <div className="card mb-4">
         <div className="h-1 w-full bg-[#e8e8ee]">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-r-full transition-[width] duration-300 ease-out"
+            className="h-full bg-linear-to-r from-indigo-500 to-indigo-600 rounded-r-full transition-[width] duration-300 ease-out"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -437,7 +440,7 @@ export default function App() {
           </div>
           <div className="min-h-20 flex items-center justify-center text-center px-2">
             <span
-              className={`text-40 font-semibold tracking-tight leading-tight break-words transition-all duration-200 ${
+              className={`text-4xl font-semibold tracking-tight leading-tight break-words transition-all duration-200 ${
                 markedFlash ? "text-rose-600 scale-105" : "text-overlay"
               }`}
             >
@@ -471,7 +474,7 @@ export default function App() {
                 onChange={(event) => setIntervalSec(Number(event.target.value))}
               />
               <span className="text-sm font-semibold text-indigo-600 min-w-9 text-center tabular-nums">
-                {intervalSec}s
+                {intervalSec.toFixed(1)}s
               </span>
             </div>
             <label className="flex items-center gap-2 text-sm text-subtle cursor-pointer select-none min-h-9">

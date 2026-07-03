@@ -61,161 +61,162 @@
 }
 
 /* ── Reusable component utilities ── */
+@layer components {
+  /* Small pill button */
+  .btn-sm {
+    cursor: pointer;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-secondary);
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .btn-sm:hover {
+    background-color: var(--color-surface-hover);
+  }
+  .btn-sm:active {
+    background-color: var(--color-surface-active);
+  }
+  .btn-sm:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
 
-/* Small pill button */
-.btn-sm {
-  cursor: pointer;
-  border-radius: 9999px;
-  border: 1px solid var(--color-border);
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-secondary);
-  transition: background-color 0.15s, color 0.15s;
-}
-.btn-sm:hover {
-  background-color: var(--color-surface-hover);
-}
-.btn-sm:active {
-  background-color: var(--color-surface-active);
-}
-.btn-sm:disabled {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-/* Large button base */
-.btn-lg {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 20px;
-  font-weight: 600;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-lg:active {
-  scale: 0.98;
-}
-.btn-lg--active {
-  min-height: 56px;
-  font-size: 1.125rem;
-}
-@media (min-width: 520px) {
+  /* Large button base */
+  .btn-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 20px;
+    font-weight: 600;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-lg:active {
+    scale: 0.98;
+  }
   .btn-lg--active {
+    min-height: 56px;
+    font-size: 1.125rem;
+  }
+  @media (min-width: 520px) {
+    .btn-lg--active {
+      min-height: 52px;
+      font-size: 1.0625rem;
+    }
+  }
+  .btn-lg--idle {
     min-height: 52px;
     font-size: 1.0625rem;
   }
-}
-.btn-lg--idle {
-  min-height: 52px;
-  font-size: 1.0625rem;
-}
 
-/* Primary solid button (gradient indigo) */
-.btn-primary {
-  color: #fff;
-  background: linear-gradient(to bottom right, #6366f1, #4f46e5);
-  box-shadow: var(--shadow-btn-primary);
-}
-.btn-primary:hover {
-  background: linear-gradient(to bottom right, #6366f1, #4338ca);
-}
-
-/* Secondary ghost button */
-.btn-ghost {
-  border: 1px solid var(--color-border);
-  color: var(--color-secondary);
-  background: #fff;
-}
-.btn-ghost:hover {
-  background-color: var(--color-surface-soft);
-}
-
-/* Marker (wrong-word) button */
-.btn-marker {
-  background-color: #fff1f2;
-  color: #e11d48;
-}
-.btn-marker:hover {
-  background-color: #ffe4e6;
-}
-.btn-marker:disabled {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* Kbd hint */
-kbd {
-  background-color: var(--color-surface-active);
-  padding: 0 6px;
-  border-radius: 4px;
-  font-size: 0.625rem;
-  color: var(--color-subtle);
-}
-
-/* Card */
-.card {
-  background: linear-gradient(to bottom, var(--color-surface), #f4f4f7);
-  border: 1px solid #eeeef2;
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-/* Toast */
-.toast {
-  background: var(--color-overlay);
-  color: #fff;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 10px 16px;
-  border-radius: 9999px;
-  white-space: nowrap;
-  box-shadow: var(--shadow-toast);
-}
-
-/* ── Range slider thumb ── */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #4f46e5;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
-  transition: transform 0.12s ease;
-}
-
-input[type="range"]::-webkit-slider-thumb:active {
-  transform: scale(1.15);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: #4f46e5;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
-}
-
-/* ── Toast entrance animation ── */
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 12px);
+  /* Primary solid button (gradient indigo) */
+  .btn-primary {
+    color: #fff;
+    background: linear-gradient(to bottom right, #6366f1, #4f46e5);
+    box-shadow: var(--shadow-btn-primary);
   }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
+  .btn-primary:hover {
+    background: linear-gradient(to bottom right, #6366f1, #4338ca);
   }
-}
 
-.animate-toast {
-  animation: toast-in 0.22s ease-out;
+  /* Secondary ghost button */
+  .btn-ghost {
+    border: 1px solid var(--color-border);
+    color: var(--color-secondary);
+    background: #fff;
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-surface-soft);
+  }
+
+  /* Marker (wrong-word) button */
+  .btn-marker {
+    background-color: #fff1f2;
+    color: #e11d48;
+  }
+  .btn-marker:hover {
+    background-color: #ffe4e6;
+  }
+  .btn-marker:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* Kbd hint */
+  kbd {
+    background-color: var(--color-surface-active);
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 0.625rem;
+    color: var(--color-subtle);
+  }
+
+  /* Card */
+  .card {
+    background: linear-gradient(to bottom, var(--color-surface), #f4f4f7);
+    border: 1px solid #eeeef2;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  /* Toast */
+  .toast {
+    background: var(--color-overlay);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    box-shadow: var(--shadow-toast);
+  }
+
+  /* ── Range slider thumb ── */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #4f46e5;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+    transition: transform 0.12s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #4f46e5;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+  }
+
+  /* ── Toast entrance animation ── */
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 12px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .animate-toast {
+    animation: toast-in 0.22s ease-out;
+  }
 }
