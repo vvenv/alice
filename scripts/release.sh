@@ -183,7 +183,7 @@ run_interactive() {
   if [ "$DEPLOY_LOCAL" -eq 1 ] && [ "$DEPLOY_LOCAL_PRESET" -eq 0 ]; then
     DEPLOY_ENV="$(prompt_multi_menu "部署环境（空格多选，回车确认）" --default=1 \
       "production:生产环境" \
-      "test:测试环境"
+      "test:测试环境")"
   fi
 
   TAG="v${NEW_VERSION}"
