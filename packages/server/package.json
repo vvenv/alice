@@ -13,7 +13,6 @@
   "dependencies": {
     "@alice/shared": "workspace:*",
     "@fastify/cors": "^11.2.0",
-    "@fastify/multipart": "^10.0.0",
     "dotenv": "^17.4.2",
     "fastify": "^5.9.0"
   },

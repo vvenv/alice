@@ -1,5 +1,4 @@
 import cors from "@fastify/cors";
-import multipart from "@fastify/multipart";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { config } from "./lib/config.js";
@@ -10,13 +9,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: config.server.logLevel },
     trustProxy: true,
-    bodyLimit: 10 * 1024 * 1024,
+    bodyLimit: 12 * 1024 * 1024,
   });
 
   await app.register(cors, { origin: true });
-  await app.register(multipart, {
-    limits: { fileSize: 8 * 1024 * 1024 },
-  });
 
   app.get("/health", async () => ({ status: "ok" }));
 

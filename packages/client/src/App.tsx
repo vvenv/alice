@@ -26,12 +26,13 @@ export default function App() {
   const [wrongWords, setWrongWords] = useState<string[]>(() => loadWrongWords());
   const [markedFlash, setMarkedFlash] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
+  const [ocrBusy, setOcrBusy] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playStateRef = useRef(playState);
   const currentIndexRef = useRef(currentIndex);
   const wordListRef = useRef(wordList);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const ocrInFlightRef = useRef(false);
 
   playStateRef.current = playState;
   currentIndexRef.current = currentIndex;
@@ -172,11 +173,14 @@ export default function App() {
 
   const handlePhotoOcr = useCallback(
     async (file: File) => {
-      setOcrStatus("识别中…");
+      if (ocrInFlightRef.current) return;
+      ocrInFlightRef.current = true;
+      setOcrBusy(true);
       try {
-        const words = await ocrWordsFromImage(file);
+        const { words, rawText } = await ocrWordsFromImage(file, setOcrStatus);
         if (words.length === 0) {
-          setOcrStatus("未识别到英文单词");
+          const hint = rawText ? `：${rawText.slice(0, 40)}` : "";
+          setOcrStatus(`未识别到英文单词${hint}`);
           return;
         }
         const merged = [...parseWords(wordInput), ...words];
@@ -186,9 +190,25 @@ export default function App() {
         setOcrStatus(
           error instanceof Error ? error.message : "识别失败",
         );
+      } finally {
+        ocrInFlightRef.current = false;
+        setOcrBusy(false);
       }
     },
     [wordInput],
+  );
+
+  const handleFileInputSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const input = event.target;
+      const file = input.files?.[0];
+      if (!file) return;
+      setOcrStatus("已选图，准备识别…");
+      void handlePhotoOcr(file).finally(() => {
+        input.value = "";
+      });
+    },
+    [handlePhotoOcr],
   );
 
   useEffect(() => {
@@ -261,30 +281,40 @@ export default function App() {
               </button>
             </div>
           </div>
-          <div className="import-row">
+        </div>
+      ) : null}
+
+      {!isActive ? (
+        <div className="import-row">
+          <label
+            className={`btn btn-sm btn-outline file-label${ocrBusy ? " is-disabled" : ""}`}
+          >
             <input
-              ref={fileInputRef}
               type="file"
               accept="image/*"
               capture="environment"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (file) void handlePhotoOcr(file);
-              }}
+              className="file-input-overlay"
+              disabled={ocrBusy}
+              onChange={handleFileInputSelect}
             />
-            <button
-              type="button"
-              className="btn btn-sm btn-outline"
-              disabled={isActive}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              拍照识别
-            </button>
-          </div>
-          {ocrStatus ? <div className="ocr-status">{ocrStatus}</div> : null}
+            拍照识别
+          </label>
+          <label
+            className={`btn btn-sm btn-outline file-label${ocrBusy ? " is-disabled" : ""}`}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              className="file-input-overlay"
+              disabled={ocrBusy}
+              onChange={handleFileInputSelect}
+            />
+            相册
+          </label>
         </div>
       ) : null}
+
+      {ocrStatus ? <div className="ocr-status">{ocrStatus}</div> : null}
 
       <div className="control-section">
         <div className="control-row">
