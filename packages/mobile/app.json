@@ -44,6 +44,9 @@
         }
       ]
     ],
+    "updates": {
+      "enabled": false
+    },
     "extra": {
       "apiBaseUrl": "http://YOUR_SERVER_IP:3600"
     }
