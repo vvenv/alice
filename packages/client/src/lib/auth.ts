@@ -1,4 +1,4 @@
-import { apiUrl } from "./api";
+import { apiUrl } from "./api-url";
 
 const AUTH_KEY = "alice_access_code";
 
