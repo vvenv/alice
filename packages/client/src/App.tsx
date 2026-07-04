@@ -10,7 +10,7 @@ import { useOcr } from "./hooks/useOcr";
 import { usePlayback } from "./hooks/usePlayback";
 import { useToast } from "./hooks/useToast";
 import { useWrongWords } from "./hooks/useWrongWords";
-import { parseWords } from "./lib/dictation";
+import { loadTtsVoice, parseWords, saveTtsVoice } from "./lib/dictation";
 import { ShortcutFooter } from "./components/ShortcutFooter";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
@@ -21,11 +21,17 @@ export default function App() {
   );
   const [intervalSec, setIntervalSec] = useState(8);
   const [autoNext, setAutoNext] = useState(true);
+  const [voice, setVoice] = useState(() => loadTtsVoice());
   const [showWord, setShowWord] = useState(false);
 
   const { toast, showToast } = useToast();
 
-  const playback = usePlayback({ intervalSec, autoNext });
+  const playback = usePlayback({ intervalSec, autoNext, voice });
+
+  const handleVoiceChange = useCallback((next: string) => {
+    setVoice(next);
+    saveTtsVoice(next);
+  }, []);
 
   const {
     wrongWords,
@@ -95,7 +101,11 @@ export default function App() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT"
+      ) {
         return;
       }
       if (event.key === " " || event.code === "Space") {
@@ -151,11 +161,13 @@ export default function App() {
         playState={playback.playState}
         intervalSec={intervalSec}
         autoNext={autoNext}
+        voice={voice}
         remainingMs={playback.remainingMs}
         currentIndex={playback.currentIndex}
         wordList={playback.wordList}
         onIntervalChange={setIntervalSec}
         onAutoNextChange={setAutoNext}
+        onVoiceChange={handleVoiceChange}
         onPlayToggle={handlePlayToggle}
         onStop={playback.stopDictation}
         onMarkWrong={handleMarkWrong}

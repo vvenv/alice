@@ -1,14 +1,18 @@
+import { SYSTEM_TTS_VOICES } from "../lib/dictation";
+
 type PlayState = "idle" | "playing" | "paused";
 
 interface PlaybackControlsProps {
   playState: PlayState;
   intervalSec: number;
   autoNext: boolean;
+  voice: string;
   remainingMs: number | null;
   currentIndex: number;
   wordList: string[];
   onIntervalChange: (sec: number) => void;
   onAutoNextChange: (auto: boolean) => void;
+  onVoiceChange: (voice: string) => void;
   onPlayToggle: () => void;
   onStop: () => void;
   onMarkWrong: () => void;
@@ -18,11 +22,13 @@ export function PlaybackControls({
   playState,
   intervalSec,
   autoNext,
+  voice,
   remainingMs,
   currentIndex,
   wordList,
   onIntervalChange,
   onAutoNextChange,
+  onVoiceChange,
   onPlayToggle,
   onStop,
   onMarkWrong,
@@ -39,16 +45,51 @@ export function PlaybackControls({
   return (
     <div
       className={
-        isActive
+        `flex flex-col gap-2 ${isActive
           ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-background/90 backdrop-blur rounded-2xl p-3 -mx-1 border border-border-muted shadow-sticky md:static md:shadow-none md:border-none md:bg-transparent md:p-0 md:mx-0 md:mb-4"
-          : ""
+          : ""}`
       }
     >
-      <div className="flex flex-wrap items-center gap-y-3 gap-x-4 mb-3">
-        <span className="text-sm text-muted min-w-8">
+      {!isActive ? (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted shrink-0">音色</span>
+          <div
+            className="flex flex-1 gap-1.5 bg-surface-raised rounded-xl p-1.5"
+            role="radiogroup"
+            aria-label="音色"
+          >
+            {SYSTEM_TTS_VOICES.map((item) => {
+              const active = voice === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={`flex-1 min-w-18 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
+                    active
+                      ? "bg-background text-foreground shadow-raised"
+                      : "text-muted hover:text-secondary"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="tts-voice"
+                    className="sr-only"
+                    value={item.id}
+                    checked={active}
+                    onChange={() => onVoiceChange(item.id)}
+                  />
+                  {item.label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-muted shrink-0">
           {isActive ? "下一词" : "间隔"}
         </span>
-        <div className="flex-1 min-w-24 flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-3">
           {isActive ? (
             <div className="flex-1 h-2 rounded-full bg-border overflow-hidden">
               <div
@@ -87,7 +128,7 @@ export function PlaybackControls({
         ) : null}
       </div>
 
-      <div className="flex gap-3 mb-3">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           className={`flex-1 btn-lg ${isActive ? "btn-lg--active" : "btn-lg--idle"} ${

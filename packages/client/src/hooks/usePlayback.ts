@@ -14,9 +14,11 @@ function sleep(ms: number): Promise<void> {
 export function usePlayback({
   intervalSec,
   autoNext,
+  voice,
 }: {
   intervalSec: number;
   autoNext: boolean;
+  voice: string;
 }) {
   const [playState, setPlayState] = useState<PlayState>("idle");
   const [wordList, setWordList] = useState<string[]>([]);
@@ -29,12 +31,14 @@ export function usePlayback({
   const playStateRef = useRef(playState);
   const currentIndexRef = useRef(currentIndex);
   const wordListRef = useRef(wordList);
+  const voiceRef = useRef(voice);
   /** Bumped on pause/stop/start/resume so in-flight playNextWord exits. */
   const playGenRef = useRef(0);
 
   // sync refs at render time for stale-closure-safe reads
   currentIndexRef.current = currentIndex;
   wordListRef.current = wordList;
+  voiceRef.current = voice;
 
   const isActive = playState === "playing" || playState === "paused";
   const isFinished =
@@ -103,13 +107,13 @@ export function usePlayback({
       const word = list[index]!;
 
       // Classroom style: each word is read twice with a short gap.
-      await speakWord(word);
+      await speakWord(word, voiceRef.current);
       if (!isPlayCurrent(gen)) return;
 
       await sleep(REPEAT_GAP_MS);
       if (!isPlayCurrent(gen)) return;
 
-      await speakWord(word);
+      await speakWord(word, voiceRef.current);
       if (!isPlayCurrent(gen)) return;
 
       if (autoNext) {

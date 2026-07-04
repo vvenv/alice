@@ -5,7 +5,33 @@ import { apiUrl } from "./api";
 const TTS_SPEED = 0.9;
 const TTS_CACHE_DB = "alice_tts_cache";
 const TTS_CACHE_STORE = "audio";
-const TTS_CACHE_VERSION = 1;
+/** Bumped when TTS input formatting changes (e.g. English-word quoting). */
+const TTS_CACHE_VERSION = 2;
+const TTS_VOICE_KEY = "dictation_tts_voice";
+
+export type VoiceOption = { id: string; label: string };
+
+/**
+ * Cloned from textbook audio `Pronunciation_Listen_and_circle.mp3`
+ * (account-bound Zhipu voice id).
+ */
+export const EXAM_TTS_VOICE = "6f62ac26-895b-512e-990f-7a0bbf06e75e";
+
+/** Built-in voices: exam-style default + GLM-TTS system voices. */
+export const SYSTEM_TTS_VOICES: VoiceOption[] = [
+  { id: EXAM_TTS_VOICE, label: "考试" },
+  { id: "tongtong", label: "彤彤" },
+  { id: "chuichui", label: "锤锤" },
+  { id: "xiaochen", label: "小陈" },
+  // { id: "jam", label: "Jam" },
+  // { id: "kazi", label: "Kazi" },
+  // { id: "douji", label: "Douji" },
+  // { id: "luodo", label: "Luodo" },
+];
+
+export const DEFAULT_TTS_VOICE = EXAM_TTS_VOICE;
+
+const SYSTEM_VOICE_IDS = new Set(SYSTEM_TTS_VOICES.map((v) => v.id));
 
 export function parseWords(text: string): string[] {
   return text
@@ -15,8 +41,34 @@ export function parseWords(text: string): string[] {
     .filter((word) => word.length > 0);
 }
 
-function ttsCacheKey(text: string): string {
-  return `${text.trim().toLowerCase()}|${TTS_SPEED}`;
+export function loadTtsVoice(): string {
+  try {
+    const stored = localStorage.getItem(TTS_VOICE_KEY);
+    if (stored && SYSTEM_VOICE_IDS.has(stored)) return stored;
+  } catch {
+    // ignore
+  }
+  return DEFAULT_TTS_VOICE;
+}
+
+export function saveTtsVoice(voice: string): void {
+  localStorage.setItem(TTS_VOICE_KEY, voice);
+}
+
+/**
+ * GLM-TTS is Chinese-first and may translate isolated English words
+ * (e.g. grape →「葡萄」). Quoting forces English reading.
+ */
+function ttsInputText(text: string): string {
+  const word = text.trim();
+  if (/^[a-zA-Z][a-zA-Z'-]*$/.test(word)) {
+    return `"${word}"`;
+  }
+  return word;
+}
+
+function ttsCacheKey(text: string, voice: string): string {
+  return `${ttsInputText(text).toLowerCase()}|${voice}|${TTS_SPEED}`;
 }
 
 function openTtsCache(): Promise<IDBDatabase> {
@@ -75,15 +127,19 @@ async function putCachedTtsAudio(key: string, blob: Blob): Promise<void> {
   }
 }
 
-export async function fetchTtsAudio(text: string): Promise<Blob | null> {
-  const key = ttsCacheKey(text);
+export async function fetchTtsAudio(
+  text: string,
+  voice: string = DEFAULT_TTS_VOICE,
+): Promise<Blob | null> {
+  const input = ttsInputText(text);
+  const key = ttsCacheKey(text, voice);
   const cached = await getCachedTtsAudio(key);
   if (cached) return cached;
 
   const response = await fetch(apiUrl("/api/tts/speech"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, speed: TTS_SPEED }),
+    body: JSON.stringify({ text: input, voice, speed: TTS_SPEED }),
   });
   if (!response.ok) {
     return null;
@@ -118,10 +174,13 @@ export function stopSpeech(): void {
   window.speechSynthesis?.cancel();
 }
 
-export async function speakWord(word: string): Promise<void> {
+export async function speakWord(
+  word: string,
+  voice: string = DEFAULT_TTS_VOICE,
+): Promise<void> {
   stopSpeech();
   try {
-    const blob = await fetchTtsAudio(word);
+    const blob = await fetchTtsAudio(word, voice);
     if (blob) {
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);

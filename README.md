@@ -57,7 +57,7 @@ pnpm dev
 |------|------|
 | `OPENAI_API_KEY` | 智谱开放平台 API Key |
 | `OPENAI_TTS_MODEL` | TTS 模型，默认 `glm-tts` |
-| `OPENAI_TTS_VOICE` | 发音人，默认 `female` |
+| `OPENAI_TTS_VOICE` | 发音人，默认教材复刻「考试发音」 |
 | `OPENAI_VISION_MODEL` | 视觉 OCR 模型，默认 `glm-4v-flash` |
 | `PORT` | 服务端口，默认 `3600` |
 

@@ -34,7 +34,11 @@ export const config = {
     apiKey: strEnv("OPENAI_API_KEY", ""),
     baseUrl: strEnv("OPENAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),
     ttsModel: strEnv("OPENAI_TTS_MODEL", "glm-tts"),
-    ttsVoice: strEnv("OPENAI_TTS_VOICE", "female"),
+    // Cloned from Pronunciation_Listen_and_circle.mp3 (account-bound).
+    ttsVoice: strEnv(
+      "OPENAI_TTS_VOICE",
+      "6f62ac26-895b-512e-990f-7a0bbf06e75e",
+    ),
     visionModel: strEnv("OPENAI_VISION_MODEL", "glm-4v-flash"),
   },
 } as const;
