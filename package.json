@@ -19,5 +19,8 @@
     "concurrently": "^10.0.3",
     "prettier": "^3.9.4"
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@11.9.0",
+  "dependencies": {
+    "resolve": "^1.22.0"
+  }
 }

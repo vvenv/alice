@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Alice 听写",
+    "slug": "alice-dictation",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vvenv.alice",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别",
+        "NSPhotoLibraryUsageDescription": "用于从相册选择单词图片进行 OCR 识别",
+        "NSMicrophoneUsageDescription": "不需要麦克风权限"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.vvenv.alice",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "用于从相册选择单词图片进行 OCR 识别",
+          "cameraPermission": "用于拍摄单词图片进行 OCR 识别"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "http://YOUR_SERVER_IP:3600"
+    }
+  }
+}
