@@ -65,13 +65,17 @@ export function OcrSection({
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted shrink-0">识别后</span>
         <div
-          className="flex flex-1 bg-surface-raised rounded-xl p-3 gap-1"
+          className="flex flex-1 gap-1.5 bg-surface-raised rounded-xl p-1.5"
           role="group"
           aria-label="识别后处理方式"
         >
           <button
             type="button"
-            className={ocrModeBtn(ocrMode === "append")}
+            className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
+              ocrMode === "append"
+                ? "bg-background text-foreground shadow-raised"
+                : "text-muted hover:text-secondary"
+            }`}
             disabled={ocrBusy}
             onClick={() => onOcrModeChange("append")}
           >
@@ -79,7 +83,11 @@ export function OcrSection({
           </button>
           <button
             type="button"
-            className={ocrModeBtn(ocrMode === "replace")}
+            className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
+              ocrMode === "replace"
+                ? "bg-background text-foreground shadow-raised"
+                : "text-muted hover:text-secondary"
+            }`}
             disabled={ocrBusy}
             onClick={() => onOcrModeChange("replace")}
           >

@@ -44,11 +44,11 @@ export function PlaybackControls({
 
   return (
     <div
-      className={
-        `flex flex-col gap-2 ${isActive
+      className={`flex flex-col gap-2 ${
+        isActive
           ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-background/90 backdrop-blur rounded-2xl p-3 -mx-1 border border-border-muted shadow-sticky md:static md:shadow-none md:border-none md:bg-transparent md:p-0 md:mx-0 md:mb-4"
-          : ""}`
-      }
+          : ""
+      }`}
     >
       {!isActive ? (
         <div className="flex items-center gap-3">
@@ -63,7 +63,7 @@ export function PlaybackControls({
               return (
                 <label
                   key={item.id}
-                  className={`flex-1 min-w-18 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
+                  className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
                     active
                       ? "bg-background text-foreground shadow-raised"
                       : "text-muted hover:text-secondary"
