@@ -31,7 +31,7 @@ export function WrongWordsPanel({
         </div>
 
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pb-4">
           {wrongWords.map((word) => (
             <button
               key={word}
