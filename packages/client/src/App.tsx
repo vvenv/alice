@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { AuthGate } from "./components/AuthGate";
 import { OcrSection } from "./components/OcrSection";
 import { PlaybackControls } from "./components/PlaybackControls";
 import { ProgressCard } from "./components/ProgressCard";
@@ -10,12 +11,14 @@ import { useOcr } from "./hooks/useOcr";
 import { usePlayback } from "./hooks/usePlayback";
 import { useToast } from "./hooks/useToast";
 import { useWrongWords } from "./hooks/useWrongWords";
+import { isAuthenticated } from "./lib/auth";
 import { loadTtsVoice, parseWords, saveTtsVoice } from "./lib/dictation";
 import { ShortcutFooter } from "./components/ShortcutFooter";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => isAuthenticated());
   const [wordInput, setWordInput] = useState(
     "apple banana cat dog elephant\n",
   );
@@ -123,9 +126,13 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [handleMarkWrong, handlePlayToggle, isActive, playback.stopDictation]);
 
+  if (!authed) {
+    return <AuthGate onAuthenticated={() => setAuthed(true)} />;
+  }
+
   return (
     <div
-      className="flex-1 w-full max-w-md mx-auto bg-background md:rounded-shell px-4 pt-4 pb-[env(safe-area-inset-bottom)] flex flex-col gap-4"
+      className="flex-1 w-full max-w-md mx-auto bg-background md:rounded-shell px-4 pt-4 pb-[env(safe-area-inset-bottom)] flex flex-col gap-4 min-h-dvh md:min-h-[50vh]"
     >
       {!isActive ? (
         <OcrSection

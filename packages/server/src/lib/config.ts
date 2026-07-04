@@ -30,6 +30,8 @@ export const config = {
     host: strEnv("HOST", "0.0.0.0"),
     logLevel: strEnv("LOG_LEVEL", "info"),
   },
+  /** 四位使用码，保护 /api 接口。 */
+  accessCode: strEnv("ACCESS_CODE", "1024"),
   openai: {
     apiKey: strEnv("OPENAI_API_KEY", ""),
     baseUrl: strEnv("OPENAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),

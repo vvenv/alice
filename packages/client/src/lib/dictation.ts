@@ -1,6 +1,6 @@
 import type { OcrWordsRequest, OcrWordsResponse } from "@alice/shared";
 
-import { apiUrl } from "./api";
+import { apiFetch } from "./api";
 
 const TTS_SPEED = 0.9;
 const TTS_CACHE_DB = "alice_tts_cache";
@@ -138,7 +138,7 @@ export async function fetchTtsAudio(
   if (signal?.aborted) return null;
   if (cached) return cached;
 
-  const response = await fetch(apiUrl("/api/tts/speech"), {
+  const response = await apiFetch("/api/tts/speech", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: input, voice, speed: TTS_SPEED }),
@@ -335,7 +335,7 @@ export async function ocrWordsFromImage(
 
   let response: Response;
   try {
-    response = await fetch(apiUrl("/api/ocr/words"), {
+    response = await apiFetch("/api/ocr/words", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

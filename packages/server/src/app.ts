@@ -5,7 +5,9 @@ import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 
+import { registerAccessCodeAuth } from "./lib/access-code.js";
 import { config } from "./lib/config.js";
+import { registerAuthRoutes } from "./routes/auth.routes.js";
 import { registerOcrRoutes } from "./routes/ocr.routes.js";
 import { registerTtsRoutes } from "./routes/tts.routes.js";
 
@@ -20,9 +22,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(cors, { origin: true });
+  await registerAccessCodeAuth(app);
 
   app.get("/health", async () => ({ status: "ok" }));
 
+  await registerAuthRoutes(app);
   await registerTtsRoutes(app);
   await registerOcrRoutes(app);
 
