@@ -17,10 +17,12 @@ export function WordInputSection({
   onClear,
 }: WordInputSectionProps) {
   const wordCount = useMemo(() => parseWords(value).length, [value]);
+
   return (
     <div className="flex flex-col gap-2">
       <textarea
-        className="w-full border border-border rounded-card px-4 py-3 text-base bg-surface-sunken resize-y text-foreground leading-normal transition-all focus:outline-none focus:border-primary-focus focus:ring-2 focus:ring-primary-ring focus:bg-background"
+        rows={2}
+        className="w-full border border-border rounded-card px-4 py-3 text-base bg-surface-sunken field-sizing-content resize-none text-foreground leading-normal transition-all focus:outline-none focus:border-primary-focus focus:ring-2 focus:ring-primary-ring focus:bg-background"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={"每行一个，或用逗号/空格分隔\n例：apple banana cat"}

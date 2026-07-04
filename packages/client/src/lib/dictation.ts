@@ -369,6 +369,7 @@ export async function ocrWordsFromImage(
 }
 
 const WRONG_WORDS_KEY = "dictation_wrong_words";
+const WORD_INPUT_KEY = "dictation_word_input";
 
 export function loadWrongWords(): string[] {
   try {
@@ -385,4 +386,16 @@ export function loadWrongWords(): string[] {
 
 export function saveWrongWords(words: string[]): void {
   localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(words));
+}
+
+export function loadWordInput(): string | null {
+  try {
+    return localStorage.getItem(WORD_INPUT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveWordInput(value: string): void {
+  localStorage.setItem(WORD_INPUT_KEY, value);
 }

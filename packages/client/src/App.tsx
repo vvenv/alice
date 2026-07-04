@@ -12,15 +12,22 @@ import { usePlayback } from "./hooks/usePlayback";
 import { useToast } from "./hooks/useToast";
 import { useWrongWords } from "./hooks/useWrongWords";
 import { isAuthenticated } from "./lib/auth";
-import { loadTtsVoice, parseWords, saveTtsVoice } from "./lib/dictation";
+import {
+  loadTtsVoice,
+  loadWordInput,
+  parseWords,
+  saveTtsVoice,
+  saveWordInput,
+} from "./lib/dictation";
 import { ShortcutFooter } from "./components/ShortcutFooter";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
+const DEFAULT_WORD_INPUT = "apple banana cat dog elephant\n";
 
 export default function App() {
   const [authed, setAuthed] = useState(() => isAuthenticated());
   const [wordInput, setWordInput] = useState(
-    "apple banana cat dog elephant\n",
+    () => loadWordInput() ?? DEFAULT_WORD_INPUT,
   );
   const [intervalSec, setIntervalSec] = useState(8);
   const [autoNext, setAutoNext] = useState(true);
@@ -35,6 +42,10 @@ export default function App() {
     setVoice(next);
     saveTtsVoice(next);
   }, []);
+
+  useEffect(() => {
+    saveWordInput(wordInput);
+  }, [wordInput]);
 
   const {
     wrongWords,
