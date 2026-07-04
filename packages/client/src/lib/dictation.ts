@@ -2,24 +2,95 @@ import type { OcrWordsRequest, OcrWordsResponse } from "@alice/shared";
 
 import { apiUrl } from "./api";
 
+const TTS_SPEED = 0.9;
+const TTS_CACHE_DB = "alice_tts_cache";
+const TTS_CACHE_STORE = "audio";
+const TTS_CACHE_VERSION = 1;
+
 export function parseWords(text: string): string[] {
   return text
-    .split(/[\n\r,，\t]+/)
+    .split(/[\n\r,，;；\t]+/)
     .flatMap((part) => part.trim().split(/\s+/))
     .map((word) => word.trim())
     .filter((word) => word.length > 0);
 }
 
+function ttsCacheKey(text: string): string {
+  return `${text.trim().toLowerCase()}|${TTS_SPEED}`;
+}
+
+function openTtsCache(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(TTS_CACHE_DB, TTS_CACHE_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(TTS_CACHE_STORE)) {
+        db.createObjectStore(TTS_CACHE_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () =>
+      reject(request.error ?? new Error("打开音频缓存失败"));
+  });
+}
+
+async function getCachedTtsAudio(key: string): Promise<Blob | null> {
+  try {
+    const db = await openTtsCache();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(TTS_CACHE_STORE, "readonly");
+        const request = tx.objectStore(TTS_CACHE_STORE).get(key);
+        request.onsuccess = () => {
+          const value = request.result;
+          resolve(value instanceof Blob ? value : null);
+        };
+        request.onerror = () =>
+          reject(request.error ?? new Error("读取音频缓存失败"));
+      });
+    } finally {
+      db.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+async function putCachedTtsAudio(key: string, blob: Blob): Promise<void> {
+  try {
+    const db = await openTtsCache();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(TTS_CACHE_STORE, "readwrite");
+        tx.objectStore(TTS_CACHE_STORE).put(blob, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () =>
+          reject(tx.error ?? new Error("写入音频缓存失败"));
+      });
+    } finally {
+      db.close();
+    }
+  } catch {
+    // cache write is best-effort
+  }
+}
+
 export async function fetchTtsAudio(text: string): Promise<Blob | null> {
+  const key = ttsCacheKey(text);
+  const cached = await getCachedTtsAudio(key);
+  if (cached) return cached;
+
   const response = await fetch(apiUrl("/api/tts/speech"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, speed: 0.9 }),
+    body: JSON.stringify({ text, speed: TTS_SPEED }),
   });
   if (!response.ok) {
     return null;
   }
-  return response.blob();
+  const blob = await response.blob();
+  void putCachedTtsAudio(key, blob);
+  return blob;
 }
 
 export function speakWithWebSpeech(word: string): Promise<void> {
@@ -30,7 +101,7 @@ export function speakWithWebSpeech(word: string): Promise<void> {
     }
     const utter = new SpeechSynthesisUtterance(word);
     utter.lang = "en-US";
-    utter.rate = 0.9;
+    utter.rate = TTS_SPEED;
     utter.onend = () => resolve();
     utter.onerror = () => resolve();
     window.speechSynthesis.speak(utter);

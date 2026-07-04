@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
-/* ── Semantic color tokens ── */
+/* Design tokens (Tailwind v4 @theme → utilities + CSS variables).
+   No comments inside @theme — IntelliSense misparses them as selectors. */
 @theme {
-  --color-muted: #9a9aa2;
-  --color-subtle: #8a8a92;
-  --color-faint: #c2c2ca;
-  --color-soft: #c7c7cf;
-  --color-secondary: #55555c;
-  --color-border: #e5e5ea;
-  --color-border-subtle: #ececf0;
-  --color-border-softer: #f0f0f3;
-  --color-surface: #fafafb;
-  --color-surface-hover: #f5f5f7;
-  --color-surface-active: #f4f4f7;
-  --color-surface-soft: #f7f7f9;
-  --color-overlay: #1a1a1a;
+  --color-primary: #4f46e5;
+  --color-primary-light: #6366f1;
+  --color-primary-dark: #4338ca;
+  --color-primary-soft: #eef2ff;
+  --color-primary-ring: #e0e7ff;
+  --color-primary-focus: #818cf8;
 
-  --shadow-card: 0 8px 40px -12px rgba(0, 0, 0, 0.12);
-  --shadow-btn-primary: 0 6px 18px -6px rgba(79, 70, 229, 0.6);
-  --shadow-toast: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
-  --shadow-sticky: 0 -6px 28px -8px rgba(0, 0, 0, 0.12);
+  --color-danger: #e11d48;
+  --color-danger-soft: #fff1f2;
+  --color-danger-hover: #ffe4e6;
+  --color-danger-muted: #fb7185;
 
-  /* Commonly used font sizes */
-  --font-size-11: 0.6875rem;
-  --font-size-13: 0.8125rem;
-  --font-size-17: 1.0625rem;
-  --font-size-40: 2.5rem;
+  --color-foreground: #000000;
+  --color-background: #ffffff;
 
-  /* Commonly used border radii */
-  --radius-9: 9px;
-  --radius-10: 10px;
-  --radius-11: 11px;
-  --radius-12: 12px;
-  --radius-14: 14px;
-  --radius-16: 16px;
-  --radius-20: 20px;
+  --color-muted: rgb(0 0 0 / 0.4);
+  --color-subtle: rgb(0 0 0 / 0.25);
+  --color-secondary: rgb(0 0 0 / 0.65);
 
+  --color-border: rgb(0 0 0 / 0.1);
+  --color-border-subtle: rgb(0 0 0 / 0.06);
+  --color-border-muted: rgb(0 0 0 / 0.075);
+
+  --color-surface: rgb(0 0 0 / 0.03);
+  --color-surface-raised: rgb(0 0 0 / 0.043);
+  --color-surface-sunken: rgb(0 0 0 / 0.02);
+  --color-surface-hover: rgb(0 0 0 / 0.04);
+  --color-track: rgb(0 0 0 / 0.07);
+
+  --radius-button: 0.9375rem;
+  --radius-card: 1.125rem;
+
+  --shadow-sticky: 0 -6px 28px -8px rgb(0 0 0 / 0.12);
+  --shadow-btn-primary: 0 6px 18px -6px rgb(79 70 229 / 0.6);
+  --shadow-toast: 0 8px 24px -6px rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 1px 4px rgb(0 0 0 / 0.1);
 }
 
 @layer base {
@@ -43,26 +46,70 @@
     font-family:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
       sans-serif;
-    background: linear-gradient(180deg, #f7f7fa 0%, #eeeef4 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.03) 0%,
+      rgb(0 0 0 / 0.065) 100%
+    );
     background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: flex-start;
     padding-bottom: env(safe-area-inset-bottom);
-    color: #1a1a1a;
+    color: var(--color-foreground);
     -webkit-tap-highlight-color: transparent;
   }
 
   #root {
     width: 100%;
+    height: 100%;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  kbd {
+    background-color: var(--color-surface-raised);
+    padding: 0 6px;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    color: var(--color-muted);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--color-background);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 35%, transparent);
+    transition: transform 0.12s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--color-background);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 35%, transparent);
   }
 }
 
 /* ── Reusable component utilities ── */
 @layer components {
-  /* Small pill button */
   .btn-sm {
     cursor: pointer;
     border-radius: 9999px;
@@ -77,14 +124,13 @@
     background-color: var(--color-surface-hover);
   }
   .btn-sm:active {
-    background-color: var(--color-surface-active);
+    background-color: var(--color-surface-raised);
   }
   .btn-sm:disabled {
     opacity: 0.4;
     pointer-events: none;
   }
 
-  /* Large button base */
   .btn-lg {
     display: inline-flex;
     align-items: center;
@@ -92,7 +138,7 @@
     gap: 6px;
     padding: 0 20px;
     font-weight: 600;
-    border-radius: 15px;
+    border-radius: var(--radius-button);
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -114,60 +160,58 @@
     font-size: 1.0625rem;
   }
 
-  /* Primary solid button (gradient indigo) */
   .btn-primary {
-    color: #fff;
-    background: linear-gradient(to bottom right, #6366f1, #4f46e5);
+    color: var(--color-background);
+    background: linear-gradient(
+      to bottom right,
+      var(--color-primary-light),
+      var(--color-primary)
+    );
     box-shadow: var(--shadow-btn-primary);
   }
   .btn-primary:hover {
-    background: linear-gradient(to bottom right, #6366f1, #4338ca);
+    background: linear-gradient(
+      to bottom right,
+      var(--color-primary-light),
+      var(--color-primary-dark)
+    );
   }
 
-  /* Secondary ghost button */
   .btn-ghost {
     border: 1px solid var(--color-border);
     color: var(--color-secondary);
-    background: #fff;
+    background: var(--color-background);
   }
   .btn-ghost:hover {
-    background-color: var(--color-surface-soft);
+    background-color: var(--color-surface);
   }
 
-  /* Marker (wrong-word) button */
   .btn-marker {
-    background-color: #fff1f2;
-    color: #e11d48;
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
   }
   .btn-marker:hover {
-    background-color: #ffe4e6;
+    background-color: var(--color-danger-hover);
   }
   .btn-marker:disabled {
     opacity: 0.3;
     pointer-events: none;
   }
 
-  /* Kbd hint */
-  kbd {
-    background-color: var(--color-surface-active);
-    padding: 0 6px;
-    border-radius: 4px;
-    font-size: 0.625rem;
-    color: var(--color-subtle);
-  }
-
-  /* Card */
   .card {
-    background: linear-gradient(to bottom, var(--color-surface), #f4f4f7);
-    border: 1px solid #eeeef2;
-    border-radius: 18px;
+    background: linear-gradient(
+      to bottom,
+      var(--color-surface-sunken),
+      var(--color-surface-raised)
+    );
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
     overflow: hidden;
   }
 
-  /* Toast */
   .toast {
-    background: var(--color-overlay);
-    color: #fff;
+    background: var(--color-foreground);
+    color: var(--color-background);
     font-size: 0.875rem;
     font-weight: 500;
     padding: 10px 16px;
@@ -176,35 +220,6 @@
     box-shadow: var(--shadow-toast);
   }
 
-  /* ── Range slider thumb ── */
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #4f46e5;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid #fff;
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
-    transition: transform 0.12s ease;
-  }
-
-  input[type="range"]::-webkit-slider-thumb:active {
-    transform: scale(1.15);
-  }
-
-  input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #4f46e5;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid #fff;
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
-  }
-
-  /* ── Toast entrance animation ── */
   @keyframes toast-in {
     from {
       opacity: 0;
