@@ -146,7 +146,7 @@ export function PlaybackControls({
             disabled={!skipEnabled}
             onClick={onSkipNext}
           >
-            ⏭ 下一个
+            ⏭ 跳过
           </button>
         ) : null}
         <button
