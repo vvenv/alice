@@ -16,6 +16,7 @@
     "module": "esnext",
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@alice/shared": [

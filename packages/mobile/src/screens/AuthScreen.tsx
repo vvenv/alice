@@ -11,6 +11,9 @@ import {
 } from "react-native";
 
 import { authenticate } from "../lib/auth";
+import { createLogger } from "../lib/logger";
+
+const log = createLogger("AuthScreen");
 
 interface AuthScreenProps {
   onAuthenticated: () => void;
@@ -25,8 +28,10 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     if (code.length !== 4 || busy) return;
     setBusy(true);
     setError(false);
+    log.info(`Submitting code, length=${code.length}`);
     try {
       const ok = await authenticate(code);
+      log.info(`authenticate returned: ${ok}`);
       if (ok) {
         onAuthenticated();
         return;
@@ -62,7 +67,6 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             }}
             placeholder="••••"
             placeholderTextColor="#ccc"
-            secureTextEntry
             textAlign="center"
             editable={!busy}
             autoFocus
@@ -135,6 +139,7 @@ const styles = StyleSheet.create({
     color: "#1a1a2e",
     letterSpacing: 12,
     backgroundColor: "#fff",
+    textAlign: "center",
   },
   inputError: {
     borderColor: "#e74c3c",

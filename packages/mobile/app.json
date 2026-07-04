@@ -38,7 +38,7 @@
         }
       ],
       [
-        "expo-av",
+        "expo-audio",
         {
           "microphonePermission": false
         }

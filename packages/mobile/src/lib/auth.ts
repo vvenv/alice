@@ -1,7 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { apiUrl } from "./api-url";
+import { createLogger } from "./logger";
 
+const log = createLogger("Auth");
 const AUTH_KEY = "alice_access_code";
 
 export function getAccessCode(): string | null {
@@ -19,18 +21,22 @@ export function isAuthenticated(): boolean {
 export async function loadPersistedCode(): Promise<string | null> {
   try {
     _cachedCode = await AsyncStorage.getItem(AUTH_KEY);
+    log.info(`loadPersistedCode: ${_cachedCode === null ? "no code found" : "code loaded"}`);
     return _cachedCode;
-  } catch {
+  } catch (e) {
+    log.warn("Failed to load persisted code:", e);
     return null;
   }
 }
 
 export async function saveAccessCode(code: string): Promise<void> {
+  _cachedCode = code;
+  log.info("saveAccessCode: in-memory code cached");
   try {
     await AsyncStorage.setItem(AUTH_KEY, code);
-    _cachedCode = code;
-  } catch {
-    // ignore
+    log.info("saveAccessCode: persisted to storage");
+  } catch (e) {
+    log.warn("Failed to persist access code to storage (will use in-memory):", e);
   }
 }
 
@@ -45,6 +51,7 @@ export async function clearAccessCode(): Promise<void> {
 
 /** Verify code against server, then persist. */
 export async function authenticate(code: string): Promise<boolean> {
+  log.info(`authenticate called with code length=${code.length}`);
   let response: Response;
   try {
     response = await fetch(apiUrl("/api/auth/verify"), {
@@ -52,9 +59,11 @@ export async function authenticate(code: string): Promise<boolean> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
     });
-  } catch {
+  } catch (e) {
+    log.warn("authenticate network error:", e);
     return false;
   }
+  log.info(`/api/auth/verify response status=${response.status}`);
   if (!response.ok) return false;
   await saveAccessCode(code);
   return true;

@@ -1,10 +1,15 @@
-import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system";
+import { Platform } from "react-native";
+import { createAudioPlayer, AudioPlayer, setAudioModeAsync } from "expo-audio";
+import { Paths, File, Directory, EncodingType } from "expo-file-system";
 
 import { apiFetch } from "./api";
+import { createLogger } from "./logger";
 
 const TTS_SPEED = 0.9;
-const TTS_CACHE_DIR = `${FileSystem.documentDirectory}tts_cache/`;
+const IS_WEB = Platform.OS === "web";
+const TTS_CACHE_DIR = IS_WEB ? "" : `${Paths.cache.uri}tts_cache/`;
+
+const log = createLogger("TTS");
 
 export function ttsInputText(text: string): string {
   const word = text.trim();
@@ -18,20 +23,19 @@ function ttsCacheKey(text: string, voice: string): string {
   return `${ttsInputText(text).toLowerCase()}|${voice}|${TTS_SPEED}`;
 }
 
-/** Ensure cache directory exists. */
+/** Ensure cache directory exists. No-op on web. */
 async function ensureCacheDir(): Promise<void> {
-  const dirInfo = await FileSystem.getInfoAsync(TTS_CACHE_DIR);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(TTS_CACHE_DIR, {
-      intermediates: true,
-    });
+  if (IS_WEB) return;
+  const dir = new Directory(TTS_CACHE_DIR);
+  if (!dir.exists) {
+    dir.create({ intermediates: true });
   }
 }
 
 /** Convert an ArrayBuffer to a base64 string. */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000; // 32 KB chunks to avoid call-stack overflow on large files
+  const chunkSize = 0x8000;
   let base64 = "";
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize);
@@ -40,20 +44,22 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(base64);
 }
 
-/** Fetch TTS audio from server, caching to file system. Returns local file URI. */
+/** Fetch TTS audio from server, caching to file system on native. Returns a URI. */
 async function fetchTtsAudio(
   text: string,
   voice: string,
 ): Promise<string | null> {
   const key = ttsCacheKey(text, voice);
-  const cachePath = `${TTS_CACHE_DIR}${encodeURIComponent(key)}.mp3`;
+  const cachePath = IS_WEB ? "" : `${TTS_CACHE_DIR}${encodeURIComponent(key)}.mp3`;
 
-  // Check cache first
-  try {
-    const info = await FileSystem.getInfoAsync(cachePath);
-    if (info.exists) return cachePath;
-  } catch {
-    // ignore cache errors
+  // Check cache first (native only)
+  if (!IS_WEB) {
+    try {
+      const file = new File(cachePath);
+      if (file.exists) return cachePath;
+    } catch {
+      // ignore cache errors
+    }
   }
 
   try {
@@ -66,27 +72,29 @@ async function fetchTtsAudio(
     });
 
     if (!response.ok) {
-      console.warn(`[TTS] Server returned ${response.status} for "${text}"`);
+      log.warn(`Server returned ${response.status} for "${text}"`);
       return null;
     }
 
-    // Use arrayBuffer instead of blob — blob+FileReader silently fails in React Native.
     const arrayBuffer = await response.arrayBuffer();
-    const base64 = arrayBufferToBase64(arrayBuffer);
+    const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+    const dataUri = URL.createObjectURL(blob);
 
-    await FileSystem.writeAsStringAsync(cachePath, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    if (!IS_WEB) {
+      const base64 = arrayBufferToBase64(arrayBuffer);
+      new File(cachePath).write(base64, { encoding: EncodingType.Base64 });
+      return cachePath;
+    }
 
-    return cachePath;
+    return dataUri;
   } catch (err) {
-    console.warn(`[TTS] Fetch failed for "${text}":`, err);
+    log.warn(`Fetch failed for "${text}":`, err);
     return null;
   }
 }
 
 // ── Playback state ──
-let currentSound: Audio.Sound | null = null;
+let currentPlayer: AudioPlayer | null = null;
 let currentAbort: (() => void) | null = null;
 
 export async function stopSpeech(): Promise<void> {
@@ -94,14 +102,14 @@ export async function stopSpeech(): Promise<void> {
     currentAbort();
     currentAbort = null;
   }
-  if (currentSound) {
+  if (currentPlayer) {
     try {
-      await currentSound.stopAsync();
-      await currentSound.unloadAsync();
+      currentPlayer.pause();
+      currentPlayer.remove();
     } catch {
       // ignore
     }
-    currentSound = null;
+    currentPlayer = null;
   }
 }
 
@@ -118,16 +126,13 @@ export async function speakWord(
   try {
     const audioUri = await fetchTtsAudio(word, voice);
     if (!audioUri) {
-      console.warn(`[TTS] Failed to fetch audio for: ${word}`);
+      log.warn(`Failed to fetch audio for: ${word}`);
       return false;
     }
 
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audioUri },
-      { shouldPlay: false },
-    );
+    const player = createAudioPlayer({ uri: audioUri });
 
-    currentSound = sound;
+    currentPlayer = player;
 
     return new Promise<boolean>((resolve) => {
       let settled = false;
@@ -138,27 +143,29 @@ export async function speakWord(
         resolve(false);
       };
 
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded || settled) return;
+      player.addListener("playbackStatusUpdate", (status) => {
+        if (status.error || settled) {
+          if (!settled && status.error) {
+            settled = true;
+            currentAbort = null;
+            currentPlayer = null;
+            log.warn(`Playback error for "${word}":`, status.error);
+            resolve(false);
+          }
+          return;
+        }
         if (status.didJustFinish) {
           settled = true;
           currentAbort = null;
-          currentSound = null;
+          currentPlayer = null;
           resolve(true);
         }
       });
 
-      sound.playAsync().catch((err) => {
-        console.warn(`[TTS] Playback error for "${word}":`, err);
-        if (settled) return;
-        settled = true;
-        currentAbort = null;
-        currentSound = null;
-        resolve(false);
-      });
+      player.play();
     });
   } catch (err) {
-    console.warn(`[TTS] Unexpected error for "${word}":`, err);
+    log.warn(`Unexpected error for "${word}":`, err);
     return false;
   }
 }
@@ -166,14 +173,12 @@ export async function speakWord(
 /** Initialize audio session for playback. */
 export async function initAudio(): Promise<void> {
   try {
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
     });
   } catch (e) {
-    console.warn("[Audio] Failed to set audio mode:", e);
+    log.warn("Failed to set audio mode:", e);
   }
 }
