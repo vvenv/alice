@@ -1,5 +1,6 @@
-packages:
-  - "packages/*"
-allowBuilds:
-  esbuild: true
-minimumReleaseAge: 0
+minimumReleaseAgeExclude:
+  - '@react-navigation/bottom-tabs@7.18.7'
+  - '@react-navigation/core@7.21.5'
+  - '@react-navigation/elements@2.9.29'
+  - '@react-navigation/native-stack@7.17.9'
+  - '@react-navigation/native@7.3.7'

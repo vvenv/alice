@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Alice 听写",
+    "slug": "alice-dictation",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vvenv.alice",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.vvenv.alice",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "用于拍摄单词图片进行 OCR 识别"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "updates": {
+      "enabled": false
+    },
+    "extra": {
+      "zhipuApiKey": "",
+      "zhipuBaseUrl": "https://open.bigmodel.cn/api/paas/v4",
+      "ttsModel": "glm-tts",
+      "ttsVoice": "6f62ac26-895b-512e-990f-7a0bbf06e75e",
+      "visionModel": "glm-4v-flash",
+      "accessCode": "1024"
+    }
+  }
+}

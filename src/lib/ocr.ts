@@ -1,0 +1,133 @@
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
+
+import { config } from "./config";
+
+const OCR_MAX_EDGE = 1600;
+const OCR_JPEG_QUALITY = 0.82;
+const OCR_URL = `${config.zhipuBaseUrl}/chat/completions`;
+
+function uriToBase64(uri: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const commaIndex = result.indexOf(",");
+        resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+      };
+      reader.onerror = () => reject(new Error("读取图片失败"));
+      reader.readAsDataURL(xhr.response);
+    };
+    xhr.onerror = () => reject(new Error("读取图片失败"));
+    xhr.responseType = "blob";
+    xhr.open("GET", uri);
+    xhr.send();
+  });
+}
+
+async function compressImageForOcr(
+  uri: string,
+): Promise<{ base64: string; mimeType: string }> {
+  const resized = await ImageManipulator.manipulateAsync(
+    uri,
+    [
+      {
+        resize: {
+          width: OCR_MAX_EDGE,
+        },
+      },
+    ],
+    {
+      compress: OCR_JPEG_QUALITY,
+      format: ImageManipulator.SaveFormat.JPEG,
+    },
+  );
+
+  const base64 = await uriToBase64(resized.uri);
+  return { base64, mimeType: "image/jpeg" };
+}
+
+export async function takePhoto(): Promise<string | null> {
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permission.granted) {
+    throw new Error("需要相机权限");
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ["images"],
+    quality: 1,
+  });
+
+  if (result.canceled || !result.assets.length) return null;
+  return result.assets[0]!.uri;
+}
+
+export async function ocrWordsFromImage(
+  imageUri: string,
+  onStatus?: (status: string) => void,
+): Promise<{ words: string[]; rawText: string }> {
+  onStatus?.("处理图片中…");
+  const { base64, mimeType } = await compressImageForOcr(imageUri);
+  const dataUrl = `data:${mimeType};base64,${base64}`;
+
+  onStatus?.("识别中…");
+
+  let response: Response;
+  try {
+    response = await fetch(OCR_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.zhipuApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.visionModel,
+        temperature: 0.1,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: dataUrl },
+              },
+              {
+                type: "text",
+                text: [
+                  "这是一张包含英文单词列表的图片。",
+                  "请识别图中所有英文单词，每行一个，只输出单词本身。",
+                  "不要编号、不要解释、不要标点。",
+                ].join(""),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  } catch {
+    throw new Error("网络请求失败，请检查网络后重试");
+  }
+
+  if (!response.ok) {
+    try {
+      const detail = await response.text();
+      throw new Error(`视觉识别失败: ${detail}`);
+    } catch {
+      throw new Error("视觉识别服务异常");
+    }
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const rawText = payload.choices?.[0]?.message?.content?.trim() ?? "";
+  const words = rawText
+    .split(/[\n\r,，\t]+/)
+    .flatMap((part) => part.trim().split(/\s+/))
+    .map((word) => word.replace(/^[\d.)\-•]+\s*/, "").trim())
+    .filter((word) => /^[a-zA-Z][a-zA-Z'-]*$/.test(word));
+
+  return { words, rawText };
+}

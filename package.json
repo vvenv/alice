@@ -1,26 +1,45 @@
 {
-  "name": "alice",
-  "version": "0.2.3",
+  "name": "alice-dictation",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "dev": "pnpm --filter @alice/shared build && concurrently --names \"server,client\" --prefix-colors \"blue,green\" --kill-others-on-fail \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
-    "build": "pnpm --filter @alice/shared build && pnpm --filter client build && pnpm --filter server build",
-    "start": "pnpm --filter server start",
-    "lint": "pnpm --filter server lint && pnpm --filter client lint && pnpm --filter shared lint",
-    "test": "pnpm --filter @alice/shared build && pnpm --filter server test",
-    "check": "pnpm lint && pnpm test",
-    "release": "bash scripts/release.sh",
-    "deploy": "bash scripts/deploy.sh",
-    "bootstrap": "bash scripts/bootstrap-remote.sh",
-    "sync-env": "bash scripts/sync-env-remote.sh"
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.20.0",
+    "@expo/metro-config": "~57.0.0",
+    "babel-preset-expo": "~57.0.1",
+    "@expo/metro-runtime": "^57.0.3",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "^3.1.1",
+    "@react-navigation/bottom-tabs": "^7.18.7",
+    "@react-navigation/native": "^7.3.7",
+    "@react-navigation/native-stack": "^7.17.9",
+    "expo": "^57.0.2",
+    "expo-audio": "^57.0.0",
+    "expo-clipboard": "^57.0.0",
+    "expo-constants": "^57.0.3",
+    "expo-file-system": "^57.0.0",
+    "expo-image-manipulator": "^57.0.2",
+    "expo-image-picker": "^57.0.2",
+    "expo-status-bar": "^57.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-native": "0.86.0",
+    "react-native-safe-area-context": "^5.8.0",
+    "react-native-screens": "^4.25.2",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3",
-    "prettier": "^3.9.4"
-  },
-  "packageManager": "pnpm@11.9.0",
-  "dependencies": {
-    "resolve": "^1.22.12"
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.0.0",
+    "@types/react": "^19.2.17",
+    "prettier": "^3.9.4",
+    "typescript": "^6.0.3"
   }
 }
