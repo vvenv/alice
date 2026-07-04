@@ -130,48 +130,53 @@ async function putCachedTtsAudio(key: string, blob: Blob): Promise<void> {
 export async function fetchTtsAudio(
   text: string,
   voice: string = DEFAULT_TTS_VOICE,
+  signal?: AbortSignal,
 ): Promise<Blob | null> {
   const input = ttsInputText(text);
   const key = ttsCacheKey(text, voice);
   const cached = await getCachedTtsAudio(key);
+  if (signal?.aborted) return null;
   if (cached) return cached;
 
   const response = await fetch(apiUrl("/api/tts/speech"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: input, voice, speed: TTS_SPEED }),
+    signal,
   });
   if (!response.ok) {
     return null;
   }
   const blob = await response.blob();
+  if (signal?.aborted) return null;
   void putCachedTtsAudio(key, blob);
   return blob;
 }
 
-export function speakWithWebSpeech(word: string): Promise<void> {
-  return new Promise((resolve) => {
-    if (!window.speechSynthesis) {
-      resolve();
-      return;
-    }
-    const utter = new SpeechSynthesisUtterance(word);
-    utter.lang = "en-US";
-    utter.rate = TTS_SPEED;
-    utter.onend = () => resolve();
-    utter.onerror = () => resolve();
-    window.speechSynthesis.speak(utter);
-  });
+let currentAudio: HTMLAudioElement | null = null;
+let currentAbort: AbortController | null = null;
+let speakResolve: (() => void) | null = null;
+
+function settleSpeak(): void {
+  if (!speakResolve) return;
+  const resolve = speakResolve;
+  speakResolve = null;
+  resolve();
 }
 
-let currentAudio: HTMLAudioElement | null = null;
-
 export function stopSpeech(): void {
+  if (currentAbort) {
+    currentAbort.abort();
+    currentAbort = null;
+  }
   if (currentAudio) {
+    currentAudio.onended = null;
+    currentAudio.onerror = null;
     currentAudio.pause();
     currentAudio = null;
   }
   window.speechSynthesis?.cancel();
+  settleSpeak();
 }
 
 export async function speakWord(
@@ -179,31 +184,55 @@ export async function speakWord(
   voice: string = DEFAULT_TTS_VOICE,
 ): Promise<void> {
   stopSpeech();
+
+  const abort = new AbortController();
+  currentAbort = abort;
+
   try {
-    const blob = await fetchTtsAudio(word, voice);
+    const blob = await fetchTtsAudio(word, voice, abort.signal);
+    if (abort.signal.aborted) return;
+
     if (blob) {
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       currentAudio = audio;
       await new Promise<void>((resolve) => {
-        audio.onended = () => {
+        speakResolve = () => {
           URL.revokeObjectURL(url);
-          if (currentAudio === audio) currentAudio = null;
           resolve();
+        };
+        audio.onended = () => {
+          if (currentAudio === audio) currentAudio = null;
+          settleSpeak();
         };
         audio.onerror = () => {
-          URL.revokeObjectURL(url);
           if (currentAudio === audio) currentAudio = null;
-          resolve();
+          settleSpeak();
         };
-        void audio.play();
+        void audio.play().catch(() => settleSpeak());
       });
       return;
     }
   } catch {
+    if (abort.signal.aborted) return;
     // fall through to Web Speech API
   }
-  await speakWithWebSpeech(word);
+
+  if (abort.signal.aborted) return;
+
+  await new Promise<void>((resolve) => {
+    speakResolve = resolve;
+    if (!window.speechSynthesis) {
+      settleSpeak();
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = "en-US";
+    utter.rate = TTS_SPEED;
+    utter.onend = () => settleSpeak();
+    utter.onerror = () => settleSpeak();
+    window.speechSynthesis.speak(utter);
+  });
 }
 
 const OCR_MAX_EDGE = 1600;

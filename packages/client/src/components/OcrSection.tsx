@@ -8,14 +8,6 @@ interface OcrSectionProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function ocrModeBtn(active: boolean) {
-  return `flex-1 rounded-lg text-sm font-medium cursor-pointer transition-all disabled:opacity-40 disabled:pointer-events-none ${
-    active
-      ? "bg-background text-foreground shadow-raised"
-      : "text-muted hover:text-secondary"
-  }`;
-}
-
 export function OcrSection({
   ocrBusy,
   ocrMode,
@@ -45,7 +37,7 @@ export function OcrSection({
           {ocrBusy ? "识别中…" : "拍照识别"}
         </label>
         <label
-          className={`relative w-full flex items-center justify-center gap-3 p-4 font-medium border border-border rounded-2xl bg-background hover:bg-surface ${
+          className={`relative btn-lg btn-ghost w-full flex items-center justify-center gap-3 p-4 ${
             ocrBusy ? "opacity-50 pointer-events-none" : ""
           }`}
         >
@@ -64,17 +56,11 @@ export function OcrSection({
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted shrink-0">识别后</span>
-        <div
-          className="flex flex-1 gap-1.5 bg-surface-raised rounded-xl p-1.5"
-          role="group"
-          aria-label="识别后处理方式"
-        >
+        <div className="segment" role="group" aria-label="识别后处理方式">
           <button
             type="button"
-            className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
-              ocrMode === "append"
-                ? "bg-background text-foreground shadow-raised"
-                : "text-muted hover:text-secondary"
+            className={`segment__item ${
+              ocrMode === "append" ? "segment__item--active" : ""
             }`}
             disabled={ocrBusy}
             onClick={() => onOcrModeChange("append")}
@@ -83,10 +69,8 @@ export function OcrSection({
           </button>
           <button
             type="button"
-            className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
-              ocrMode === "replace"
-                ? "bg-background text-foreground shadow-raised"
-                : "text-muted hover:text-secondary"
+            className={`segment__item ${
+              ocrMode === "replace" ? "segment__item--active" : ""
             }`}
             disabled={ocrBusy}
             onClick={() => onOcrModeChange("replace")}
@@ -96,7 +80,7 @@ export function OcrSection({
         </div>
       </div>
       {ocrStatus ? (
-        <div className="text-sm text-muted text-center bg-surface rounded-xl py-2 px-3">
+        <div className="text-sm text-muted text-center bg-surface rounded-surface py-2 px-3">
           {ocrStatus}
         </div>
       ) : null}

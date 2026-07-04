@@ -15,6 +15,7 @@ interface PlaybackControlsProps {
   onVoiceChange: (voice: string) => void;
   onPlayToggle: () => void;
   onStop: () => void;
+  onSkipNext: () => void;
   onMarkWrong: () => void;
 }
 
@@ -31,10 +32,12 @@ export function PlaybackControls({
   onVoiceChange,
   onPlayToggle,
   onStop,
+  onSkipNext,
   onMarkWrong,
 }: PlaybackControlsProps) {
   const isActive = playState === "playing" || playState === "paused";
   const markEnabled = isActive && currentIndex < wordList.length;
+  const skipEnabled = isActive && currentIndex < wordList.length;
   const sliderPct = ((intervalSec - 1) / (10 - 1)) * 100;
   const intervalMs = intervalSec * 1000;
   const countdownScale =
@@ -46,27 +49,21 @@ export function PlaybackControls({
     <div
       className={`flex flex-col gap-2 ${
         isActive
-          ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-background/90 backdrop-blur rounded-2xl p-3 -mx-1 border border-border-muted shadow-sticky md:static md:shadow-none md:border-none md:bg-transparent md:p-0 md:mx-0 md:mb-4"
+          ? "sticky bottom-[max(8px,env(safe-area-inset-bottom))] z-10 bg-background/90 backdrop-blur rounded-card p-3 -mx-1 border border-border-muted shadow-sticky md:static md:shadow-none md:border-none md:bg-transparent md:p-0 md:mx-0 md:mb-4"
           : ""
       }`}
     >
       {!isActive ? (
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted shrink-0">音色</span>
-          <div
-            className="flex flex-1 gap-1.5 bg-surface-raised rounded-xl p-1.5"
-            role="radiogroup"
-            aria-label="音色"
-          >
+          <div className="segment" role="radiogroup" aria-label="音色">
             {SYSTEM_TTS_VOICES.map((item) => {
               const active = voice === item.id;
               return (
                 <label
                   key={item.id}
-                  className={`flex-1 text-center rounded-lg px-2 py-1.5 text-sm font-medium cursor-pointer transition-all ${
-                    active
-                      ? "bg-background text-foreground shadow-raised"
-                      : "text-muted hover:text-secondary"
+                  className={`segment__item ${
+                    active ? "segment__item--active" : ""
                   }`}
                 >
                   <input
@@ -142,6 +139,16 @@ export function PlaybackControls({
           {playState === "playing" && "⏸ 暂停"}
           {playState === "paused" && "▶ 继续"}
         </button>
+        {isActive ? (
+          <button
+            type="button"
+            className={`flex-1 btn-lg btn-lg--active btn-ghost`}
+            disabled={!skipEnabled}
+            onClick={onSkipNext}
+          >
+            ⏭ 下一个
+          </button>
+        ) : null}
         <button
           type="button"
           className={`flex-1 btn-lg ${isActive ? "btn-lg--active" : "btn-lg--idle"} btn-ghost`}

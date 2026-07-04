@@ -26,9 +26,10 @@ export function WrongWordsPanel({
         </div>
       </div>
       {!hasWrongWords ? (
-        <div className="text-sm text-subtle py-2 text-center bg-surface-sunken rounded-xl">
+        <div className="text-sm text-subtle py-2 text-center bg-surface-sunken rounded-surface">
           尚无错词
         </div>
+
       ) : (
         <div className="flex flex-wrap gap-2">
           {wrongWords.map((word) => (

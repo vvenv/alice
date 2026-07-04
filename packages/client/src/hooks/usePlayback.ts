@@ -103,6 +103,7 @@ export function usePlayback({
       }
 
       clearCountdown();
+      currentIndexRef.current = index;
       setCurrentIndex(index);
       const word = list[index]!;
 
@@ -176,6 +177,29 @@ export function usePlayback({
     updatePlayState("idle");
   }, [clearTimer, updatePlayState]);
 
+  /** Skip to the next word; cancels in-flight TTS/playback from prior words. */
+  const skipToNextWord = useCallback(() => {
+    if (
+      playStateRef.current !== "playing" &&
+      playStateRef.current !== "paused"
+    ) {
+      return;
+    }
+
+    const list = wordListRef.current;
+    const nextIndex = currentIndexRef.current + 1;
+
+    playGenRef.current += 1;
+    clearTimer();
+    stopSpeech();
+
+    currentIndexRef.current = nextIndex;
+    if (playStateRef.current === "paused") {
+      updatePlayState("playing");
+    }
+    void playNextWord(nextIndex, list);
+  }, [clearTimer, playNextWord, updatePlayState]);
+
   // cleanup on unmount
   useEffect(
     () => () => {
@@ -196,5 +220,6 @@ export function usePlayback({
     pauseDictation,
     resumeDictation,
     stopDictation,
+    skipToNextWord,
   };
 }

@@ -125,7 +125,7 @@ export default function App() {
 
   return (
     <div
-      className="flex-1 w-full max-w-md mx-auto bg-background px-4 pt-4 pb-[env(safe-area-inset-bottom)] flex flex-col gap-4"
+      className="flex-1 w-full max-w-md mx-auto bg-background md:rounded-shell px-4 pt-4 pb-[env(safe-area-inset-bottom)] flex flex-col gap-4"
     >
       {!isActive ? (
         <OcrSection
@@ -170,6 +170,7 @@ export default function App() {
         onVoiceChange={handleVoiceChange}
         onPlayToggle={handlePlayToggle}
         onStop={playback.stopDictation}
+        onSkipNext={playback.skipToNextWord}
         onMarkWrong={handleMarkWrong}
       />
 

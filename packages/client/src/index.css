@@ -32,8 +32,13 @@
   --color-surface-hover: rgb(0 0 0 / 0.04);
   --color-track: rgb(0 0 0 / 0.07);
 
+  --radius-xs: 0.25rem;
+  --radius-control: 0.5rem;
+  --radius-surface: 0.75rem;
   --radius-button: 0.9375rem;
   --radius-card: 1.125rem;
+  --radius-shell: 1.5rem;
+  --radius-full: 9999px;
 
   --shadow-sticky: 0 -6px 28px -8px rgb(0 0 0 / 0.12);
   --shadow-btn-primary: 0 6px 18px -6px rgb(79 70 229 / 0.6);
@@ -75,7 +80,7 @@
   kbd {
     background-color: var(--color-surface-raised);
     padding: 0 6px;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-xs);
     font-size: 0.625rem;
     color: var(--color-muted);
   }
@@ -112,7 +117,7 @@
 @layer components {
   .btn-sm {
     cursor: pointer;
-    border-radius: 9999px;
+    border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
     padding: 4px 12px;
     font-size: 0.75rem;
@@ -209,13 +214,46 @@
     overflow: hidden;
   }
 
+  .segment {
+    display: flex;
+    flex: 1;
+    gap: 0.375rem;
+    background: var(--color-surface-raised);
+    border-radius: var(--radius-surface);
+    padding: 0.375rem;
+  }
+
+  .segment__item {
+    flex: 1;
+    text-align: center;
+    border-radius: var(--radius-control);
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--color-muted);
+  }
+  .segment__item:hover {
+    color: var(--color-secondary);
+  }
+  .segment__item--active {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    box-shadow: var(--shadow-raised);
+  }
+  .segment__item:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
   .toast {
     background: var(--color-foreground);
     color: var(--color-background);
     font-size: 0.875rem;
     font-weight: 500;
     padding: 10px 16px;
-    border-radius: 9999px;
+    border-radius: var(--radius-full);
     white-space: nowrap;
     box-shadow: var(--shadow-toast);
   }
