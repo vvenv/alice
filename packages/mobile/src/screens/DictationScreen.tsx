@@ -37,14 +37,15 @@ export function DictationScreen({
 
   const playback = usePlayback({ intervalSec, autoNext, voice });
 
-  // Initialize audio on mount
+  // Initialize audio then auto-start on mount
   useEffect(() => {
-    initAudio();
-  }, []);
-
-  // Auto-start on mount
-  useEffect(() => {
-    playback.startDictation(words);
+    let cancelled = false;
+    (async () => {
+      await initAudio();
+      if (cancelled) return;
+      playback.startDictation(words);
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,26 +107,46 @@ export function DictationScreen({
       <View style={styles.content}>
         {/* Word display area */}
         <View style={styles.wordArea}>
-          <Text style={styles.progressText}>
-            {playback.currentIndex + 1} / {playback.wordList.length}
-          </Text>
+          <View style={styles.progressRow}>
+            <Text style={styles.progressText}>
+              {playback.currentIndex + 1}
+              {wrongWords.length > 0
+                ? ` / ${wrongWords.length}`
+                : ""}{" "}
+              / {playback.wordList.length}
+            </Text>
 
-          <TouchableOpacity
+            <TouchableOpacity
+              style={[
+                styles.toggleWordBtn,
+                showWord && styles.toggleWordBtnActive,
+              ]}
+              onPress={() => setShowWord((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.toggleWordText,
+                  showWord && styles.toggleWordTextActive,
+                ]}
+              >
+                {showWord ? "👁 显示中" : "🙈 已隐藏"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
             style={[
               styles.wordCard,
               markedFlash && styles.wordCardFlash,
             ]}
-            onPress={() => setShowWord((v) => !v)}
-            activeOpacity={0.8}
           >
             <Text style={styles.wordText}>
               {showWord && playback.currentIndex < playback.wordList.length
                 ? playback.wordList[playback.currentIndex]!
                 : "•••••"}
             </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.tapHint}>点击显示/隐藏单词</Text>
+          </View>
         </View>
 
         {/* Countdown bar (when auto-next is active) */}
@@ -192,7 +213,7 @@ export function DictationScreen({
               disabled={!isActive}
               activeOpacity={0.7}
             >
-              <Text style={styles.controlBtnText}>⏹ 结束</Text>
+              <Text style={styles.controlBtnTextDanger}>⏹ 结束</Text>
             </TouchableOpacity>
           </View>
 
@@ -276,12 +297,39 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
+  },
+  progressRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
   },
   progressText: {
     fontSize: 16,
     color: "#999",
     fontWeight: "500",
+  },
+  toggleWordBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e2e2e2",
+    backgroundColor: "#fff",
+  },
+  toggleWordBtnActive: {
+    backgroundColor: "#eef2ff",
+    borderColor: "#4a6cf7",
+  },
+  toggleWordText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#999",
+  },
+  toggleWordTextActive: {
+    color: "#4a6cf7",
+    fontWeight: "600",
   },
   wordCard: {
     backgroundColor: "#fff",
@@ -307,9 +355,10 @@ const styles = StyleSheet.create({
     color: "#1a1a2e",
     letterSpacing: 2,
   },
-  tapHint: {
-    fontSize: 12,
-    color: "#bbb",
+  controlBtnTextDanger: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#e74c3c",
   },
 
   // Countdown

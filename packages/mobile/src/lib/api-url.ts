@@ -9,7 +9,7 @@ export function apiUrl(path: string): string {
   if (typeof EXTRA_API_BASE === "string" && EXTRA_API_BASE.length > 0) {
     return `${EXTRA_API_BASE.replace(/\/$/, "")}${path}`;
   }
-  // In dev / Expo Go, default to localhost:3600 (same as web dev server).
-  // Adjust this IP if testing on a physical device.
-  return `http://10.0.2.2:3600${path}`; // Android emulator → host machine
+  // Dev fallback: localhost works on iOS simulator and Expo Go.
+  // For Android emulator use http://10.0.2.2:3600 instead.
+  return `http://localhost:3600${path}`;
 }

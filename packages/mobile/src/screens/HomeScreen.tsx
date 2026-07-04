@@ -145,18 +145,7 @@ export function HomeScreen({ onStartDictation }: HomeScreenProps) {
     ]);
   }, [wrongWords, clearWrong]);
 
-  const handleRemoveWord = useCallback(
-    (word: string) => {
-      Alert.alert("移除错词", `确定将「${word}」从错词本中移除？`, [
-        { text: "取消", style: "cancel" },
-        {
-          text: "移除",
-          onPress: () => removeWrongWord(word),
-        },
-      ]);
-    },
-    [removeWrongWord],
-  );
+  const handleRemoveWord = removeWrongWord;
 
   return (
     <KeyboardAvoidingView

@@ -28,6 +28,18 @@ async function ensureCacheDir(): Promise<void> {
   }
 }
 
+/** Convert an ArrayBuffer to a base64 string. */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000; // 32 KB chunks to avoid call-stack overflow on large files
+  let base64 = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    base64 += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(base64);
+}
+
 /** Fetch TTS audio from server, caching to file system. Returns local file URI. */
 async function fetchTtsAudio(
   text: string,
@@ -53,42 +65,35 @@ async function fetchTtsAudio(
       body: JSON.stringify({ text: ttsInputText(text), voice, speed: TTS_SPEED }),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn(`[TTS] Server returned ${response.status} for "${text}"`);
+      return null;
+    }
 
-    const blob = await response.blob();
-    const reader = new FileReader();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      reader.onload = () => {
-        const result = reader.result as string;
-        const commaIndex = result.indexOf(",");
-        resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
-      };
-      reader.onerror = () => reject(new Error("读取音频失败"));
-      reader.readAsDataURL(blob);
-    });
+    // Use arrayBuffer instead of blob — blob+FileReader silently fails in React Native.
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = arrayBufferToBase64(arrayBuffer);
 
     await FileSystem.writeAsStringAsync(cachePath, base64, {
       encoding: FileSystem.EncodingType.Base64,
     });
 
     return cachePath;
-  } catch {
+  } catch (err) {
+    console.warn(`[TTS] Fetch failed for "${text}":`, err);
     return null;
   }
 }
 
-// Track currently playing sound for stop/cancel
+// ── Playback state ──
 let currentSound: Audio.Sound | null = null;
-let speakResolve: (() => void) | null = null;
-
-function settleSpeak(): void {
-  if (!speakResolve) return;
-  const resolve = speakResolve;
-  speakResolve = null;
-  resolve();
-}
+let currentAbort: (() => void) | null = null;
 
 export async function stopSpeech(): Promise<void> {
+  if (currentAbort) {
+    currentAbort();
+    currentAbort = null;
+  }
   if (currentSound) {
     try {
       await currentSound.stopAsync();
@@ -98,14 +103,11 @@ export async function stopSpeech(): Promise<void> {
     }
     currentSound = null;
   }
-  settleSpeak();
 }
-
-let currentPlayId = 0;
 
 /**
  * Speak a word using server TTS (with local file cache).
- * Falls back to returning false so the caller can use system TTS if available.
+ * Returns false if the TTS server is unreachable or an error occurs.
  */
 export async function speakWord(
   word: string,
@@ -113,42 +115,50 @@ export async function speakWord(
 ): Promise<boolean> {
   await stopSpeech();
 
-  const playId = ++currentPlayId;
-
   try {
     const audioUri = await fetchTtsAudio(word, voice);
-    if (playId !== currentPlayId) return false;
-    if (!audioUri) return false;
+    if (!audioUri) {
+      console.warn(`[TTS] Failed to fetch audio for: ${word}`);
+      return false;
+    }
 
     const { sound } = await Audio.Sound.createAsync(
       { uri: audioUri },
       { shouldPlay: false },
     );
-    if (playId !== currentPlayId) {
-      await sound.unloadAsync();
-      return false;
-    }
 
     currentSound = sound;
 
-    await new Promise<void>((resolve) => {
-      speakResolve = () => {
-        resolve();
+    return new Promise<boolean>((resolve) => {
+      let settled = false;
+
+      currentAbort = () => {
+        if (settled) return;
+        settled = true;
+        resolve(false);
       };
 
       sound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded) return;
+        if (!status.isLoaded || settled) return;
         if (status.didJustFinish) {
+          settled = true;
+          currentAbort = null;
           currentSound = null;
-          settleSpeak();
+          resolve(true);
         }
       });
 
-      sound.playAsync().catch(() => settleSpeak());
+      sound.playAsync().catch((err) => {
+        console.warn(`[TTS] Playback error for "${word}":`, err);
+        if (settled) return;
+        settled = true;
+        currentAbort = null;
+        currentSound = null;
+        resolve(false);
+      });
     });
-
-    return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[TTS] Unexpected error for "${word}":`, err);
     return false;
   }
 }
@@ -157,11 +167,13 @@ export async function speakWord(
 export async function initAudio(): Promise<void> {
   try {
     await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
       playsInSilentModeIOS: true,
       staysActiveInBackground: false,
       shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
     });
-  } catch {
-    // non-critical
+  } catch (e) {
+    console.warn("[Audio] Failed to set audio mode:", e);
   }
 }
