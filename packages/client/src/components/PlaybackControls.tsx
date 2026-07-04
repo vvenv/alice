@@ -142,7 +142,7 @@ export function PlaybackControls({
         {isActive ? (
           <button
             type="button"
-            className={`flex-1 btn-lg btn-lg--active btn-ghost`}
+            className={`flex-1 btn-lg ${skipEnabled ? "btn-lg--active" : "btn-lg--idle"} btn-ghost`}
             disabled={!skipEnabled}
             onClick={onSkipNext}
           >
