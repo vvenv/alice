@@ -53,7 +53,8 @@
       "zhipuApiKey": "YOUR_ZHIPU_API_KEY",
       "zhipuBaseUrl": "https://open.bigmodel.cn/api/paas/v4",
       "visionModel": "glm-4v-flash",
-      "accessCode": "1024",
+      "hmacSecret": "YOUR_HMAC_SECRET",
+      "wechatId": "vvenvw",
       "eas": {
         "projectId": "c3f70d10-17f5-49fe-90b2-7a73d3beb382"
       }

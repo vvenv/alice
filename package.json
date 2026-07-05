@@ -13,6 +13,7 @@
     "build:android": "eas build --platform android --non-interactive",
     "build:ios": "eas build --platform ios --non-interactive",
     "build:mobile": "eas build --platform all --non-interactive",
+    "generate-code": "npx tsx scripts/generate-unlock-code.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

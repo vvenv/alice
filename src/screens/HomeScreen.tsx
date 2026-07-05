@@ -25,6 +25,10 @@ import {
   loadWordInput,
   saveWordInput,
 } from "../lib/storage";
+import {
+  loadOcrUnlockState,
+  verifyUnlockCode,
+} from "../lib/auth";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 
@@ -40,18 +44,21 @@ export function HomeScreen() {
   const [wordInput, setWordInput] = useState("");
   const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
+  const [ocrUnlocked, setOcrUnlocked] = useState(false);
 
   const { toast, showToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [savedInput] = await Promise.all([
+      const [savedInput, , persistedOcrUnlocked] = await Promise.all([
         loadWordInput(),
         loadPersistedWrongWords(),
+        loadOcrUnlockState(),
       ]);
       if (cancelled) return;
       if (savedInput) setWordInput(savedInput);
+      setOcrUnlocked(persistedOcrUnlocked);
       setReady(true);
     })();
     return () => {
@@ -65,6 +72,12 @@ export function HomeScreen() {
 
   const handleOcrResult = useCallback((words: string[]) => {
     setWordInput(words.join("\n"));
+  }, []);
+
+  const handleUnlockOcr = useCallback((code: string): boolean => {
+    const ok = verifyUnlockCode(code);
+    if (ok) setOcrUnlocked(true);
+    return ok;
   }, []);
 
   const handleStart = useCallback(() => {
@@ -127,7 +140,12 @@ export function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
-            <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
+            <OcrSection
+              wordInput={wordInput}
+              ocrUnlocked={ocrUnlocked}
+              onOcrResult={handleOcrResult}
+              onUnlockOcr={handleUnlockOcr}
+            />
             <WordInputSection
               value={wordInput}
               onChange={setWordInput}

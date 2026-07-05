@@ -36,7 +36,54 @@ pnpm android        # Android 模拟器
 | `zhipuApiKey` | 智谱 API Key（OCR） | 空（必填） |
 | `zhipuBaseUrl` | 智谱 API 地址 | `https://open.bigmodel.cn/api/paas/v4` |
 | `visionModel` | OCR 模型 | `glm-4v-flash` |
-| `accessCode` | 使用码 | `1024` |
+| `hmacSecret` | 生成/验证解锁码的密钥 | `alice-dictation-default-secret` |
+| `wechatId` | 付费解锁展示的微信号 | `your_wechat_id` |
+
+## OCR 付费解锁
+
+OCR 拍照识别功能为付费功能，付费流程：
+
+1. **付费墙**：用户看到功能介绍 + 微信号，添加微信完成支付
+2. **输入解锁码**：支付完成后，输入 4 位字母/数字解锁码即可解锁
+3. **持久化**：解锁状态保存在本地，下次启动无需重复输入
+
+解锁码通过 HMAC-SHA256 本地校验，无需远程 API。
+
+### 生成解锁码
+
+你本地运行脚本即可生成解锁码，每个用户可以领取不同的码：
+
+```bash
+# 生成 1 个解锁码
+pnpm generate-code
+
+# 生成 5 个解锁码
+pnpm generate-code --count 5
+
+# 使用自定义密钥（需与 app.json 中的 hmacSecret 一致）
+pnpm generate-code --secret "你的密钥" --count 3
+```
+
+输出示例：
+
+```
+Secret: alice-dictation-default-secret
+Prefix: 00
+Count:  3
+
+  1. FUFW
+     HMAC: 009909f8c5d6483e... (starts with "00" ✓)
+
+  2. GLA8
+     HMAC: 00c265428c950c59... (starts with "00" ✓)
+
+  3. HNRX
+     HMAC: 00a68c057b1a850a... (starts with "00" ✓)
+
+All codes: FUFW, GLA8, HNRX
+```
+
+> **注意**：生成的解锁码必须与 app 内置的 `hmacSecret` 匹配。如果修改了 `app.json` 中的密钥，需要用新密钥重新生成解锁码。
 
 ## 移动端发版（EAS）
 

@@ -1,55 +1,45 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { config } from "./config";
-import { createLogger } from "./logger";
+import { hmacSha256Hex } from "./crypto";
 
-const log = createLogger("Auth");
-const AUTH_KEY = "alice_access_code";
+const OCR_KEY = "alice_ocr_unlocked";
+/** Hex prefix that a valid HMAC must start with. ~1/256 false positive rate. */
+const VALID_PREFIX = "00";
 
-export function getAccessCode(): string | null {
-  return _cachedCode;
+let _ocrUnlocked = false;
+
+export function isOcrUnlocked(): boolean {
+  return _ocrUnlocked;
 }
 
-let _cachedCode: string | null = null;
-
-export function isAuthenticated(): boolean {
-  return _cachedCode !== null;
-}
-
-export async function loadPersistedCode(): Promise<string | null> {
+export async function loadOcrUnlockState(): Promise<boolean> {
   try {
-    _cachedCode = await AsyncStorage.getItem(AUTH_KEY);
-    log.info(`loadPersistedCode: ${_cachedCode === null ? "no code found" : "code loaded"}`);
-    return _cachedCode;
-  } catch (e) {
-    log.warn("Failed to load persisted code:", e);
-    return null;
-  }
-}
-
-export async function saveAccessCode(code: string): Promise<void> {
-  _cachedCode = code;
-  try {
-    await AsyncStorage.setItem(AUTH_KEY, code);
+    _ocrUnlocked = (await AsyncStorage.getItem(OCR_KEY)) === "true";
+    return _ocrUnlocked;
   } catch {
-    // ignore
+    return false;
   }
 }
 
-export async function clearAccessCode(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(AUTH_KEY);
-    _cachedCode = null;
-  } catch {
-    // ignore
+/**
+ * Verify an unlock code locally using HMAC-SHA256.
+ *
+ * A code is valid if:
+ *   HMAC-SHA256(hmacSecret, code.toUpperCase()).startsWith("00")
+ *
+ * This means ~1/256 random 4-char codes will pass — low enough for casual
+ * protection. The secret is embedded in the app; anyone who reverses the
+ * binary can forge codes, but this is a pragmatic trade-off comparable to
+ * most mobile paywalls.
+ */
+export function verifyUnlockCode(code: string): boolean {
+  const hex = hmacSha256Hex(config.hmacSecret, code.toUpperCase());
+  const ok = hex.startsWith(VALID_PREFIX);
+  if (ok) {
+    _ocrUnlocked = true;
+    // fire-and-forget persistence
+    AsyncStorage.setItem(OCR_KEY, "true").catch(() => {});
   }
-}
-
-/** Verify code locally against configured access code. */
-export function authenticate(code: string): boolean {
-  if (code === config.accessCode) {
-    void saveAccessCode(code);
-    return true;
-  }
-  return false;
+  return ok;
 }

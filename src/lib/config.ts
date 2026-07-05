@@ -4,7 +4,10 @@ interface AppConfig {
   zhipuApiKey: string;
   zhipuBaseUrl: string;
   visionModel: string;
-  accessCode: string;
+  /** Secret key for local HMAC-SHA256 unlock code verification. */
+  hmacSecret: string;
+  /** WeChat ID shown to users for payment. */
+  wechatId: string;
 }
 
 function extraString(key: string, fallback: string): string {
@@ -13,8 +16,9 @@ function extraString(key: string, fallback: string): string {
 }
 
 export const config: AppConfig = {
-  zhipuApiKey: extraString("zhipuApiKey", ""),
+  zhipuApiKey: extraString("zhipuApiKey", "YOUR_ZHIPU_API_KEY"),
   zhipuBaseUrl: extraString("zhipuBaseUrl", "https://open.bigmodel.cn/api/paas/v4"),
   visionModel: extraString("visionModel", "glm-4v-flash"),
-  accessCode: extraString("accessCode", "1024"),
+  hmacSecret: extraString("hmacSecret", "YOUR_HMAC_SECRET"),
+  wechatId: extraString("wechatId", "vvenvw"),
 };
