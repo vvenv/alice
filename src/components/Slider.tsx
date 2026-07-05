@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   DimensionValue,
   LayoutChangeEvent,
@@ -27,7 +27,11 @@ export function Slider({
   disabled,
 }: SliderProps) {
   const colors = useThemeColors();
+
+  const containerRef = useRef<View>(null);
   const containerWidth = useRef(0);
+  const containerPageX = useRef(0);
+
   const fraction = (value - min) / (max - min);
   const fillPct: DimensionValue = `${fraction * 100}%`;
   const thumbLeft = THUMB_SIZE / 2 + fraction * (containerWidth.current - THUMB_SIZE);
@@ -42,32 +46,49 @@ export function Slider({
     [min, max, step],
   );
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: () => !disabled,
-      onPanResponderGrant: (evt) => {
-        const x = evt.nativeEvent.locationX;
-        const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
-        onValueChange(snapValue(pct));
-      },
-      onPanResponderMove: (evt) => {
-        const x = evt.nativeEvent.locationX;
-        const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
-        onValueChange(snapValue(pct));
-      },
-    }),
-  ).current;
+  // Keep mutable refs for callbacks so PanResponder never uses stale closures
+  const snapValueRef = useRef(snapValue);
+  snapValueRef.current = snapValue;
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
-  // Thumb position recalculation hack to force re-render with layout
+  // Use pageX (absolute screen coords) instead of locationX to avoid the
+  // Android bug where locationX is measured relative to whichever child view
+  // is under the finger, shifting the coordinate system on every re-render.
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabledRef.current,
+        onMoveShouldSetPanResponder: () => !disabledRef.current,
+        onPanResponderGrant: (evt) => {
+          const x = evt.nativeEvent.pageX - containerPageX.current;
+          const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
+          onValueChangeRef.current(snapValueRef.current(pct));
+        },
+        onPanResponderMove: (evt) => {
+          const x = evt.nativeEvent.pageX - containerPageX.current;
+          const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
+          onValueChangeRef.current(snapValueRef.current(pct));
+        },
+      }),
+    [],
+  );
+
   const [, setLayoutReady] = useState(false);
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     containerWidth.current = e.nativeEvent.layout.width;
+    // Measure the container's absolute X so we can translate pageX to local coords
+    containerRef.current?.measureInWindow((x) => {
+      containerPageX.current = x;
+    });
     setLayoutReady(true);
   }, []);
 
   return (
     <View
+      ref={containerRef}
       style={[styles.container, disabled && styles.disabled]}
       onLayout={onLayout}
       {...panResponder.panHandlers}
