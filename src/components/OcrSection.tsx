@@ -1,13 +1,24 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  LayoutAnimation,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
   ViewStyle,
 } from "react-native";
+
+// Enable LayoutAnimation on Android
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 import { config } from "../lib/config";
 import { takePhoto, pickFromAlbum, ocrWordsFromImage } from "../lib/ocr";
@@ -35,6 +46,12 @@ export function OcrSection({
   const [unlockCode, setUnlockCode] = useState("");
   const [unlockError, setUnlockError] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
+  const [paywallCollapsed, setPaywallCollapsed] = useState(false);
+
+  const togglePaywall = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPaywallCollapsed((v) => !v);
+  }, []);
 
   const runOcr = useCallback(
     async (getUri: () => Promise<string | null>, messagePrefix: string) => {
@@ -93,36 +110,55 @@ export function OcrSection({
       <View
         style={[styles.container, styles.paywallContainer, { borderColor: colors.border }]}
       >
-        <View style={styles.paywallHeader}>
+        <TouchableOpacity
+          style={styles.paywallHeader}
+          onPress={togglePaywall}
+          activeOpacity={0.6}
+        >
           <Text style={styles.paywallLockIcon}>🔒</Text>
           <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-            OCR 拍照识别
+            拍照识别
           </Text>
-        </View>
-        <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-          拍照或从相册选取图片，自动识别图片中的英文单词，快速生成听写列表。
-        </Text>
-        <View style={styles.wechatRow}>
-          <Text style={styles.wechatIcon}>💬</Text>
-          <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-            添加微信号
-          </Text>
-          <Text style={[styles.wechatId, { color: colors.primary }]}>
-            {config.wechatId}
-          </Text>
-          <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-            完成支付
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.unlockBtn, { backgroundColor: colors.primary }]}
-          onPress={() => setShowUnlock(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.unlockBtnText, { color: colors.background }]}>
-            我已支付，输入解锁码
+          <Text style={[styles.chevron, { color: colors.muted }]}>
+            {paywallCollapsed ? "▸" : "▾"}
           </Text>
         </TouchableOpacity>
+        {!paywallCollapsed && (
+          <>
+            <Text style={[styles.paywallDesc, { color: colors.muted }]}>
+              拍照或从相册选取图片，自动识别图片中的英文单词，快速生成听写列表。
+            </Text>
+            <View style={styles.priceBadge}>
+              <Text style={[styles.priceAmount, { color: colors.foreground }]}>
+                ¥9.9
+              </Text>
+              <Text style={[styles.priceLabel, { color: colors.muted }]}>
+                一次性解锁，永久使用
+              </Text>
+            </View>
+            <View style={styles.wechatRow}>
+              <Text style={styles.wechatIcon}>💬</Text>
+              <Text style={[styles.wechatLabel, { color: colors.muted }]}>
+                添加微信号
+              </Text>
+              <Text style={[styles.wechatId, { color: colors.primary }]}>
+                {config.wechatId}
+              </Text>
+              <Text style={[styles.wechatLabel, { color: colors.muted }]}>
+                完成支付
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.unlockBtn, { backgroundColor: colors.primary }]}
+              onPress={() => setShowUnlock(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.unlockBtnText, { color: colors.background }]}>
+                我已支付，输入解锁码
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     );
   }
@@ -275,6 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    width: "100%",
   },
   paywallLockIcon: {
     fontSize: 20,
@@ -282,6 +319,10 @@ const styles = StyleSheet.create({
   paywallTitle: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  chevron: {
+    fontSize: 16,
+    marginLeft: "auto",
   },
   paywallDesc: {
     fontSize: 13,
@@ -294,6 +335,18 @@ const styles = StyleSheet.create({
     gap: 4,
     flexWrap: "wrap",
     justifyContent: "center",
+  },
+  priceBadge: {
+    alignItems: "center",
+    gap: 2,
+    marginVertical: 4,
+  },
+  priceAmount: {
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  priceLabel: {
+    fontSize: 12,
   },
   wechatIcon: {
     fontSize: 16,

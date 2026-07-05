@@ -151,7 +151,7 @@ function generateCode(secret: string, prefix: string): string {
 
 function main() {
   const args = process.argv.slice(2);
-  let secret = "alice-dictation-default-secret";
+  let secret = "YOUR_HMAC_SECRET";
   let count = 1;
   let prefix = "00";
 
