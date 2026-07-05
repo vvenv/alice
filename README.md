@@ -37,3 +37,34 @@ pnpm android        # Android 模拟器
 | `zhipuBaseUrl` | 智谱 API 地址 | `https://open.bigmodel.cn/api/paas/v4` |
 | `visionModel` | OCR 模型 | `glm-4v-flash` |
 | `accessCode` | 使用码 | `1024` |
+
+## 移动端发版（EAS）
+
+首次发版前在本地完成 EAS 初始化，并将 Access Token 配置到 GitHub Secrets：
+
+```bash
+pnpm exec eas login
+pnpm exec eas init          # 写入 app.json 的 expo.extra.eas.projectId
+```
+
+在 GitHub → Settings → Secrets → Actions 添加 `EXPO_TOKEN`（Expo 账号 → Access Tokens）。
+
+### GitHub Actions 手动发版
+
+仓库 **Actions → Release → Run workflow**，可选择：
+
+| 参数 | 说明 |
+|------|------|
+| platform | `all` / `android` / `ios` |
+| profile | `preview`（内测 APK）/ `production`（商店包） |
+| submit | 是否自动提交应用商店（仅 production） |
+
+推送 `v*` 标签（如 `v0.1.0`）会自动触发 production 全平台构建。
+
+### 本地发版
+
+```bash
+pnpm build:android -- --profile preview
+pnpm build:ios -- --profile production
+pnpm build:mobile -- --profile preview
+```

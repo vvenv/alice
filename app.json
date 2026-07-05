@@ -9,7 +9,9 @@
     "splash": {
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vvenv.alice",
@@ -23,7 +25,11 @@
       },
       "package": "com.vvenv.alice",
       "permissions": [
-        "CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
@@ -47,7 +53,11 @@
       "zhipuApiKey": "YOUR_ZHIPU_API_KEY",
       "zhipuBaseUrl": "https://open.bigmodel.cn/api/paas/v4",
       "visionModel": "glm-4v-flash",
-      "accessCode": "1024"
-    }
+      "accessCode": "1024",
+      "eas": {
+        "projectId": "c3f70d10-17f5-49fe-90b2-7a73d3beb382"
+      }
+    },
+    "owner": "vvenv"
   }
 }

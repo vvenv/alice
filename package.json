@@ -3,23 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "main": "index.js",
+  "packageManager": "pnpm@11.10.0",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build": "expo export --platform web --output-dir dist",
+    "build:android": "eas build --platform android --non-interactive",
+    "build:ios": "eas build --platform ios --non-interactive",
+    "build:mobile": "eas build --platform all --non-interactive",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@babel/runtime": "^7.20.0",
-    "@expo/metro-config": "~57.0.0",
+    "@babel/runtime": "^8.0.0",
+    "@expo/metro-config": "^57.0.3",
     "@expo/metro-runtime": "^57.0.3",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-navigation/bottom-tabs": "^7.18.7",
     "@react-navigation/native": "^7.3.7",
     "@react-navigation/native-stack": "^7.17.9",
-    "babel-preset-expo": "~57.0.1",
+    "babel-preset-expo": "^57.0.1",
     "expo": "^57.0.2",
     "expo-audio": "^57.0.0",
     "expo-clipboard": "^57.0.0",
@@ -36,9 +41,10 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-transform-runtime": "^7.0.0",
+    "@babel/core": "^8.0.1",
+    "@babel/plugin-transform-runtime": "^8.0.1",
     "@types/react": "^19.2.17",
+    "eas-cli": "^20.5.1",
     "prettier": "^3.9.4",
     "typescript": "^6.0.3"
   }

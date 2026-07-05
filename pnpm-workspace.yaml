@@ -1,3 +1,5 @@
+allowBuilds:
+  dtrace-provider: true
 minimumReleaseAgeExclude:
   - '@react-navigation/bottom-tabs@7.18.7'
   - '@react-navigation/core@7.21.5'
