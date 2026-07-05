@@ -13,13 +13,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OcrSection } from "../components/OcrSection";
 import { PlaybackControls } from "../components/PlaybackControls";
-import { ProgressCard } from "../components/ProgressCard";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
-import { WrongWordsPanel } from "../components/WrongWordsPanel";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
-import { useWrongWords } from "../hooks/useWrongWords";
 import {
   DEFAULT_TTS_VOICE,
   loadPersistedVoice,
@@ -43,17 +40,8 @@ export function HomeScreen() {
   const [intervalSec, setIntervalSec] = useState(8);
   const [autoNext, setAutoNext] = useState(true);
   const [voice, setVoice] = useState(DEFAULT_TTS_VOICE);
-  const [showWord, setShowWord] = useState(false);
 
   const { toast, showToast } = useToast();
-  const {
-    wrongWords,
-    markedFlash,
-    markWrong,
-    exportWrong,
-    clearWrong,
-    removeWrongWord,
-  } = useWrongWords();
   const playback = usePlayback({ intervalSec, autoNext, voice });
 
   useEffect(() => {
@@ -87,12 +75,6 @@ export function HomeScreen() {
     setWordInput(words.join("\n"));
   }, []);
 
-  const handleMarkWrong = useCallback(() => {
-    if (!playback.isActive || playback.currentIndex >= playback.wordList.length)
-      return;
-    markWrong(playback.wordList[playback.currentIndex]!);
-  }, [playback.isActive, playback.currentIndex, playback.wordList, markWrong]);
-
   const handlePlayToggle = useCallback(() => {
     if (playback.playState === "idle") {
       const words = parseWords(wordInput);
@@ -109,17 +91,6 @@ export function HomeScreen() {
     }
     playback.resumeDictation();
   }, [playback, showToast, wordInput]);
-
-  const handleExportWrong = useCallback(async () => {
-    const msg = await exportWrong();
-    if (msg) showToast(msg);
-  }, [exportWrong, showToast]);
-
-  const handleClearWrong = useCallback(() => {
-    if (wrongWords.length === 0) return;
-    clearWrong();
-    showToast("已清空错词本");
-  }, [wrongWords, clearWrong, showToast]);
 
   if (!ready) {
     return (
