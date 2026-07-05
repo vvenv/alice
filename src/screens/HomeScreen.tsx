@@ -37,7 +37,7 @@ export function HomeScreen() {
   const { mode, toggleTheme } = useThemeMode();
   const [ready, setReady] = useState(false);
   const [wordInput, setWordInput] = useState("");
-  const [intervalSec, setIntervalSec] = useState(8);
+  const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
   const [voice, setVoice] = useState(DEFAULT_TTS_VOICE);
 
@@ -132,12 +132,14 @@ export function HomeScreen() {
         >
           <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
 
-          <WordInputSection
-            value={wordInput}
-            onChange={setWordInput}
-            onSetSample={() => setWordInput(SAMPLE_WORDS)}
-            onClear={() => setWordInput("")}
-          />
+          <View style={styles.wordInputWrapper}>
+            <WordInputSection
+              value={wordInput}
+              onChange={setWordInput}
+              onSetSample={() => setWordInput(SAMPLE_WORDS)}
+              onClear={() => setWordInput("")}
+            />
+          </View>
         </ScrollView>
 
         <View style={styles.playbackControls}>
@@ -189,10 +191,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingTop: 8,
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     gap: 16,
-    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -202,5 +204,8 @@ const styles = StyleSheet.create({
   playbackControls: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+  },
+  wordInputWrapper: {
+    flex: 1,
   },
 });

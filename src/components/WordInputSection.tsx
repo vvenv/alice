@@ -66,9 +66,11 @@ export function WordInputSection({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     gap: 8,
   },
   textArea: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: radii.card,
     paddingHorizontal: 16,

@@ -12,8 +12,6 @@ import { radii } from "../lib/designTokens";
 import { useThemeColors, type ThemeColors } from "../lib/theme";
 import { Slider } from "./Slider";
 
-type PlayState = "idle" | "playing" | "paused";
-
 interface PlaybackControlsProps {
   intervalSec: number;
   autoNext: boolean;
@@ -127,7 +125,7 @@ export function PlaybackControls({
               },
             ]}
           >
-            开始
+            ▶ 开始
           </Text>
         </TouchableOpacity>
       </View>
@@ -172,16 +170,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  countdownBar: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  countdownFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
   countValue: {
     fontSize: 14,
     fontWeight: "600",
@@ -212,39 +200,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  secondaryBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  btnDisabled: {
-    opacity: 0.4,
-  },
-  markBtnDisabled: {
-    opacity: 0.3,
-  },
-  markBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
-
-const secondaryBtnStyle = (colors: ThemeColors): ViewStyle => ({
-  flex: 1,
-  minHeight: 52,
-  borderWidth: 1,
-  borderColor: colors.border,
-  backgroundColor: colors.background,
-  borderRadius: radii.button,
-  justifyContent: "center",
-  alignItems: "center",
-});
-
-const markBtnStyle = (colors: ThemeColors): ViewStyle => ({
-  minHeight: 52,
-  backgroundColor: colors.dangerSoft,
-  borderRadius: radii.button,
-  justifyContent: "center",
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: colors.dangerHover,
 });
