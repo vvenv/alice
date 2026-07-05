@@ -77,8 +77,6 @@ jobs:
       - name: Typecheck
         run: pnpm lint
 
-      # release version validation skipped — only relevant for tag-triggered workflows
-
       - name: Validate EAS project
         run: |
           set -euo pipefail
