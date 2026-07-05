@@ -1,4 +1,4 @@
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Switch, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 import { SYSTEM_TTS_VOICES } from "../lib/dictation";
 import { radii } from "../lib/designTokens";
@@ -154,7 +154,7 @@ export function PlaybackControls({
         </TouchableOpacity>
         {isActive && (
           <TouchableOpacity
-            style={[styles.secondaryBtn(colors), !skipEnabled && styles.btnDisabled]}
+            style={[secondaryBtnStyle(colors), !skipEnabled && styles.btnDisabled]}
             disabled={!skipEnabled}
             onPress={onSkipNext}
             activeOpacity={0.7}
@@ -163,7 +163,7 @@ export function PlaybackControls({
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          style={[styles.secondaryBtn(colors), !isActive && styles.btnDisabled]}
+          style={[secondaryBtnStyle(colors), !isActive && styles.btnDisabled]}
           disabled={!isActive}
           onPress={onStop}
           activeOpacity={0.7}
@@ -174,7 +174,7 @@ export function PlaybackControls({
 
       {/* Mark wrong */}
       <TouchableOpacity
-        style={[styles.markBtn(colors), !markEnabled && styles.markBtnDisabled]}
+        style={[markBtnStyle(colors), !markEnabled && styles.markBtnDisabled]}
         disabled={!markEnabled}
         onPress={onMarkWrong}
         activeOpacity={0.7}
@@ -262,16 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
   },
-  secondaryBtn: (colors: ThemeColors) => ({
-    flex: 1,
-    minHeight: 52,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-    borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
-  }),
   secondaryBtnText: {
     fontSize: 17,
     fontWeight: "600",
@@ -279,15 +269,6 @@ const styles = StyleSheet.create({
   btnDisabled: {
     opacity: 0.4,
   },
-  markBtn: (colors: ThemeColors) => ({
-    minHeight: 52,
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.dangerHover,
-  }),
   markBtnDisabled: {
     opacity: 0.3,
   },
@@ -295,4 +276,25 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
   },
+});
+
+const secondaryBtnStyle = (colors: ThemeColors): ViewStyle => ({
+  flex: 1,
+  minHeight: 52,
+  borderWidth: 1,
+  borderColor: colors.border,
+  backgroundColor: colors.background,
+  borderRadius: radii.button,
+  justifyContent: "center",
+  alignItems: "center",
+});
+
+const markBtnStyle = (colors: ThemeColors): ViewStyle => ({
+  minHeight: 52,
+  backgroundColor: colors.dangerSoft,
+  borderRadius: radii.button,
+  justifyContent: "center",
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: colors.dangerHover,
 });

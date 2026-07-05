@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import {
+  DimensionValue,
   LayoutChangeEvent,
   PanResponder,
   StyleSheet,
@@ -26,9 +27,10 @@ export function Slider({
   disabled,
 }: SliderProps) {
   const colors = useThemeColors();
-  const trackWidth = useRef(0);
+  const containerWidth = useRef(0);
   const fraction = (value - min) / (max - min);
-  const fillPct = `${fraction * 100}%`;
+  const fillPct: DimensionValue = `${fraction * 100}%`;
+  const thumbLeft = THUMB_SIZE / 2 + fraction * (containerWidth.current - THUMB_SIZE);
 
   const snapValue = useCallback(
     (pct: number) => {
@@ -46,12 +48,12 @@ export function Slider({
       onMoveShouldSetPanResponder: () => !disabled,
       onPanResponderGrant: (evt) => {
         const x = evt.nativeEvent.locationX;
-        const pct = (x - 12) / (trackWidth.current - 24);
+        const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
         onValueChange(snapValue(pct));
       },
       onPanResponderMove: (evt) => {
         const x = evt.nativeEvent.locationX;
-        const pct = (x - 12) / (trackWidth.current - 24);
+        const pct = (x - THUMB_SIZE / 2) / (containerWidth.current - THUMB_SIZE);
         onValueChange(snapValue(pct));
       },
     }),
@@ -60,7 +62,7 @@ export function Slider({
   // Thumb position recalculation hack to force re-render with layout
   const [, setLayoutReady] = useState(false);
   const onLayout = useCallback((e: LayoutChangeEvent) => {
-    trackWidth.current = e.nativeEvent.layout.width;
+    containerWidth.current = e.nativeEvent.layout.width;
     setLayoutReady(true);
   }, []);
 
@@ -87,7 +89,7 @@ export function Slider({
         style={[
           styles.thumb,
           {
-            left: fillPct as unknown as number,
+            left: thumbLeft,
             backgroundColor: colors.primary,
             shadowColor: colors.primary,
           },
@@ -102,6 +104,7 @@ const TRACK_HEIGHT = 6;
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     height: 40,
     justifyContent: "center",
     paddingHorizontal: THUMB_SIZE / 2,
