@@ -1,14 +1,6 @@
-name: CI & Release
+name: CI
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - v*
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       platform:
@@ -46,41 +38,8 @@ env:
   PNPM_VERSION: "11.10.0"
 
 jobs:
-  build:
-    name: Build
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js and pnpm
-        uses: ./.github/actions/setup-node-pnpm
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck
-        run: pnpm lint
-
-      - name: Build web bundle
-        run: pnpm build
-
-      - name: Upload web build
-        uses: actions/upload-artifact@v7
-        with:
-          name: web-dist
-          path: dist
-          retention-days: 7
-
   plan:
     name: Plan
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       platform: ${{ steps.meta.outputs.platform }}
@@ -105,7 +64,6 @@ jobs:
   release:
     name: "${{ needs.plan.outputs.platform }} · ${{ needs.plan.outputs.profile }}"
     needs: plan
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
