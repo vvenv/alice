@@ -48,7 +48,7 @@ export function OcrSection({ wordInput, onOcrResult }: OcrSectionProps) {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.primaryBtn(colors), ocrBusy && styles.btnDisabled]}
+        style={[primaryBtnStyle(colors), ocrBusy && styles.btnDisabled]}
         onPress={processOcr}
         disabled={ocrBusy}
         activeOpacity={0.7}
@@ -69,23 +69,26 @@ export function OcrSection({ wordInput, onOcrResult }: OcrSectionProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  primaryBtn: (colors: ThemeColors) => ({
+function primaryBtnStyle(colors: ThemeColors) {
+  return {
     minHeight: 52,
     backgroundColor: colors.primary,
     borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingHorizontal: 20,
     shadowColor: colors.primary,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
-  }),
+  };
+}
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 12,
+  },
   primaryBtnText: {
     fontSize: 17,
     fontWeight: "600",
