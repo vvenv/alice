@@ -51,15 +51,9 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "platform=all" >> "$GITHUB_OUTPUT"
-            echo "profile=production" >> "$GITHUB_OUTPUT"
-            echo "submit=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
-            echo "profile=${{ inputs.profile }}" >> "$GITHUB_OUTPUT"
-            echo "submit=${{ inputs.submit }}" >> "$GITHUB_OUTPUT"
-          fi
+          echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+          echo "profile=${{ inputs.profile }}" >> "$GITHUB_OUTPUT"
+          echo "submit=${{ inputs.submit }}" >> "$GITHUB_OUTPUT"
 
   release:
     name: "${{ needs.plan.outputs.platform }} · ${{ needs.plan.outputs.profile }}"
@@ -84,7 +78,6 @@ jobs:
         run: pnpm lint
 
       - name: Validate release version
-        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           TAG_VERSION="${GITHUB_REF_NAME#v}"
