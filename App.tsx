@@ -4,15 +4,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
+import type { RootStackParamList } from "./src/navigation/types";
 import { AuthScreen } from "./src/screens/AuthScreen";
+import { DictationScreen } from "./src/screens/DictationScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { loadPersistedCode } from "./src/lib/auth";
 import { ThemeProvider, useThemeColors } from "./src/lib/theme";
 
-export type RootStackParamList = {
-  Auth: undefined;
-  Home: undefined;
-};
+export type { RootStackParamList };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -54,12 +53,27 @@ function AppContent() {
               )}
             </Stack.Screen>
           ) : (
-            <Stack.Screen
-              name="Home"
-              options={{ headerShown: false, gestureEnabled: false }}
-            >
-              {() => <HomeScreen />}
-            </Stack.Screen>
+            <>
+              <Stack.Screen
+                name="Home"
+                options={{ headerShown: false, gestureEnabled: false }}
+              >
+                {() => <HomeScreen />}
+              </Stack.Screen>
+              <Stack.Screen
+                name="Dictation"
+                options={{ headerShown: false, gestureEnabled: false }}
+              >
+                {(props) => (
+                  <DictationScreen
+                    words={props.route.params.words}
+                    intervalSec={props.route.params.intervalSec}
+                    autoNext={props.route.params.autoNext}
+                    onEnd={() => props.navigation.goBack()}
+                  />
+                )}
+              </Stack.Screen>
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>

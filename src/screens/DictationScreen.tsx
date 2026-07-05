@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -7,35 +8,36 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PlaybackControls } from "../components/PlaybackControls";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { initAudio } from "../lib/tts";
+import { useThemeColors } from "../lib/theme";
 
 interface DictationScreenProps {
   words: string[];
-  voice: string;
   intervalSec: number;
   autoNext: boolean;
   onEnd: () => void;
-  brokenWords: string[];
 }
 
 export function DictationScreen({
   words,
-  voice,
-  intervalSec,
-  autoNext,
+  intervalSec: initialIntervalSec,
+  autoNext: initialAutoNext,
   onEnd,
-  brokenWords,
 }: DictationScreenProps) {
+  const colors = useThemeColors();
   const [showWord, setShowWord] = useState(false);
+  const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
+  const [autoNext, setAutoNext] = useState(initialAutoNext);
 
   const { toast, showToast } = useToast();
   const { wrongWords, markedFlash, markWrong, exportWrong, clearWrong, removeWrongWord } =
-    useWrongWords(brokenWords);
+    useWrongWords();
 
-  const playback = usePlayback({ intervalSec, autoNext, voice });
+  const playback = usePlayback({ intervalSec, autoNext });
 
   // Initialize audio then auto-start on mount
   useEffect(() => {
@@ -104,15 +106,21 @@ export function DictationScreen({
         <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Word display area */}
         <View style={styles.wordArea}>
           <View style={styles.progressRow}>
             <Text style={styles.progressText}>
               {playback.currentIndex + 1}
-              {wrongWords.length > 0
-                ? ` / ${wrongWords.length}`
-                : ""}{" "}
+            </Text>
+            <Text style={[styles.progressText, { color: colors.foreground }]}>
+            / ${wrongWords.length}
+            </Text>
+            <Text style={styles.progressText}>
               / {playback.wordList.length}
             </Text>
 
@@ -148,6 +156,15 @@ export function DictationScreen({
             </Text>
           </View>
         </View>
+
+        {/* Playback settings */}
+        <PlaybackControls
+          intervalSec={intervalSec}
+          autoNext={autoNext}
+          onIntervalChange={setIntervalSec}
+          onAutoNextChange={setAutoNext}
+          showPlayButton={false}
+        />
 
         {/* Countdown bar (when auto-next is active) */}
         {isActive && autoNext && playback.remainingMs !== null ? (
@@ -261,7 +278,7 @@ export function DictationScreen({
             </View>
           )}
         </View>
-      </View>
+      </ScrollView>
 
       {/* Toast */}
       {toast ? (
@@ -286,8 +303,11 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#4a6cf7",
   },
-  content: {
+  scroll: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     padding: 20,
     gap: 20,
   },

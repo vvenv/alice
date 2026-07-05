@@ -47,15 +47,15 @@ importers:
       expo-constants:
         specifier: ^57.0.3
         version: 57.0.3(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7))
-      expo-file-system:
-        specifier: ^57.0.0
-        version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7))
       expo-image-manipulator:
         specifier: ^57.0.2
         version: 57.0.2(expo@57.0.2)
       expo-image-picker:
         specifier: ^57.0.2
         version: 57.0.2(expo@57.0.2)
+      expo-speech:
+        specifier: ^57.0.0
+        version: 57.0.0(expo@57.0.2)
       expo-status-bar:
         specifier: ^57.0.0
         version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)
@@ -1246,6 +1246,11 @@ packages:
   expo-server@57.0.0:
     resolution: {integrity: sha512-18byjwFbHVFrGzI4IH1o2MZiiYwvO/y3d+JL3sq50Lg3Id1titwIRMh1fjbHbpM+wP6x14KJY0Ers1UYsjGq8Q==}
     engines: {node: '>=20.16.0'}
+
+  expo-speech@57.0.0:
+    resolution: {integrity: sha512-AOTdEkrFEq6t7ilQLOOZbrLkQrLYDSBC8aqcbhQMHgxe89yKqAAJ+r1hE0HqkNeK9YyV0mQ1+XizEmIX/djh5Q==}
+    peerDependencies:
+      expo: '*'
 
   expo-status-bar@57.0.0:
     resolution: {integrity: sha512-wq1fDVAjfrzCj67hOcvEkGpgRrb6xVI7oSA3bfsQ08SFk8il7vGixJq+xyEbtdcrI9CDiNKQrT3ZIjgnyGbbBA==}
@@ -3841,6 +3846,10 @@ snapshots:
       react-native: 0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7)
 
   expo-server@57.0.0: {}
+
+  expo-speech@57.0.0(expo@57.0.2):
+    dependencies:
+      expo: 57.0.2(@babel/core@7.29.7)(@expo/dom-webview@57.0.0)(@expo/metro-runtime@57.0.3)(react-dom@19.2.7(react@19.2.7))(react-native-web@0.21.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
 
   expo-status-bar@57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.7))(react@19.2.7):
     dependencies:

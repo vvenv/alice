@@ -9,20 +9,17 @@ import {
   Text,
   View,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OcrSection } from "../components/OcrSection";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
-import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
-import {
-  DEFAULT_TTS_VOICE,
-  loadPersistedVoice,
-  parseWords,
-  saveTtsVoice,
-} from "../lib/dictation";
+import type { RootStackParamList } from "../navigation/types";
+import { parseWords } from "../lib/dictation";
 import {
   loadPersistedWrongWords,
   loadWordInput,
@@ -32,29 +29,28 @@ import { useThemeColors, useThemeMode } from "../lib/theme";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
 
+type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
+
 export function HomeScreen() {
+  const navigation = useNavigation<HomeNavigation>();
   const colors = useThemeColors();
   const { mode, toggleTheme } = useThemeMode();
   const [ready, setReady] = useState(false);
   const [wordInput, setWordInput] = useState("");
   const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
-  const [voice, setVoice] = useState(DEFAULT_TTS_VOICE);
 
   const { toast, showToast } = useToast();
-  const playback = usePlayback({ intervalSec, autoNext, voice });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [savedInput, savedVoice] = await Promise.all([
+      const [savedInput] = await Promise.all([
         loadWordInput(),
-        loadPersistedVoice(),
         loadPersistedWrongWords(),
       ]);
       if (cancelled) return;
       if (savedInput) setWordInput(savedInput);
-      setVoice(savedVoice);
       setReady(true);
     })();
     return () => {
@@ -66,31 +62,22 @@ export function HomeScreen() {
     if (ready) saveWordInput(wordInput);
   }, [wordInput, ready]);
 
-  const handleVoiceChange = useCallback((next: string) => {
-    setVoice(next);
-    saveTtsVoice(next);
-  }, []);
-
   const handleOcrResult = useCallback((words: string[]) => {
     setWordInput(words.join("\n"));
   }, []);
 
-  const handlePlayToggle = useCallback(() => {
-    if (playback.playState === "idle") {
-      const words = parseWords(wordInput);
-      if (words.length === 0) {
-        showToast("请先输入单词列表");
-        return;
-      }
-      playback.startDictation(words);
+  const handleStart = useCallback(() => {
+    const words = parseWords(wordInput);
+    if (words.length === 0) {
+      showToast("请先输入单词列表");
       return;
     }
-    if (playback.playState === "playing") {
-      playback.pauseDictation();
-      return;
-    }
-    playback.resumeDictation();
-  }, [playback, showToast, wordInput]);
+    navigation.navigate("Dictation", {
+      words,
+      intervalSec,
+      autoNext,
+    });
+  }, [autoNext, intervalSec, navigation, showToast, wordInput]);
 
   if (!ready) {
     return (
@@ -146,11 +133,9 @@ export function HomeScreen() {
           <PlaybackControls
             intervalSec={intervalSec}
             autoNext={autoNext}
-            voice={voice}
             onIntervalChange={setIntervalSec}
             onAutoNextChange={setAutoNext}
-            onVoiceChange={handleVoiceChange}
-            onPlayToggle={handlePlayToggle}
+            onPlayToggle={handleStart}
           />
         </View>
         <Toast message={toast} />

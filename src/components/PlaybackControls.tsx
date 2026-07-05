@@ -4,77 +4,33 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
 
-import { SYSTEM_TTS_VOICES } from "../lib/dictation";
 import { radii } from "../lib/designTokens";
-import { useThemeColors, type ThemeColors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import { Slider } from "./Slider";
 
 interface PlaybackControlsProps {
   intervalSec: number;
   autoNext: boolean;
-  voice: string;
   onIntervalChange: (sec: number) => void;
   onAutoNextChange: (auto: boolean) => void;
-  onVoiceChange: (voice: string) => void;
-  onPlayToggle: () => void;
+  onPlayToggle?: () => void;
+  showPlayButton?: boolean;
 }
 
 export function PlaybackControls({
   intervalSec,
   autoNext,
-  voice,
   onIntervalChange,
   onAutoNextChange,
-  onVoiceChange,
   onPlayToggle,
+  showPlayButton = true,
 }: PlaybackControlsProps) {
   const colors = useThemeColors();
 
   return (
     <View style={styles.container}>
-      {/* Voice selector — only when idle */}
-      <View style={styles.row}>
-        <Text style={[styles.label, { color: colors.muted }]}>音色</Text>
-        <View
-          style={[styles.segment, { backgroundColor: colors.surfaceRaised }]}
-        >
-          {SYSTEM_TTS_VOICES.map((item) => {
-            const active = voice === item.id;
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.segmentItem,
-                  active && {
-                    backgroundColor: colors.background,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.1,
-                    shadowRadius: 2,
-                    shadowOffset: { width: 0, height: 1 },
-                    elevation: 2,
-                  },
-                ]}
-                onPress={() => onVoiceChange(item.id)}
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: active ? colors.foreground : colors.muted },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Interval / Countdown */}
       <View style={styles.row}>
         <Text style={[styles.label, { color: colors.muted }]}>间隔</Text>
         <View style={styles.sliderArea}>
@@ -100,35 +56,36 @@ export function PlaybackControls({
         </View>
       </View>
 
-      {/* Play / Skip / Stop */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={[
-            styles.mainBtn,
-            {
-              backgroundColor: colors.primary,
-              shadowColor: colors.primary,
-              shadowOpacity: 0.35,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            },
-          ]}
-          onPress={onPlayToggle}
-          activeOpacity={0.7}
-        >
-          <Text
+      {showPlayButton && onPlayToggle ? (
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
             style={[
-              styles.mainBtnTextBase,
+              styles.mainBtn,
               {
-                color: colors.background,
+                backgroundColor: colors.primary,
+                shadowColor: colors.primary,
+                shadowOpacity: 0.35,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               },
             ]}
+            onPress={onPlayToggle}
+            activeOpacity={0.7}
           >
-            ▶ 开始
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text
+              style={[
+                styles.mainBtnTextBase,
+                {
+                  color: colors.background,
+                },
+              ]}
+            >
+              ▶ 开始
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -145,24 +102,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     flexShrink: 0,
-  },
-  segment: {
-    flex: 1,
-    flexDirection: "row",
-    borderRadius: radii.surface,
-    padding: 4,
-    gap: 6,
-  },
-  segmentItem: {
-    flex: 1,
-    alignItems: "center",
-    borderRadius: radii.control,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-  },
-  segmentText: {
-    fontSize: 14,
-    fontWeight: "500",
   },
   sliderArea: {
     flex: 1,
