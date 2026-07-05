@@ -6,12 +6,12 @@ on:
       platform:
         description: 构建平台
         required: true
-        default: all
+        default: android
         type: choice
         options:
-          - all
           - android
           - ios
+          - web
       profile:
         description: EAS 构建配置
         required: true
