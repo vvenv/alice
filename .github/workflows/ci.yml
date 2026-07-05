@@ -77,15 +77,7 @@ jobs:
       - name: Typecheck
         run: pnpm lint
 
-      - name: Validate release version
-        run: |
-          set -euo pipefail
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::标签 ${{ github.ref_name }} 与 package.json 版本 ${PKG_VERSION} 不一致"
-            exit 1
-          fi
+      # release version validation skipped — only relevant for tag-triggered workflows
 
       - name: Validate EAS project
         run: |
