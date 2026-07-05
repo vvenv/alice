@@ -1,4 +1,11 @@
-import { StyleSheet, Switch, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 import { SYSTEM_TTS_VOICES } from "../lib/dictation";
 import { radii } from "../lib/designTokens";
@@ -8,122 +15,91 @@ import { Slider } from "./Slider";
 type PlayState = "idle" | "playing" | "paused";
 
 interface PlaybackControlsProps {
-  playState: PlayState;
   intervalSec: number;
   autoNext: boolean;
   voice: string;
-  remainingMs: number | null;
-  currentIndex: number;
-  wordList: string[];
   onIntervalChange: (sec: number) => void;
   onAutoNextChange: (auto: boolean) => void;
   onVoiceChange: (voice: string) => void;
   onPlayToggle: () => void;
-  onStop: () => void;
-  onSkipNext: () => void;
-  onMarkWrong: () => void;
 }
 
 export function PlaybackControls({
-  playState,
   intervalSec,
   autoNext,
   voice,
-  remainingMs,
-  currentIndex,
-  wordList,
   onIntervalChange,
   onAutoNextChange,
   onVoiceChange,
   onPlayToggle,
-  onStop,
-  onSkipNext,
-  onMarkWrong,
 }: PlaybackControlsProps) {
   const colors = useThemeColors();
-  const isActive = playState === "playing" || playState === "paused";
-  const markEnabled = isActive && currentIndex < wordList.length;
-  const skipEnabled = isActive && currentIndex < wordList.length;
-  const intervalMs = intervalSec * 1000;
-  const countdownScale =
-    remainingMs !== null && intervalMs > 0 ? remainingMs / intervalMs : 0;
-  const countdownLabel =
-    remainingMs !== null ? `${Math.ceil(remainingMs / 1000)}s` : "—";
 
   return (
     <View style={styles.container}>
       {/* Voice selector — only when idle */}
-      {!isActive && (
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.muted }]}>音色</Text>
-          <View style={[styles.segment, { backgroundColor: colors.surfaceRaised }]}>
-            {SYSTEM_TTS_VOICES.map((item) => {
-              const active = voice === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: colors.muted }]}>音色</Text>
+        <View
+          style={[styles.segment, { backgroundColor: colors.surfaceRaised }]}
+        >
+          {SYSTEM_TTS_VOICES.map((item) => {
+            const active = voice === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.segmentItem,
+                  active && {
+                    backgroundColor: colors.background,
+                    shadowColor: "#000",
+                    shadowOpacity: 0.1,
+                    shadowRadius: 2,
+                    shadowOffset: { width: 0, height: 1 },
+                    elevation: 2,
+                  },
+                ]}
+                onPress={() => onVoiceChange(item.id)}
+                activeOpacity={0.6}
+              >
+                <Text
                   style={[
-                    styles.segmentItem,
-                    active && { backgroundColor: colors.background, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
+                    styles.segmentText,
+                    { color: active ? colors.foreground : colors.muted },
                   ]}
-                  onPress={() => onVoiceChange(item.id)}
-                  activeOpacity={0.6}
                 >
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      { color: active ? colors.foreground : colors.muted },
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      )}
+      </View>
 
       {/* Interval / Countdown */}
       <View style={styles.row}>
-        <Text style={[styles.label, { color: colors.muted }]}>
-          {isActive ? "下一词" : "间隔"}
-        </Text>
+        <Text style={[styles.label, { color: colors.muted }]}>间隔</Text>
         <View style={styles.sliderArea}>
-          {isActive ? (
-            <View style={[styles.countdownBar, { backgroundColor: colors.border }]}>
-              <View
-                style={[
-                  styles.countdownFill,
-                  { width: `${countdownScale * 100}%`, backgroundColor: colors.primary },
-                ]}
-              />
-            </View>
-          ) : (
-            <Slider
-              min={1}
-              max={10}
-              step={0.5}
-              value={intervalSec}
-              onValueChange={onIntervalChange}
-              disabled={isActive}
-            />
-          )}
+          <Slider
+            min={1}
+            max={10}
+            step={0.5}
+            value={intervalSec}
+            onValueChange={onIntervalChange}
+          />
           <Text style={[styles.countValue, { color: colors.primary }]}>
-            {isActive ? countdownLabel : `${intervalSec.toFixed(1)}s`}
+            {intervalSec.toFixed(1)}s
           </Text>
         </View>
-        {!isActive && (
-          <View style={styles.autoRow}>
-            <Text style={[styles.autoLabel, { color: colors.muted }]}>自动</Text>
-            <Switch
-              value={autoNext}
-              onValueChange={onAutoNextChange}
-              trackColor={{ false: colors.track, true: colors.primaryRing }}
-              thumbColor={autoNext ? colors.primary : colors.background}
-            />
-          </View>
-        )}
+        <View style={styles.autoRow}>
+          <Text style={[styles.autoLabel, { color: colors.muted }]}>自动</Text>
+          <Switch
+            value={autoNext}
+            onValueChange={onAutoNextChange}
+            trackColor={{ false: colors.track, true: colors.primaryRing }}
+            thumbColor={autoNext ? colors.primary : colors.background}
+          />
+        </View>
       </View>
 
       {/* Play / Skip / Stop */}
@@ -131,9 +107,14 @@ export function PlaybackControls({
         <TouchableOpacity
           style={[
             styles.mainBtn,
-            playState === "playing"
-              ? { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border }
-              : { backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+            {
+              backgroundColor: colors.primary,
+              shadowColor: colors.primary,
+              shadowOpacity: 0.35,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            },
           ]}
           onPress={onPlayToggle}
           activeOpacity={0.7}
@@ -142,45 +123,14 @@ export function PlaybackControls({
             style={[
               styles.mainBtnTextBase,
               {
-                color:
-                  playState === "playing" ? colors.foreground : colors.background,
+                color: colors.background,
               },
             ]}
           >
-            {playState === "idle" && "▶ 开始"}
-            {playState === "playing" && "⏸ 暂停"}
-            {playState === "paused" && "▶ 继续"}
+            开始
           </Text>
         </TouchableOpacity>
-        {isActive && (
-          <TouchableOpacity
-            style={[secondaryBtnStyle(colors), !skipEnabled && styles.btnDisabled]}
-            disabled={!skipEnabled}
-            onPress={onSkipNext}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.secondaryBtnText, { color: colors.secondary }]}>⏭ 跳过</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={[secondaryBtnStyle(colors), !isActive && styles.btnDisabled]}
-          disabled={!isActive}
-          onPress={onStop}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.secondaryBtnText, { color: colors.secondary }]}>⏹ 结束</Text>
-        </TouchableOpacity>
       </View>
-
-      {/* Mark wrong */}
-      <TouchableOpacity
-        style={[markBtnStyle(colors), !markEnabled && styles.markBtnDisabled]}
-        disabled={!markEnabled}
-        onPress={onMarkWrong}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.markBtnText, { color: colors.danger }]}>✕ 标记错词</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -259,11 +209,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   mainBtnTextBase: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
   },
   secondaryBtnText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
   },
   btnDisabled: {
@@ -273,7 +223,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   markBtnText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
   },
 });

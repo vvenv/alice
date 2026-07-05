@@ -7,7 +7,6 @@ import { useThemeColors } from "../lib/theme";
 
 interface WordInputSectionProps {
   value: string;
-  disabled: boolean;
   onChange: (value: string) => void;
   onSetSample: () => void;
   onClear: () => void;
@@ -15,7 +14,6 @@ interface WordInputSectionProps {
 
 export function WordInputSection({
   value,
-  disabled,
   onChange,
   onSetSample,
   onClear,
@@ -33,7 +31,6 @@ export function WordInputSection({
             backgroundColor: colors.surfaceSunken,
             color: colors.foreground,
           },
-          disabled && styles.textAreaDisabled,
         ]}
         multiline
         numberOfLines={2}
@@ -41,7 +38,7 @@ export function WordInputSection({
         placeholderTextColor={colors.subtle}
         value={value}
         onChangeText={onChange}
-        editable={!disabled}
+        editable
         textAlignVertical="top"
       />
       <View style={styles.footer}>
@@ -49,7 +46,6 @@ export function WordInputSection({
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.smallBtn, { borderColor: colors.border }]}
-            disabled={disabled}
             onPress={onSetSample}
             activeOpacity={0.6}
           >
@@ -57,7 +53,6 @@ export function WordInputSection({
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.smallBtn, { borderColor: colors.border }]}
-            disabled={disabled}
             onPress={onClear}
             activeOpacity={0.6}
           >

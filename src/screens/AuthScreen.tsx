@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
   },
 });

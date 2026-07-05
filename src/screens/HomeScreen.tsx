@@ -46,8 +46,14 @@ export function HomeScreen() {
   const [showWord, setShowWord] = useState(false);
 
   const { toast, showToast } = useToast();
-  const { wrongWords, markedFlash, markWrong, exportWrong, clearWrong, removeWrongWord } =
-    useWrongWords();
+  const {
+    wrongWords,
+    markedFlash,
+    markWrong,
+    exportWrong,
+    clearWrong,
+    removeWrongWord,
+  } = useWrongWords();
   const playback = usePlayback({ intervalSec, autoNext, voice });
 
   useEffect(() => {
@@ -77,15 +83,13 @@ export function HomeScreen() {
     saveTtsVoice(next);
   }, []);
 
-  const handleOcrResult = useCallback(
-    (words: string[]) => {
-      setWordInput(words.join("\n"));
-    },
-    [],
-  );
+  const handleOcrResult = useCallback((words: string[]) => {
+    setWordInput(words.join("\n"));
+  }, []);
 
   const handleMarkWrong = useCallback(() => {
-    if (!playback.isActive || playback.currentIndex >= playback.wordList.length) return;
+    if (!playback.isActive || playback.currentIndex >= playback.wordList.length)
+      return;
     markWrong(playback.wordList[playback.currentIndex]!);
   }, [playback.isActive, playback.currentIndex, playback.wordList, markWrong]);
 
@@ -119,14 +123,13 @@ export function HomeScreen() {
 
   if (!ready) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.loadingContainer, { backgroundColor: colors.surface }]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
-
-  const isActive = playback.isActive;
-  const showInputSection = !isActive || showWord;
 
   return (
     <SafeAreaView
@@ -139,7 +142,7 @@ export function HomeScreen() {
       >
         {/* Theme toggle */}
         <View style={styles.topBar}>
-          <View style={{ flex: 1 }} />
+          <Text style={[styles.title, { color: colors.foreground }]}>Alice Dictation</Text>
           <TouchableOpacity
             style={[styles.themeBtn, { borderColor: colors.border }]}
             onPress={toggleTheme}
@@ -156,55 +159,27 @@ export function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {!isActive && (
-            <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
-          )}
+          <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
 
-          {showInputSection && (
-            <WordInputSection
-              value={wordInput}
-              disabled={isActive}
-              onChange={setWordInput}
-              onSetSample={() => setWordInput(SAMPLE_WORDS)}
-              onClear={() => setWordInput("")}
-            />
-          )}
-
-          <ProgressCard
-            wordList={playback.wordList}
-            currentIndex={playback.currentIndex}
-            playState={playback.playState}
-            showWord={showWord}
-            onToggleShowWord={() => setShowWord((v) => !v)}
-            markedFlash={markedFlash}
-            wrongWords={wrongWords}
+          <WordInputSection
+            value={wordInput}
+            onChange={setWordInput}
+            onSetSample={() => setWordInput(SAMPLE_WORDS)}
+            onClear={() => setWordInput("")}
           />
+        </ScrollView>
 
+        <View style={styles.playbackControls}>
           <PlaybackControls
-            playState={playback.playState}
             intervalSec={intervalSec}
             autoNext={autoNext}
             voice={voice}
-            remainingMs={playback.remainingMs}
-            currentIndex={playback.currentIndex}
-            wordList={playback.wordList}
             onIntervalChange={setIntervalSec}
             onAutoNextChange={setAutoNext}
             onVoiceChange={handleVoiceChange}
             onPlayToggle={handlePlayToggle}
-            onStop={playback.stopDictation}
-            onSkipNext={playback.skipToNextWord}
-            onMarkWrong={handleMarkWrong}
           />
-
-          <WrongWordsPanel
-            wrongWords={wrongWords}
-            onExport={handleExportWrong}
-            onClear={handleClearWrong}
-            onRemove={removeWrongWord}
-          />
-        </ScrollView>
-
+        </View>
         <Toast message={toast} />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -221,19 +196,23 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
   themeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+    width: 24,
+    height: 24,
     justifyContent: "center",
     alignItems: "center",
   },
   themeBtnText: {
-    fontSize: 18,
+    fontSize: 24,
   },
   scroll: {
     flex: 1,
@@ -248,5 +227,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  playbackControls: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 });

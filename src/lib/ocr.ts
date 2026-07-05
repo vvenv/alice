@@ -64,6 +64,21 @@ export async function takePhoto(): Promise<string | null> {
   return result.assets[0]!.uri;
 }
 
+export async function pickFromAlbum(): Promise<string | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    throw new Error("需要相册权限");
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"],
+    quality: 1,
+  });
+
+  if (result.canceled || !result.assets.length) return null;
+  return result.assets[0]!.uri;
+}
+
 export async function ocrWordsFromImage(
   imageUri: string,
   onStatus?: (status: string) => void,
