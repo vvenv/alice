@@ -101,7 +101,7 @@ jobs:
           SUBMIT: ${{ needs.plan.outputs.submit }}
         run: |
           set -euo pipefail
-          args=(--platform "$PLATFORM" --profile "$PROFILE" --non-interactive --wait)
+          args=(--platform "$PLATFORM" --profile "$PROFILE" --non-interactive)
           if [ "$SUBMIT" = "true" ]; then
             if [ "$PROFILE" != "production" ]; then
               echo "::error::自动提交仅支持 production 配置"
