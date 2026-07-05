@@ -121,7 +121,7 @@ export function DictationScreen({
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      edges={["top", "bottom"]}
+      edges={["top", "bottom", "left", "right"]}
     >
       <View style={[styles.progressBar, { backgroundColor: colors.track }]}>
         <View

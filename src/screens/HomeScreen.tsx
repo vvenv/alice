@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    maxWidth: 480,
     width: "100%",
     alignSelf: "center",
   },
@@ -208,7 +207,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
-    maxWidth: 480,
     width: "100%",
     alignSelf: "center",
   },
