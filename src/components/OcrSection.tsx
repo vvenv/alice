@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   UIManager,
   View,
-  ViewStyle,
 } from "react-native";
 
 // Enable LayoutAnimation on Android
@@ -33,6 +33,64 @@ interface OcrSectionProps {
 }
 
 const ALPHANUMERIC = /^[a-zA-Z0-9]*$/;
+
+type OcrActionButtonProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  variant: "primary" | "secondary";
+  colors: ThemeColors;
+  busy: boolean;
+  onPress: () => void;
+};
+
+function OcrActionButton({
+  icon,
+  label,
+  variant,
+  colors,
+  busy,
+  onPress,
+}: OcrActionButtonProps) {
+  const isPrimary = variant === "primary";
+  const contentColor = isPrimary ? colors.background : colors.foreground;
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.actionBtn,
+        isPrimary
+          ? {
+              backgroundColor: colors.primary,
+              shadowColor: colors.primary,
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }
+          : {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+            },
+        busy && styles.btnDisabled,
+      ]}
+      onPress={onPress}
+      disabled={busy}
+      activeOpacity={0.7}
+    >
+      {busy ? (
+        <ActivityIndicator size="small" color={contentColor} />
+      ) : (
+        <View style={styles.actionBtnContent}>
+          <Ionicons name={icon} size={20} color={contentColor} />
+          <Text style={[styles.actionBtnText, { color: contentColor }]}>
+            {label}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 export function OcrSection({
   wordInput,
@@ -246,43 +304,22 @@ export function OcrSection({
   return (
     <View style={styles.container}>
       <View style={styles.btnRow}>
-        <TouchableOpacity
-          style={[
-            primaryBtnStyle(colors),
-            styles.halfBtn,
-            ocrBusy && styles.btnDisabled,
-          ]}
+        <OcrActionButton
+          icon="camera"
+          label="拍照"
+          variant="primary"
+          colors={colors}
+          busy={ocrBusy}
           onPress={processOcr}
-          disabled={ocrBusy}
-          activeOpacity={0.7}
-        >
-          {ocrBusy ? (
-            <ActivityIndicator size="small" color={colors.background} />
-          ) : (
-            <Text style={[styles.primaryBtnText, { color: colors.background }]}>
-             <Text style={styles.primaryBtnTextIcon}>📷</Text> 拍照
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            secondaryBtnStyle(colors),
-            styles.halfBtn,
-            ocrBusy && styles.btnDisabled,
-          ]}
+        />
+        <OcrActionButton
+          icon="images-outline"
+          label="相册"
+          variant="secondary"
+          colors={colors}
+          busy={ocrBusy}
           onPress={processAlbum}
-          disabled={ocrBusy}
-          activeOpacity={0.7}
-        >
-          {ocrBusy ? (
-            <ActivityIndicator size="small" color={colors.background} />
-          ) : (
-            <Text style={[styles.secondaryBtnText, { color: colors.background }]}>
-              <Text style={styles.secondaryBtnTextIcon}>🖼</Text> 相册
-            </Text>
-          )}
-        </TouchableOpacity>
+        />
       </View>
 
       {ocrStatus ? (
@@ -414,32 +451,26 @@ const styles = StyleSheet.create({
   },
   btnRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.md,
   },
-  halfBtn: {
+  actionBtn: {
     flex: 1,
+    minHeight: 52,
+    borderRadius: radii.button,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
   },
-  primaryBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
-    display: "flex",
+  actionBtnContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
+    gap: spacing.sm,
   },
-  primaryBtnTextIcon: {
-    fontSize: 24,
-  },
-  secondaryBtnText: {
+  actionBtnText: {
     fontSize: 16,
     fontWeight: "600",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  secondaryBtnTextIcon: {
-    fontSize: 16,
+    lineHeight: 20,
   },
   btnDisabled: {
     opacity: 0.4,
@@ -454,32 +485,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
   },
-});
-
-const primaryBtnStyle = (colors: ThemeColors): ViewStyle => ({
-  minHeight: 52,
-  backgroundColor: colors.primary,
-  borderRadius: radii.button,
-  justifyContent: "center",
-  alignItems: "center",
-  paddingHorizontal: 20,
-  shadowColor: colors.primary,
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 4,
-});
-
-const secondaryBtnStyle = (colors: ThemeColors): ViewStyle => ({
-  minHeight: 52,
-  backgroundColor: colors.secondary,
-  borderRadius: radii.button,
-  justifyContent: "center",
-  alignItems: "center",
-  paddingHorizontal: 20,
-  shadowColor: colors.secondary,
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 4,
 });
