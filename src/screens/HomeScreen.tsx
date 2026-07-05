@@ -25,6 +25,7 @@ import {
   loadWordInput,
   saveWordInput,
 } from "../lib/storage";
+import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
@@ -98,11 +99,18 @@ export function HomeScreen() {
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Theme toggle */}
-        <View style={styles.topBar}>
-          <Text style={[styles.title, { color: colors.foreground }]}>Alice Dictation</Text>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            Alice Dictation
+          </Text>
           <TouchableOpacity
-            style={[styles.themeBtn, { borderColor: colors.border }]}
+            style={[
+              styles.themeBtn,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              },
+            ]}
             onPress={toggleTheme}
             activeOpacity={0.7}
           >
@@ -116,10 +124,10 @@ export function HomeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
-
-          <View style={styles.wordInputWrapper}>
+          <View style={styles.content}>
+            <OcrSection wordInput={wordInput} onOcrResult={handleOcrResult} />
             <WordInputSection
               value={wordInput}
               onChange={setWordInput}
@@ -129,7 +137,9 @@ export function HomeScreen() {
           </View>
         </ScrollView>
 
-        <View style={styles.playbackControls}>
+        <View
+          style={[styles.bottomPanel, { borderTopColor: colors.border }]}
+        >
           <PlaybackControls
             intervalSec={intervalSec}
             autoNext={autoNext}
@@ -151,46 +161,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBar: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
   },
   themeBtn: {
-    width: 24,
-    height: 24,
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   themeBtnText: {
-    fontSize: 24,
+    fontSize: 18,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 16,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  content: {
+    gap: spacing.lg,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  playbackControls: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  wordInputWrapper: {
-    flex: 1,
+  bottomPanel: {
+    borderTopWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
 });

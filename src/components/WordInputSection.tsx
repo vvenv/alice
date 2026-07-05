@@ -1,9 +1,20 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type NativeSyntheticEvent,
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextInputContentSizeChangeEventData,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { parseWords } from "../lib/dictation";
-import { radii } from "../lib/designTokens";
+import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
+
+const TEXT_AREA_MIN_HEIGHT = 88;
+const TEXT_AREA_PADDING_V = spacing.md * 2;
 
 interface WordInputSectionProps {
   value: string;
@@ -20,12 +31,31 @@ export function WordInputSection({
 }: WordInputSectionProps) {
   const colors = useThemeColors();
   const wordCount = useMemo(() => parseWords(value).length, [value]);
+  const [textAreaHeight, setTextAreaHeight] = useState(TEXT_AREA_MIN_HEIGHT);
+
+  const handleContentSizeChange = useCallback(
+    (event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => {
+      const next = Math.max(
+        TEXT_AREA_MIN_HEIGHT,
+        Math.ceil(event.nativeEvent.contentSize.height) + TEXT_AREA_PADDING_V,
+      );
+      setTextAreaHeight((prev) => (prev === next ? prev : next));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!value) {
+      setTextAreaHeight(TEXT_AREA_MIN_HEIGHT);
+    }
+  }, [value]);
 
   return (
     <View style={styles.container}>
       <TextInput
         style={[
           styles.textArea,
+          { height: textAreaHeight },
           {
             borderColor: colors.border,
             backgroundColor: colors.surfaceSunken,
@@ -33,11 +63,12 @@ export function WordInputSection({
           },
         ]}
         multiline
-        numberOfLines={2}
+        scrollEnabled={false}
         placeholder="每行一个，或用逗号/空格分隔\n例：apple banana cat"
         placeholderTextColor={colors.subtle}
         value={value}
         onChangeText={onChange}
+        onContentSizeChange={handleContentSizeChange}
         editable
         textAlignVertical="top"
       />
@@ -66,18 +97,15 @@ export function WordInputSection({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    gap: 8,
+    gap: spacing.sm,
   },
   textArea: {
-    flex: 1,
     borderWidth: 1,
     borderRadius: radii.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     fontSize: 16,
     lineHeight: 22,
-    minHeight: 80,
   },
   textAreaDisabled: {
     opacity: 0.5,

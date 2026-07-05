@@ -13,6 +13,7 @@ import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { initAudio } from "../lib/tts";
+import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 interface DictationScreenProps {
@@ -34,8 +35,14 @@ export function DictationScreen({
   const [autoNext, setAutoNext] = useState(initialAutoNext);
 
   const { toast, showToast } = useToast();
-  const { wrongWords, markedFlash, markWrong, exportWrong, clearWrong, removeWrongWord } =
-    useWrongWords();
+  const {
+    wrongWords,
+    markedFlash,
+    markWrong,
+    exportWrong,
+    clearWrong,
+    removeWrongWord,
+  } = useWrongWords();
 
   const playback = usePlayback({ intervalSec, autoNext });
 
@@ -47,13 +54,18 @@ export function DictationScreen({
       if (cancelled) return;
       playback.startDictation(words);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isActive = playback.playState === "playing" || playback.playState === "paused";
-  const markEnabled = isActive && playback.currentIndex < playback.wordList.length;
-  const skipEnabled = isActive && playback.currentIndex < playback.wordList.length;
+  const isActive =
+    playback.playState === "playing" || playback.playState === "paused";
+  const markEnabled =
+    isActive && playback.currentIndex < playback.wordList.length;
+  const skipEnabled =
+    isActive && playback.currentIndex < playback.wordList.length;
 
   const handleMarkWrong = useCallback(() => {
     if (!isActive || playback.currentIndex >= playback.wordList.length) return;
@@ -99,65 +111,104 @@ export function DictationScreen({
       ? `${Math.ceil(playback.remainingMs / 1000)}s`
       : "—";
 
+  const stateLabel =
+    playback.playState === "playing"
+      ? "播放中"
+      : playback.playState === "paused"
+        ? "已暂停"
+        : "已结束";
+
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      {/* Progress bar */}
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top", "bottom"]}
+    >
+      <View style={[styles.progressBar, { backgroundColor: colors.track }]}>
+        <View
+          style={[
+            styles.progressFill,
+            { width: `${progress * 100}%`, backgroundColor: colors.primary },
+          ]}
+        />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Word display area */}
-        <View style={styles.wordArea}>
-          <View style={styles.progressRow}>
-            <Text style={styles.progressText}>
-              {playback.currentIndex + 1}
-            </Text>
-            <Text style={[styles.progressText, { color: colors.foreground }]}>
-            / ${wrongWords.length}
-            </Text>
-            <Text style={styles.progressText}>
-              / {playback.wordList.length}
-            </Text>
+      {/* Progress indicator */}
+      <View style={styles.header}>
+        <Text style={[styles.progressText, { color: colors.muted }]}>
+          {playback.currentIndex + 1} / {playback.wordList.length}
+        </Text>
+      </View>
 
-            <TouchableOpacity
-              style={[
-                styles.toggleWordBtn,
-                showWord && styles.toggleWordBtnActive,
-              ]}
-              onPress={() => setShowWord((v) => !v)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.toggleWordText,
-                  showWord && styles.toggleWordTextActive,
-                ]}
-              >
-                {showWord ? "👁 显示中" : "🙈 已隐藏"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View
+      {/* Word card — centered in remaining space */}
+      <View style={styles.wordStage}>
+        <View
+          style={[
+            styles.wordCard,
+            {
+              backgroundColor: colors.surfaceRaised,
+              borderColor: colors.borderSubtle,
+            },
+            markedFlash && {
+              backgroundColor: colors.dangerSoft,
+              borderColor: colors.danger,
+            },
+          ]}
+        >
+          <TouchableOpacity
             style={[
-              styles.wordCard,
-              markedFlash && styles.wordCardFlash,
+              styles.toggleWordBtn,
+              {
+                borderColor: showWord ? colors.primary : colors.borderMuted,
+                backgroundColor: showWord
+                  ? colors.primarySoft
+                  : colors.surface,
+              },
             ]}
+            onPress={() => setShowWord((v) => !v)}
+            activeOpacity={0.7}
+            accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
           >
-            <Text style={styles.wordText}>
-              {showWord && playback.currentIndex < playback.wordList.length
-                ? playback.wordList[playback.currentIndex]!
-                : "•••••"}
+            <Text style={styles.toggleWordIcon}>
+              {showWord ? "👁" : "🙈"}
             </Text>
-          </View>
+          </TouchableOpacity>
+
+          <Text style={[styles.wordText, { color: colors.foreground }]}>
+            {showWord && playback.currentIndex < playback.wordList.length
+              ? playback.wordList[playback.currentIndex]!
+              : "•••••"}
+          </Text>
         </View>
 
-        {/* Playback settings */}
+        <TouchableOpacity
+          style={[
+            styles.markBtn,
+            {
+              borderColor: colors.borderMuted,
+              backgroundColor: colors.surface,
+            },
+            !markEnabled && styles.controlBtnDisabled,
+          ]}
+          onPress={handleMarkWrong}
+          disabled={!markEnabled}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
+            ✕ 标记错词
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom panel — settings, controls, wrong words */}
+      <View
+        style={[
+          styles.bottomPanel,
+          {
+            backgroundColor: colors.surfaceSunken,
+            borderTopColor: colors.borderSubtle,
+          },
+        ]}
+      >
         <PlaybackControls
           intervalSec={intervalSec}
           autoNext={autoNext}
@@ -166,121 +217,167 @@ export function DictationScreen({
           showPlayButton={false}
         />
 
-        {/* Countdown bar (when auto-next is active) */}
-        {isActive && autoNext && playback.remainingMs !== null ? (
+        {isActive && autoNext ? (
           <View style={styles.countdownSection}>
-            <View style={styles.countdownBar}>
+            <View
+              style={[styles.countdownBar, { backgroundColor: colors.track }]}
+            >
               <View
                 style={[
                   styles.countdownFill,
-                  { width: `${countdownScale * 100}%` },
+                  {
+                    width: `${countdownScale * 100}%`,
+                    backgroundColor: colors.primary,
+                  },
                 ]}
               />
             </View>
-            <Text style={styles.countdownText}>{countdownLabel}</Text>
+            <Text style={[styles.countdownText, { color: colors.primary }]}>
+              {countdownLabel}
+            </Text>
           </View>
         ) : null}
 
-        {/* Play state indicator */}
-        <View style={styles.stateIndicator}>
-          <View
-            style={[
-              styles.stateDot,
-              playback.playState === "playing" && styles.stateDotPlaying,
-              playback.playState === "paused" && styles.stateDotPaused,
-            ]}
-          />
-          <Text style={styles.stateText}>
-            {playback.playState === "playing"
-              ? "播放中"
-              : playback.playState === "paused"
-                ? "已暂停"
-                : "已结束"}
-          </Text>
-        </View>
+        <View style={styles.actionSection}>
+          <View style={styles.stateIndicator}>
+            <View
+              style={[
+                styles.stateDot,
+                { backgroundColor: colors.subtle },
+                playback.playState === "playing" && {
+                  backgroundColor: "#27ae60",
+                },
+                playback.playState === "paused" && {
+                  backgroundColor: "#f39c12",
+                },
+              ]}
+            />
+            <Text style={[styles.stateText, { color: colors.muted }]}>
+              {stateLabel}
+            </Text>
+          </View>
 
-        {/* Controls */}
-        <View style={styles.controls}>
           <View style={styles.controlRow}>
             <TouchableOpacity
               style={[
                 styles.controlBtn,
-                styles.controlBtnPrimary,
+                { backgroundColor: colors.primary, borderColor: colors.primary },
               ]}
               onPress={handlePlayToggle}
               activeOpacity={0.7}
             >
-              <Text style={styles.controlBtnText}>
+              <Text style={[styles.controlBtnText, { color: colors.background }]}>
                 {playback.playState === "playing" ? "⏸ 暂停" : "▶ 继续"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.controlBtn, !skipEnabled && styles.controlBtnDisabled]}
+              style={[
+                styles.controlBtn,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+                !skipEnabled && styles.controlBtnDisabled,
+              ]}
               onPress={playback.skipToNextWord}
               disabled={!skipEnabled}
               activeOpacity={0.7}
             >
-              <Text style={styles.controlBtnTextOutline}>⏭ 跳过</Text>
+              <Text style={[styles.controlBtnTextOutline, { color: colors.secondary }]}>
+                ⏭ 跳过
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.controlBtn, styles.controlBtnDanger, !isActive && styles.controlBtnDisabled]}
+              style={[
+                styles.controlBtn,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.dangerMuted,
+                },
+                !isActive && styles.controlBtnDisabled,
+              ]}
               onPress={handleStop}
               disabled={!isActive}
               activeOpacity={0.7}
             >
-              <Text style={styles.controlBtnTextDanger}>⏹ 结束</Text>
+              <Text style={[styles.controlBtnTextDanger, { color: colors.danger }]}>
+                ⏹ 结束
+              </Text>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={[
-              styles.markBtn,
-              !markEnabled && styles.controlBtnDisabled,
-            ]}
-            onPress={handleMarkWrong}
-            disabled={!markEnabled}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.markBtnText}>✕ 标记错词</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Wrong words */}
         <View style={styles.wrongSection}>
           <View style={styles.wrongHeader}>
-            <Text style={styles.wrongTitle}>错词本 ({wrongWords.length})</Text>
+            <Text style={[styles.wrongTitle, { color: colors.muted }]}>
+              错词本 ({wrongWords.length})
+            </Text>
             <View style={styles.wrongActions}>
-              <TouchableOpacity style={styles.smallBtn} onPress={handleExport}>
-                <Text style={styles.smallBtnText}>导出</Text>
+              <TouchableOpacity
+                style={[styles.smallBtn, { backgroundColor: colors.surface }]}
+                onPress={handleExport}
+              >
+                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                  导出
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.smallBtn} onPress={handleClearWrong}>
-                <Text style={styles.smallBtnText}>清空</Text>
+              <TouchableOpacity
+                style={[styles.smallBtn, { backgroundColor: colors.surface }]}
+                onPress={handleClearWrong}
+              >
+                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                  清空
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
           {wrongWords.length === 0 ? (
-            <Text style={styles.emptyWrong}>尚无错词</Text>
+            <Text
+              style={[
+                styles.emptyWrong,
+                {
+                  color: colors.subtle,
+                  backgroundColor: colors.surface,
+                },
+              ]}
+            >
+              尚无错词
+            </Text>
           ) : (
-            <View style={styles.chipRow}>
+            <ScrollView
+              style={styles.wrongScroll}
+              contentContainerStyle={styles.chipRow}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={false}
+            >
               {wrongWords.map((word) => (
                 <TouchableOpacity
                   key={word}
-                  style={styles.chip}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.borderMuted,
+                    },
+                  ]}
                   onPress={() => removeWrongWord(word)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.chipText}>{word}</Text>
-                  <Text style={styles.chipRemove}> ×</Text>
+                  <Text style={[styles.chipText, { color: colors.foreground }]}>
+                    {word}
+                  </Text>
+                  <Text style={[styles.chipRemove, { color: colors.subtle }]}>
+                    {" "}×
+                  </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           )}
         </View>
-      </ScrollView>
+      </View>
 
-      {/* Toast */}
       {toast ? (
         <View style={styles.toast}>
           <Text style={styles.toastText}>{toast}</Text>
@@ -293,202 +390,164 @@ export function DictationScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   progressBar: {
-    height: 4,
-    backgroundColor: "#e2e2e2",
+    height: 3,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#4a6cf7",
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    padding: 20,
-    gap: 20,
   },
 
-  // Word area
-  wordArea: {
+  header: {
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  progressText: {
+    fontSize: 15,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+    textAlign: "center",
+  },
+  toggleWordBtn: {
+    position: "absolute",
+    top: spacing.md,
+    right: spacing.md,
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  toggleWordIcon: {
+    fontSize: 16,
+  },
+
+  wordStage: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 16,
-  },
-  progressRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    alignSelf: "stretch",
-  },
-  progressText: {
-    fontSize: 16,
-    color: "#999",
-    fontWeight: "500",
-  },
-  toggleWordBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e2e2e2",
-    backgroundColor: "#fff",
-  },
-  toggleWordBtnActive: {
-    backgroundColor: "#eef2ff",
-    borderColor: "#4a6cf7",
-  },
-  toggleWordText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#999",
-  },
-  toggleWordTextActive: {
-    color: "#4a6cf7",
-    fontWeight: "600",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    minHeight: 120,
+    gap: spacing.lg,
   },
   wordCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingHorizontal: 40,
-    paddingVertical: 32,
-    minWidth: 200,
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: radii.card,
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["2xl"],
     alignItems: "center",
+    borderWidth: 1,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  wordCardFlash: {
-    backgroundColor: "#fff0f0",
-    borderWidth: 2,
-    borderColor: "#e74c3c",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   wordText: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: "700",
-    color: "#1a1a2e",
-    letterSpacing: 2,
-  },
-  controlBtnTextDanger: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#e74c3c",
+    letterSpacing: 1,
+    textAlign: "center",
   },
 
-  // Countdown
+  bottomPanel: {
+    borderTopWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.lg,
+  },
+
   countdownSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: spacing.sm,
+    marginTop: -spacing.sm,
   },
   countdownBar: {
     flex: 1,
-    height: 8,
-    backgroundColor: "#e2e2e2",
-    borderRadius: 4,
+    height: 6,
+    borderRadius: radii.xs,
     overflow: "hidden",
   },
   countdownFill: {
     height: "100%",
-    backgroundColor: "#4a6cf7",
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   countdownText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: "#4a6cf7",
-    minWidth: 36,
+    minWidth: 32,
     textAlign: "right",
+    fontVariant: ["tabular-nums"],
   },
 
-  // State indicator
+  actionSection: {
+    gap: spacing.md,
+  },
   stateIndicator: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   stateDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ddd",
-  },
-  stateDotPlaying: {
-    backgroundColor: "#27ae60",
-  },
-  stateDotPaused: {
-    backgroundColor: "#f39c12",
+    width: 7,
+    height: 7,
+    borderRadius: radii.full,
   },
   stateText: {
     fontSize: 13,
-    color: "#999",
+    fontWeight: "500",
   },
 
-  // Controls
-  controls: {
-    gap: 10,
-  },
   controlRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
   },
   controlBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 10,
+    height: 46,
+    borderRadius: radii.control,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#e2e2e2",
-    backgroundColor: "#fff",
-  },
-  controlBtnPrimary: {
-    backgroundColor: "#4a6cf7",
-    borderColor: "#4a6cf7",
-  },
-  controlBtnDanger: {
-    backgroundColor: "#fff",
-    borderColor: "#e74c3c",
   },
   controlBtnDisabled: {
     opacity: 0.4,
   },
   controlBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
   },
   controlBtnTextOutline: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#555",
+  },
+  controlBtnTextDanger: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   markBtn: {
-    height: 48,
-    backgroundColor: "#fff0f0",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#fdd",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.full,
+    borderWidth: 1,
   },
   markBtnText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#e74c3c",
   },
 
-  // Wrong words
   wrongSection: {
-    maxHeight: 140,
-    gap: 10,
+    gap: spacing.sm,
+    maxHeight: 120,
   },
   wrongHeader: {
     flexDirection: "row",
@@ -496,66 +555,59 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   wrongTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#888",
   },
   wrongActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
   smallBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: "#f0f0f0",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.xs,
   },
   smallBtnText: {
     fontSize: 12,
-    color: "#666",
+    fontWeight: "500",
   },
   emptyWrong: {
     textAlign: "center",
-    color: "#bbb",
     fontSize: 13,
-    paddingVertical: 12,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
+    paddingVertical: spacing.md,
+    borderRadius: radii.surface,
+  },
+  wrongScroll: {
+    flexGrow: 0,
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: spacing.sm,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e8e8e8",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.full,
   },
   chipText: {
     fontSize: 13,
-    color: "#333",
   },
   chipRemove: {
     fontSize: 14,
-    color: "#bbb",
-    marginLeft: 2,
   },
 
-  // Toast
   toast: {
     position: "absolute",
     bottom: 40,
-    left: 20,
-    right: 20,
+    left: spacing.lg,
+    right: spacing.lg,
     backgroundColor: "rgba(0,0,0,0.8)",
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: spacing.md,
+    borderRadius: radii.surface,
     alignItems: "center",
   },
   toastText: {

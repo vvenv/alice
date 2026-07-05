@@ -6,7 +6,7 @@ import {
   View,
 } from "react-native";
 
-import { radii } from "../lib/designTokens";
+import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 import { Slider } from "./Slider";
 
@@ -31,7 +31,7 @@ export function PlaybackControls({
 
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
+      <View style={styles.intervalRow}>
         <Text style={[styles.label, { color: colors.muted }]}>间隔</Text>
         <View style={styles.sliderArea}>
           <Slider
@@ -45,15 +45,16 @@ export function PlaybackControls({
             {intervalSec.toFixed(1)}s
           </Text>
         </View>
-        <View style={styles.autoRow}>
-          <Text style={[styles.autoLabel, { color: colors.muted }]}>自动</Text>
-          <Switch
-            value={autoNext}
-            onValueChange={onAutoNextChange}
-            trackColor={{ false: colors.track, true: colors.primaryRing }}
-            thumbColor={autoNext ? colors.primary : colors.background}
-          />
-        </View>
+      </View>
+
+      <View style={styles.autoRow}>
+        <Text style={[styles.autoLabel, { color: colors.muted }]}>自动</Text>
+        <Switch
+          value={autoNext}
+          onValueChange={onAutoNextChange}
+          trackColor={{ false: colors.track, true: colors.primaryRing }}
+          thumbColor={autoNext ? colors.primary : colors.background}
+        />
       </View>
 
       {showPlayButton && onPlayToggle ? (
@@ -92,12 +93,12 @@ export function PlaybackControls({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: spacing.md,
   },
-  row: {
+  intervalRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   label: {
     fontSize: 14,
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   countValue: {
     fontSize: 14,
@@ -119,14 +120,14 @@ const styles = StyleSheet.create({
   autoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
   },
   autoLabel: {
     fontSize: 14,
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.md,
   },
   mainBtn: {
     flex: 1,
