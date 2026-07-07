@@ -126,10 +126,11 @@ export function DictationScreen({
   // Update lock screen metadata when current word changes
   useEffect(() => {
     if (isActive && playback.wordList.length > 0) {
-      const word = playback.wordList[playback.currentIndex];
-      if (word) {
+      const rawWord = playback.wordList[playback.currentIndex];
+      if (rawWord) {
+        const displayText = showWord ? rawWord : "•••••";
         updateMetadata(
-          `${playback.currentIndex + 1} / ${playback.wordList.length}  ${word}`,
+          `${playback.currentIndex + 1} / ${playback.wordList.length}  ${displayText}`,
         );
       }
     }
@@ -137,6 +138,7 @@ export function DictationScreen({
     playback.currentIndex,
     playback.wordList,
     isActive,
+    showWord,
     updateMetadata,
   ]);
 
