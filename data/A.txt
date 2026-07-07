@@ -16,7 +16,8 @@ act
 action
 active
 activity
-actor / actress
+actor
+actress
 actually
 ad
 add
@@ -64,7 +65,8 @@ another
 answer
 ant
 any
-anybody / anyone
+anybody
+anyone
 anything
 anyway
 anywhere

@@ -31,7 +31,8 @@ act
 action
 active
 activity
-actor / actress
+actor
+actress
 actually
 ad
 add
@@ -79,7 +80,8 @@ another
 answer
 ant
 any
-anybody / anyone
+anybody
+anyone
 anything
 anyway
 anywhere
@@ -483,7 +485,8 @@ elephant
 else
 email
 emergency
-emperor / empress
+emperor
+empress
 empty
 encourage
 end
@@ -504,7 +507,8 @@ evening
 event
 ever
 every
-everybody / everyone
+everybody
+everyone
 everyday
 everything
 everywhere
@@ -729,7 +733,8 @@ honour
 hope
 horse
 hospital
-host / hostess
+host
+hostess
 hot
 hotel
 hour
@@ -1150,8 +1155,10 @@ poem
 poet
 point
 police
-policeman / policewoman
-policemen / policewomen
+policeman
+policewoman
+policemen
+policewomen
 polite
 pollute
 pool
@@ -1183,7 +1190,8 @@ pretty
 price
 pride
 primary
-prince / princess
+prince
+princess
 print
 private
 prize
@@ -1407,7 +1415,8 @@ soil
 soldier
 solve
 some
-somebody / someone
+somebody
+someone
 something
 sometimes
 somewhere

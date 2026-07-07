@@ -107,7 +107,8 @@ soil
 soldier
 solve
 some
-somebody / someone
+somebody
+someone
 something
 sometimes
 somewhere

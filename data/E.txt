@@ -19,7 +19,8 @@ elephant
 else
 email
 emergency
-emperor / empress
+emperor
+empress
 empty
 encourage
 end
@@ -40,7 +41,8 @@ evening
 event
 ever
 every
-everybody / everyone
+everybody
+everyone
 everyday
 everything
 everywhere

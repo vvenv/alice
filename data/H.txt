@@ -55,7 +55,8 @@ honour
 hope
 horse
 hospital
-host / hostess
+host
+hostess
 hot
 hotel
 hour

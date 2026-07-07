@@ -74,8 +74,10 @@ poem
 poet
 point
 police
-policeman / policewoman
-policemen / policewomen
+policeman
+policewoman
+policemen
+policewomen
 polite
 pollute
 pool
@@ -107,7 +109,8 @@ pretty
 price
 pride
 primary
-prince / princess
+prince
+princess
 print
 private
 prize
