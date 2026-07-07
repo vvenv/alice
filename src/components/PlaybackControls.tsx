@@ -18,6 +18,8 @@ interface PlaybackControlsProps {
   onAutoNextChange: (auto: boolean) => void;
   onPlayToggle?: () => void;
   showPlayButton?: boolean;
+  shuffle?: boolean;
+  onShuffleChange?: (shuffle: boolean) => void;
 }
 
 export function PlaybackControls({
@@ -27,6 +29,8 @@ export function PlaybackControls({
   onAutoNextChange,
   onPlayToggle,
   showPlayButton = true,
+  shuffle,
+  onShuffleChange,
 }: PlaybackControlsProps) {
   const colors = useThemeColors();
 
@@ -57,6 +61,18 @@ export function PlaybackControls({
           thumbColor={autoNext ? colors.primary : colors.background}
         />
       </View>
+
+      {onShuffleChange !== undefined && (
+        <View style={styles.autoRow}>
+          <Text style={[styles.autoLabel, { color: colors.muted }]}>随机顺序</Text>
+          <Switch
+            value={shuffle}
+            onValueChange={onShuffleChange}
+            trackColor={{ false: colors.track, true: colors.primarySoft }}
+            thumbColor={shuffle ? colors.primary : colors.background}
+          />
+        </View>
+      )}
 
       {showPlayButton && onPlayToggle ? (
         <View style={styles.buttonRow}>

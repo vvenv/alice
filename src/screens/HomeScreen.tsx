@@ -42,6 +42,15 @@ import { useThemeColors, useThemeMode } from "../lib/theme";
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
 const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  return shuffled;
+}
+
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 function formatDate(ts: number): string {
@@ -62,6 +71,8 @@ export function HomeScreen() {
   const [wordInput, setWordInput] = useState("");
   const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
+  const [startIndex, setStartIndex] = useState(0);
+  const [shuffle, setShuffle] = useState(false);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
 
@@ -111,6 +122,16 @@ export function HomeScreen() {
     };
   }, [wordInput, ready]);
 
+  // Clamp startIndex when word count drops below current startIndex
+  useEffect(() => {
+    const count = wordCount(wordInput);
+    if (startIndex >= count && count > 0) {
+      setStartIndex(Math.max(0, count - 1));
+    } else if (count === 0) {
+      setStartIndex(0);
+    }
+  }, [wordInput, startIndex]);
+
   const handleOcrResult = useCallback((words: string[]) => {
     setWordInput(words.join("\n"));
   }, []);
@@ -122,10 +143,15 @@ export function HomeScreen() {
   }, []);
 
   const handleStart = useCallback(() => {
-    const words = parseWords(wordInput);
-    if (words.length === 0) {
+    const allWords = parseWords(wordInput);
+    if (allWords.length === 0) {
       showToast("请先输入单词列表");
       return;
+    }
+    const clampedStart = Math.min(startIndex, allWords.length - 1);
+    let words = allWords.slice(clampedStart);
+    if (shuffle) {
+      words = shuffleArray(words);
     }
     // Save to history before navigating
     addWordHistory(wordInput).then(() =>
@@ -136,7 +162,7 @@ export function HomeScreen() {
       intervalSec,
       autoNext,
     });
-  }, [autoNext, intervalSec, navigation, showToast, wordInput]);
+  }, [autoNext, intervalSec, navigation, showToast, shuffle, startIndex, wordInput]);
 
   const handleApplyHistory = useCallback((text: string) => {
     setWordInput(text);
@@ -231,6 +257,8 @@ export function HomeScreen() {
               onChange={setWordInput}
               onSetSample={() => setWordInput(SAMPLE_WORDS)}
               onClear={() => setWordInput("")}
+              startIndex={startIndex}
+              onStartIndexChange={setStartIndex}
             />
 
             {/* History section */}
@@ -347,6 +375,8 @@ export function HomeScreen() {
             onIntervalChange={setIntervalSec}
             onAutoNextChange={setAutoNext}
             onPlayToggle={handleStart}
+            shuffle={shuffle}
+            onShuffleChange={setShuffle}
           />
         </View>
         <Toast message={toast} />

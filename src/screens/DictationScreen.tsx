@@ -67,6 +67,8 @@ export function DictationScreen({
 
   const isActive =
     playback.playState === "playing" || playback.playState === "paused";
+  const isFinished =
+    playback.playState === "idle" && playback.wordList.length > 0;
   const markEnabled =
     isActive && playback.currentIndex < playback.wordList.length;
   const skipEnabled =
@@ -144,69 +146,134 @@ export function DictationScreen({
         </Text>
       </View>
 
-      {/* Word card — centered in remaining space */}
+      {/* Word card / Finished view — centered in remaining space */}
       <View style={styles.wordStage}>
-        <View
-          style={[
-            styles.wordCard,
-            {
-              backgroundColor: colors.surfaceRaised,
-              borderColor: colors.borderSubtle,
-            },
-            markedFlash && {
-              backgroundColor: colors.dangerSoft,
-              borderColor: colors.danger,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.toggleWordBtn,
-              {
-                borderColor: showWord ? colors.primary : colors.borderMuted,
-                backgroundColor: showWord
-                  ? colors.primarySoft
-                  : colors.surface,
-              },
-            ]}
-            onPress={() => setShowWord((v) => !v)}
-            activeOpacity={0.7}
-            accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
-          >
-            <Ionicons
-              name={showWord ? "eye" : "eye-off"}
-              size={18}
-              color={showWord ? colors.primary : colors.muted}
-            />
-          </TouchableOpacity>
+        {isFinished ? (
+          <View style={styles.finishedContainer}>
+            <View
+              style={[
+                styles.finishedCard,
+                {
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={48}
+                color={STATUS_PLAYING}
+              />
+              <Text style={[styles.finishedTitle, { color: colors.foreground }]}>
+                听写完成
+              </Text>
+              <Text style={[styles.finishedSub, { color: colors.muted }]}>
+                共 {playback.wordList.length} 个单词
+              </Text>
+            </View>
 
-          <Text style={[styles.wordText, { color: colors.foreground }]}>
-            {showWord && playback.currentIndex < playback.wordList.length
-              ? playback.wordList[playback.currentIndex]!
-              : "•••••"}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.markBtn,
-            {
-              borderColor: colors.borderMuted,
-              backgroundColor: colors.surface,
-            },
-            !markEnabled && styles.controlBtnDisabled,
-          ]}
-          onPress={handleMarkWrong}
-          disabled={!markEnabled}
-          activeOpacity={0.7}
-        >
-          <View style={styles.markBtnContent}>
-            <Ionicons name="close" size={14} color={colors.dangerMuted} />
-            <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
-              标记错词
-            </Text>
+            <TouchableOpacity
+              style={[
+                styles.returnBtn,
+                { backgroundColor: colors.primary },
+              ]}
+              onPress={onEnd}
+              activeOpacity={0.7}
+            >
+              <View style={styles.returnBtnContent}>
+                <Ionicons
+                  name="arrow-back"
+                  size={18}
+                  color={colors.background}
+                />
+                <Text
+                  style={[
+                    styles.returnBtnText,
+                    { color: colors.background },
+                  ]}
+                >
+                  返回首页
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        ) : (
+          <>
+            <View
+              style={[
+                styles.wordCard,
+                {
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.borderSubtle,
+                },
+                markedFlash && {
+                  backgroundColor: colors.dangerSoft,
+                  borderColor: colors.danger,
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.toggleWordBtn,
+                  {
+                    borderColor: showWord ? colors.primary : colors.borderMuted,
+                    backgroundColor: showWord
+                      ? colors.primarySoft
+                      : colors.surface,
+                  },
+                ]}
+                onPress={() => setShowWord((v) => !v)}
+                activeOpacity={0.7}
+                accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
+              >
+                <Ionicons
+                  name={showWord ? "eye" : "eye-off"}
+                  size={18}
+                  color={showWord ? colors.primary : colors.muted}
+                />
+              </TouchableOpacity>
+
+              <Text style={[styles.wordText, { color: colors.foreground }]}>
+                {showWord && playback.currentIndex < playback.wordList.length
+                  ? playback.wordList[playback.currentIndex]!
+                  : "•••••"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.markBtn,
+                {
+                  borderColor: colors.borderMuted,
+                  backgroundColor: colors.surface,
+                },
+                !markEnabled && styles.controlBtnDisabled,
+              ]}
+              onPress={handleMarkWrong}
+              disabled={!markEnabled}
+              activeOpacity={0.7}
+            >
+              <View style={styles.markBtnContent}>
+                <Ionicons name="close" size={14} color={colors.dangerMuted} />
+                <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
+                  标记错词
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {showWord &&
+              playback.currentIndex + 1 < playback.wordList.length && (
+                <View style={styles.nextWordRow}>
+                  <Text style={[styles.nextWordLabel, { color: colors.muted }]}>
+                    下一个
+                  </Text>
+                  <Text style={[styles.nextWordText, { color: colors.subtle }]}>
+                    {playback.wordList[playback.currentIndex + 1]}
+                  </Text>
+                </View>
+              )}
+          </>
+        )}
       </View>
 
       {/* Bottom panel — settings, controls, wrong words */}
@@ -570,6 +637,63 @@ const styles = StyleSheet.create({
   },
   markBtnText: {
     fontSize: 13,
+    fontWeight: "600",
+  },
+  nextWordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  nextWordLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  nextWordText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  finishedContainer: {
+    alignItems: "center",
+    gap: spacing["2xl"],
+    width: "100%",
+  },
+  finishedCard: {
+    width: "100%",
+    maxWidth: 320,
+    borderRadius: radii.card,
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["2xl"],
+    alignItems: "center",
+    borderWidth: 1,
+    gap: spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  finishedTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  finishedSub: {
+    fontSize: 14,
+  },
+  returnBtn: {
+    width: "100%",
+    maxWidth: 320,
+    height: 48,
+    borderRadius: radii.control,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  returnBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  returnBtnText: {
+    fontSize: 16,
     fontWeight: "600",
   },
 
