@@ -4,15 +4,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type ThemeColors = {
   primary: string;
-  primaryLight: string;
-  primaryDark: string;
   primarySoft: string;
-  primaryRing: string;
-  primaryFocus: string;
 
   danger: string;
   dangerSoft: string;
-  dangerHover: string;
   dangerMuted: string;
 
   foreground: string;
@@ -29,21 +24,17 @@ export type ThemeColors = {
   surface: string;
   surfaceRaised: string;
   surfaceSunken: string;
-  surfaceHover: string;
   track: string;
+
+  overlay: string;
 };
 
 export const lightTheme: ThemeColors = {
   primary: "#4f46e5",
-  primaryLight: "#6366f1",
-  primaryDark: "#4338ca",
   primarySoft: "#eef2ff",
-  primaryRing: "#e0e7ff",
-  primaryFocus: "#818cf8",
 
   danger: "#e11d48",
   dangerSoft: "#fff1f2",
-  dangerHover: "#ffe4e6",
   dangerMuted: "#fb7185",
 
   foreground: "#000000",
@@ -60,21 +51,17 @@ export const lightTheme: ThemeColors = {
   surface: "#00000008",
   surfaceRaised: "#0000000B",
   surfaceSunken: "#00000005",
-  surfaceHover: "#0000000A",
   track: "#00000012",
+
+  overlay: "rgba(0,0,0,0.45)",
 };
 
 export const darkTheme: ThemeColors = {
   primary: "#818cf8",
-  primaryLight: "#a5b4fc",
-  primaryDark: "#6366f1",
   primarySoft: "#1e1b4b",
-  primaryRing: "#312e81",
-  primaryFocus: "#6366f1",
 
   danger: "#fb7185",
   dangerSoft: "#2d1520",
-  dangerHover: "#3d1f2a",
   dangerMuted: "#e11d48",
 
   foreground: "#ffffff",
@@ -91,8 +78,9 @@ export const darkTheme: ThemeColors = {
   surface: "#ffffff08",
   surfaceRaised: "#ffffff0B",
   surfaceSunken: "#ffffff05",
-  surfaceHover: "#ffffff0A",
   track: "#ffffff12",
+
+  overlay: "rgba(0,0,0,0.45)",
 };
 
 type ThemeMode = "light" | "dark";

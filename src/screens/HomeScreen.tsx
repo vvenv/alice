@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { OcrSection } from "../components/OcrSection";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
@@ -25,6 +26,11 @@ import {
   loadPersistedWrongWords,
   loadWordInput,
   saveWordInput,
+  loadWordHistory,
+  addWordHistory,
+  deleteWordHistory,
+  clearWordHistory,
+  WordHistoryEntry,
 } from "../lib/storage";
 import {
   loadOcrUnlockState,
@@ -38,6 +44,16 @@ const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
 
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
 
+function formatDate(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function wordCount(text: string): number {
+  return parseWords(text).length;
+}
+
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigation>();
   const colors = useThemeColors();
@@ -47,6 +63,16 @@ export function HomeScreen() {
   const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
+  const [history, setHistory] = useState<WordHistoryEntry[]>([]);
+
+  // Confirm dialog state
+  const [dialog, setDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -55,14 +81,17 @@ export function HomeScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [savedInput, , persistedOcrUnlocked] = await Promise.all([
-        loadWordInput(),
-        loadPersistedWrongWords(),
-        loadOcrUnlockState(),
-      ]);
+      const [savedInput, , persistedOcrUnlocked, savedHistory] =
+        await Promise.all([
+          loadWordInput(),
+          loadPersistedWrongWords(),
+          loadOcrUnlockState(),
+          loadWordHistory(),
+        ]);
       if (cancelled) return;
       if (savedInput) setWordInput(savedInput);
       setOcrUnlocked(persistedOcrUnlocked);
+      setHistory(savedHistory);
       setReady(true);
     })();
     return () => {
@@ -98,12 +127,49 @@ export function HomeScreen() {
       showToast("请先输入单词列表");
       return;
     }
+    // Save to history before navigating
+    addWordHistory(wordInput).then(() =>
+      loadWordHistory().then(setHistory),
+    );
     navigation.navigate("Dictation", {
       words,
       intervalSec,
       autoNext,
     });
   }, [autoNext, intervalSec, navigation, showToast, wordInput]);
+
+  const handleApplyHistory = useCallback((text: string) => {
+    setWordInput(text);
+    showToast("已载入历史记录");
+  }, [showToast]);
+
+  const handleDeleteHistory = useCallback((id: string) => {
+    setDialog({
+      visible: true,
+      title: "删除记录",
+      message: "确定要删除这条历史记录吗？",
+      confirmLabel: "删除",
+      action: () => {
+        setHistory((prev) => prev.filter((e) => e.id !== id));
+        deleteWordHistory(id);
+      },
+    });
+  }, []);
+
+  const handleClearHistory = useCallback(() => {
+    if (history.length === 0) return;
+    setDialog({
+      visible: true,
+      title: "清空历史",
+      message: "确定要清空历史记录吗？此操作不可撤销。",
+      confirmLabel: "清空",
+      action: () => {
+        setHistory([]);
+        clearWordHistory();
+        showToast("已清空历史记录");
+      },
+    });
+  }, [history, showToast]);
 
   if (!ready) {
     return (
@@ -166,6 +232,109 @@ export function HomeScreen() {
               onSetSample={() => setWordInput(SAMPLE_WORDS)}
               onClear={() => setWordInput("")}
             />
+
+            {/* History section */}
+            <View
+              style={[
+                styles.historySection,
+                {
+                  backgroundColor: colors.surfaceSunken,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <View style={styles.historyHeader}>
+                <Text style={[styles.sectionLabel, { color: colors.muted }]}>
+                  历史记录 ({history.length})
+                </Text>
+                {history.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.smallBtn, { backgroundColor: colors.surface }]}
+                    onPress={handleClearHistory}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[styles.smallBtnText, { color: colors.dangerMuted }]}
+                    >
+                      清空
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {history.length === 0 ? (
+                <Text
+                  style={[
+                    styles.emptyHistory,
+                    { color: colors.subtle, backgroundColor: colors.surface },
+                  ]}
+                >
+                  尚无历史记录
+                </Text>
+              ) : (
+                <View>
+                  {history.map((entry) => (
+                    <View
+                      key={entry.id}
+                      style={[
+                        styles.historyItem,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.borderSubtle,
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.historyItemContent}
+                        onPress={() => handleApplyHistory(entry.text)}
+                        activeOpacity={0.6}
+                      >
+                        <View style={styles.historyItemLeft}>
+                          <Ionicons
+                            name="document-text-outline"
+                            size={16}
+                            color={colors.subtle}
+                          />
+                        </View>
+                        <View style={styles.historyItemCenter}>
+                          <Text
+                            style={[
+                              styles.historyItemText,
+                              { color: colors.foreground },
+                            ]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {entry.text.replace(/\n/g, " ")}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.historyItemMeta,
+                              { color: colors.subtle },
+                            ]}
+                          >
+                            {wordCount(entry.text)} 个单词 ·{" "}
+                            {formatDate(entry.timestamp)}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.historyItemDelete}
+                        onPress={() => handleDeleteHistory(entry.id)}
+                        activeOpacity={0.6}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={20}
+                          color={colors.subtle}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
         </ScrollView>
 
@@ -181,6 +350,18 @@ export function HomeScreen() {
           />
         </View>
         <Toast message={toast} />
+        <ConfirmDialog
+          visible={dialog?.visible}
+          title={dialog?.title}
+          message={dialog?.message}
+          confirmLabel={dialog?.confirmLabel}
+          destructive
+          onConfirm={dialog?.action ?? (() => {})}
+          onCancel={() => setDialog({
+            ...dialog!,
+            visible: false,
+          })}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -238,5 +419,71 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     width: "100%",
     alignSelf: "center",
+  },
+
+  // History styles
+  historySection: {
+    borderRadius: radii.surface,
+    borderWidth: 1,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  smallBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.xs,
+  },
+  smallBtnText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  emptyHistory: {
+    textAlign: "center",
+    fontSize: 13,
+    paddingVertical: spacing.md,
+    borderRadius: radii.surface,
+  },
+  historyItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: radii.control,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+    overflow: "hidden",
+  },
+  historyItemContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm + 2,
+    paddingLeft: spacing.sm + 2,
+    paddingRight: spacing.xs,
+  },
+  historyItemLeft: {
+    marginRight: spacing.sm,
+  },
+  historyItemCenter: {
+    flex: 1,
+  },
+  historyItemText: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  historyItemMeta: {
+    fontSize: 11,
+  },
+  historyItemDelete: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm + 2,
   },
 });

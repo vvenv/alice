@@ -53,7 +53,7 @@ export function PlaybackControls({
         <Switch
           value={autoNext}
           onValueChange={onAutoNextChange}
-          trackColor={{ false: colors.track, true: colors.primaryRing }}
+          trackColor={{ false: colors.track, true: colors.primarySoft }}
           thumbColor={autoNext ? colors.primary : colors.background}
         />
       </View>
