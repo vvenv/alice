@@ -115,7 +115,7 @@ export function DictationScreen({
       : 0;
   const countdownLabel =
     playback.remainingMs !== null
-      ? `${Math.ceil(playback.remainingMs / 1000)}s`
+      ? `${(playback.remainingMs / 1000).toFixed(1)}s`
       : "—";
 
   const stateLabel =
