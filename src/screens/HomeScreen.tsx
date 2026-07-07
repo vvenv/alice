@@ -32,10 +32,7 @@ import {
   clearWordHistory,
   WordHistoryEntry,
 } from "../lib/storage";
-import {
-  loadOcrUnlockState,
-  verifyUnlockCode,
-} from "../lib/auth";
+import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 
@@ -52,6 +49,10 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
+
+function isDefaultEntry(entry: WordHistoryEntry): boolean {
+  return entry.id.startsWith("default_");
+}
 
 function formatDate(ts: number): string {
   const d = new Date(ts);
@@ -154,20 +155,29 @@ export function HomeScreen() {
       words = shuffleArray(words);
     }
     // Save to history before navigating
-    addWordHistory(wordInput).then(() =>
-      loadWordHistory().then(setHistory),
-    );
+    addWordHistory(wordInput).then(() => loadWordHistory().then(setHistory));
     navigation.navigate("Dictation", {
       words,
       intervalSec,
       autoNext,
     });
-  }, [autoNext, intervalSec, navigation, showToast, shuffle, startIndex, wordInput]);
+  }, [
+    autoNext,
+    intervalSec,
+    navigation,
+    showToast,
+    shuffle,
+    startIndex,
+    wordInput,
+  ]);
 
-  const handleApplyHistory = useCallback((text: string) => {
-    setWordInput(text);
-    showToast("已载入历史记录");
-  }, [showToast]);
+  const handleApplyHistory = useCallback(
+    (text: string) => {
+      setWordInput(text);
+      showToast("已载入历史记录");
+    },
+    [showToast],
+  );
 
   const handleDeleteHistory = useCallback((id: string) => {
     setDialog({
@@ -183,19 +193,18 @@ export function HomeScreen() {
   }, []);
 
   const handleClearHistory = useCallback(() => {
-    if (history.length === 0) return;
+    const userEntries = history.filter((e) => !isDefaultEntry(e));
+    if (userEntries.length === 0) return;
     setDialog({
       visible: true,
       title: "清空历史",
-      message: "确定要清空历史记录吗？此操作不可撤销。",
+      message: "确定要清空自定义历史记录吗？\n内置词库不会被清除。",
       confirmLabel: "清空",
       action: () => {
-        setHistory([]);
-        clearWordHistory();
-        showToast("已清空历史记录");
+        clearWordHistory().then(() => loadWordHistory().then(setHistory));
       },
     });
-  }, [history, showToast]);
+  }, [history]);
 
   if (!ready) {
     return (
@@ -275,14 +284,20 @@ export function HomeScreen() {
                 <Text style={[styles.sectionLabel, { color: colors.muted }]}>
                   历史记录 ({history.length})
                 </Text>
-                {history.length > 0 && (
+                {history.filter((e) => !isDefaultEntry(e)).length > 0 && (
                   <TouchableOpacity
-                    style={[styles.smallBtn, { backgroundColor: colors.surface }]}
+                    style={[
+                      styles.smallBtn,
+                      { backgroundColor: colors.surface },
+                    ]}
                     onPress={handleClearHistory}
                     activeOpacity={0.7}
                   >
                     <Text
-                      style={[styles.smallBtnText, { color: colors.dangerMuted }]}
+                      style={[
+                        styles.smallBtnText,
+                        { color: colors.dangerMuted },
+                      ]}
                     >
                       清空
                     </Text>
@@ -317,47 +332,42 @@ export function HomeScreen() {
                         onPress={() => handleApplyHistory(entry.text)}
                         activeOpacity={0.6}
                       >
-                        <View style={styles.historyItemLeft}>
+                        <Text
+                          style={[
+                            styles.historyItemText,
+                            { color: colors.foreground },
+                          ]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {isDefaultEntry(entry)
+                            ? entry.id.replace("default_", "")
+                            : entry.text.replace(/\n/g, " ")}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.historyItemMeta,
+                            { color: colors.subtle },
+                          ]}
+                        >
+                          {wordCount(entry.text)}
+                          {isDefaultEntry(entry) ? " · 内置" : null}
+                        </Text>
+                      </TouchableOpacity>
+                      {!isDefaultEntry(entry) && (
+                        <TouchableOpacity
+                          style={styles.historyItemDelete}
+                          onPress={() => handleDeleteHistory(entry.id)}
+                          activeOpacity={0.6}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
                           <Ionicons
-                            name="document-text-outline"
-                            size={16}
+                            name="close-circle"
+                            size={20}
                             color={colors.subtle}
                           />
-                        </View>
-                        <View style={styles.historyItemCenter}>
-                          <Text
-                            style={[
-                              styles.historyItemText,
-                              { color: colors.foreground },
-                            ]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {entry.text.replace(/\n/g, " ")}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.historyItemMeta,
-                              { color: colors.subtle },
-                            ]}
-                          >
-                            {wordCount(entry.text)} 个单词 ·{" "}
-                            {formatDate(entry.timestamp)}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.historyItemDelete}
-                        onPress={() => handleDeleteHistory(entry.id)}
-                        activeOpacity={0.6}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={20}
-                          color={colors.subtle}
-                        />
-                      </TouchableOpacity>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -366,9 +376,7 @@ export function HomeScreen() {
           </View>
         </ScrollView>
 
-        <View
-          style={[styles.bottomPanel, { borderTopColor: colors.border }]}
-        >
+        <View style={[styles.bottomPanel, { borderTopColor: colors.border }]}>
           <PlaybackControls
             intervalSec={intervalSec}
             autoNext={autoNext}
@@ -387,10 +395,12 @@ export function HomeScreen() {
           confirmLabel={dialog?.confirmLabel}
           destructive
           onConfirm={dialog?.action ?? (() => {})}
-          onCancel={() => setDialog({
-            ...dialog!,
-            visible: false,
-          })}
+          onCancel={() =>
+            setDialog({
+              ...dialog!,
+              visible: false,
+            })
+          }
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -494,15 +504,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm + 2,
-    paddingLeft: spacing.sm + 2,
-    paddingRight: spacing.xs,
-  },
-  historyItemLeft: {
-    marginRight: spacing.sm,
-  },
-  historyItemCenter: {
-    flex: 1,
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    padding: spacing.sm + 2,
   },
   historyItemText: {
     fontSize: 14,
