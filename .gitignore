@@ -16,6 +16,8 @@ dist/
 dist-ssr/
 release/
 *.tar.gz
+*.apk
+*.ipa
 
 # Editor
 .vscode/*
@@ -35,4 +37,3 @@ release/
 .env.development
 .env.production
 .env.test
-.env.deploy

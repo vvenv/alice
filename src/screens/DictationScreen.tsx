@@ -9,13 +9,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useAudioPlayer } from "expo-audio";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { useBackgroundAudio } from "../hooks/useBackgroundAudio";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
-import { initAudio } from "../lib/tts";
+import { initAudio, setWordPlayer } from "../lib/tts";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
@@ -52,6 +53,10 @@ export function DictationScreen({
 
   // Ref to hold setPlaying from useBackgroundAudio (avoids circular dependency)
   const setPlayingRef = useRef<(playing: boolean) => void>(() => {});
+
+  // Word audio player — used by tts module to speak words via expo-audio
+  // (required for background playback on Android)
+  const wordPlayer = useAudioPlayer(null);
 
   const playback = usePlayback({ intervalSec, autoNext });
 
@@ -94,6 +99,14 @@ export function DictationScreen({
   useEffect(() => {
     setPlayingRef.current = setPlaying;
   }, [setPlaying]);
+
+  // Inject the word player into the tts module (so speakWord uses expo-audio)
+  useEffect(() => {
+    setWordPlayer(wordPlayer);
+    return () => {
+      setWordPlayer(null);
+    };
+  }, [wordPlayer]);
 
   // Initialize audio then auto-start on mount
   useEffect(() => {
@@ -592,11 +605,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   wordText: {
     fontSize: 40,
@@ -732,11 +740,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     gap: spacing.md,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   finishedTitle: {
     fontSize: 22,

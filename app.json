@@ -34,6 +34,7 @@
       "versionCode": 2
     },
     "plugins": [
+      "./plugins/withGradleJvmArgs",
       [
         "expo-image-picker",
         {
@@ -43,13 +44,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#ffffff"
+          "microphonePermission": false,
+          "enableBackgroundPlayback": true
         }
       ]
     ],

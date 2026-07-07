@@ -7,7 +7,11 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "env": {
+          "GRADLE_OPTS": "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m --enable-native-access=ALL-UNNAMED -Dfile.encoding=UTF-8\" -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false",
+          "JAVA_TOOL_OPTIONS": "--enable-native-access=ALL-UNNAMED"
+        }
       }
     },
     "production": {
