@@ -35,8 +35,8 @@ export function WordInputSection({
   onStartIndexChange,
 }: WordInputSectionProps) {
   const colors = useThemeColors();
-  const wordCount = useMemo(() => parseWords(value).length, [value]);
   const parsedWords = useMemo(() => parseWords(value), [value]);
+  const wordCount = useMemo(() => parsedWords.length, [parsedWords]);
   const [textAreaHeight, setTextAreaHeight] = useState(TEXT_AREA_MIN_HEIGHT);
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const effectiveDisplayMode = isDisplayMode && wordCount > 0;
@@ -108,7 +108,12 @@ export function WordInputSection({
                     {word}
                   </Text>
                   {isCursor && (
-                    <Text style={[styles.cursorIndicator, { color: colors.primary }]}>
+                    <Text
+                      style={[
+                        styles.cursorIndicator,
+                        { color: colors.primary },
+                      ]}
+                    >
                       ◀
                     </Text>
                   )}
@@ -142,19 +147,28 @@ export function WordInputSection({
       )}
 
       <View style={styles.footer}>
-        <Text style={[styles.count, { color: colors.muted }]}>
-          {effectiveDisplayMode
-            ? `游标：第 ${startIndex + 1} 个`
-            : `共 ${wordCount} 个单词`}
-        </Text>
+        {effectiveDisplayMode ? (
+          <Text style={[styles.start, { color: colors.secondary }]}>
+            起始：{parsedWords[startIndex] || "无"}
+          </Text>
+        ) : (
+          <Text style={[styles.count, { color: colors.muted }]}>
+            共 {wordCount} 个单词
+          </Text>
+        )}
+
         <View style={styles.actions}>
           {wordCount > 0 && (
             <TouchableOpacity
               style={[
                 styles.smallBtn,
                 {
-                  borderColor: effectiveDisplayMode ? colors.primary : colors.border,
-                  backgroundColor: effectiveDisplayMode ? colors.primarySoft : "transparent",
+                  borderColor: effectiveDisplayMode
+                    ? colors.primary
+                    : colors.border,
+                  backgroundColor: effectiveDisplayMode
+                    ? colors.primarySoft
+                    : "transparent",
                 },
               ]}
               onPress={() => setIsDisplayMode((prev) => !prev)}
@@ -163,7 +177,11 @@ export function WordInputSection({
               <Text
                 style={[
                   styles.smallBtnText,
-                  { color: effectiveDisplayMode ? colors.primary : colors.secondary },
+                  {
+                    color: effectiveDisplayMode
+                      ? colors.primary
+                      : colors.secondary,
+                  },
                 ]}
               >
                 {effectiveDisplayMode ? "编辑" : "退出编辑"}
@@ -177,7 +195,9 @@ export function WordInputSection({
                 onPress={onSetSample}
                 activeOpacity={0.6}
               >
-                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                <Text
+                  style={[styles.smallBtnText, { color: colors.secondary }]}
+                >
                   示例
                 </Text>
               </TouchableOpacity>
@@ -186,7 +206,9 @@ export function WordInputSection({
                 onPress={onClear}
                 activeOpacity={0.6}
               >
-                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                <Text
+                  style={[styles.smallBtnText, { color: colors.secondary }]}
+                >
                   清空
                 </Text>
               </TouchableOpacity>
@@ -214,6 +236,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  start: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   count: {
     fontSize: 12,
