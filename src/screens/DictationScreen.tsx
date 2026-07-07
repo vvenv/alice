@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
+import { useBackgroundAudio } from "../hooks/useBackgroundAudio";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
@@ -49,6 +50,8 @@ export function DictationScreen({
     removeWrongWord,
   } = useWrongWords();
 
+  const { startSession, stopSession } = useBackgroundAudio();
+
   const playback = usePlayback({ intervalSec, autoNext });
 
   // Initialize audio then auto-start on mount
@@ -57,10 +60,12 @@ export function DictationScreen({
     (async () => {
       await initAudio();
       if (cancelled) return;
+      startSession();
       playback.startDictation(words);
     })();
     return () => {
       cancelled = true;
+      stopSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -69,6 +74,14 @@ export function DictationScreen({
     playback.playState === "playing" || playback.playState === "paused";
   const isFinished =
     playback.playState === "idle" && playback.wordList.length > 0;
+
+  // Stop background audio session when dictation finishes naturally.
+  useEffect(() => {
+    if (isFinished) {
+      stopSession();
+    }
+  }, [isFinished, stopSession]);
+
   const markEnabled =
     isActive && playback.currentIndex < playback.wordList.length;
   const skipEnabled =
@@ -89,8 +102,9 @@ export function DictationScreen({
 
   const handleStop = useCallback(() => {
     playback.stopDictation();
+    stopSession();
     onEnd();
-  }, [playback, onEnd]);
+  }, [playback, stopSession, onEnd]);
 
   const handleExport = useCallback(async () => {
     const msg = await exportWrong();
