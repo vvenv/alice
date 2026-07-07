@@ -17,7 +17,9 @@
       "bundleIdentifier": "com.vvenv.alice",
       "infoPlist": {
         "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -31,7 +33,8 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ]
+      ],
+      "versionCode": 2
     },
     "plugins": [
       [
