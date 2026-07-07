@@ -56,6 +56,9 @@ importers:
       expo-speech:
         specifier: ^57.0.0
         version: 57.0.0(expo@57.0.2)
+      expo-splash-screen:
+        specifier: ^57.0.2
+        version: 57.0.2(expo@57.0.2)(typescript@6.0.3)
       expo-status-bar:
         specifier: ^57.0.0
         version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@8.0.1)(@types/react@19.2.17)(react@19.2.7)(supports-color@8.1.1))(react@19.2.7)
@@ -1329,6 +1332,11 @@ packages:
 
   expo-speech@57.0.0:
     resolution: {integrity: sha512-AOTdEkrFEq6t7ilQLOOZbrLkQrLYDSBC8aqcbhQMHgxe89yKqAAJ+r1hE0HqkNeK9YyV0mQ1+XizEmIX/djh5Q==}
+    peerDependencies:
+      expo: '*'
+
+  expo-splash-screen@57.0.2:
+    resolution: {integrity: sha512-xyfl+Twl5EiFKxYLKlofJi/r7mvdxwr/w9olUWYL4viEEpYCPCvj2YzZQtPptr/wMFe4G+X97W42sRWq6zdSfA==}
     peerDependencies:
       expo: '*'
 
@@ -4102,6 +4110,16 @@ snapshots:
   expo-speech@57.0.0(expo@57.0.2):
     dependencies:
       expo: 57.0.2(@babel/core@8.0.1)(@expo/dom-webview@57.0.0)(@expo/metro-runtime@57.0.3)(react-dom@19.2.7(react@19.2.7))(react-native-web@0.21.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-native@0.86.0(@babel/core@8.0.1)(@types/react@19.2.17)(react@19.2.7)(supports-color@8.1.1))(react@19.2.7)(supports-color@8.1.1)(typescript@6.0.3)
+
+  expo-splash-screen@57.0.2(expo@57.0.2)(typescript@6.0.3):
+    dependencies:
+      '@expo/config-plugins': 57.0.2(typescript@6.0.3)
+      '@expo/image-utils': 0.11.1(typescript@6.0.3)
+      expo: 57.0.2(@babel/core@8.0.1)(@expo/dom-webview@57.0.0)(@expo/metro-runtime@57.0.3)(react-dom@19.2.7(react@19.2.7))(react-native-web@0.21.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-native@0.86.0(@babel/core@8.0.1)(@types/react@19.2.17)(react@19.2.7)(supports-color@8.1.1))(react@19.2.7)(supports-color@8.1.1)(typescript@6.0.3)
+      xml2js: 0.6.0
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   expo-status-bar@57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@8.0.1)(@types/react@19.2.17)(react@19.2.7)(supports-color@8.1.1))(react@19.2.7):
     dependencies:

@@ -34,6 +34,7 @@
     "expo-image-manipulator": "^57.0.2",
     "expo-image-picker": "^57.0.2",
     "expo-speech": "^57.0.0",
+    "expo-splash-screen": "^57.0.2",
     "expo-status-bar": "^57.0.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
