@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -50,9 +50,50 @@ export function DictationScreen({
     removeWrongWord,
   } = useWrongWords();
 
-  const { startSession, stopSession } = useBackgroundAudio();
+  // Ref to hold setPlaying from useBackgroundAudio (avoids circular dependency)
+  const setPlayingRef = useRef<(playing: boolean) => void>(() => {});
 
   const playback = usePlayback({ intervalSec, autoNext });
+
+  // In-app play/pause — used both by the UI button AND the lock-screen callback
+  const handlePlayToggle = useCallback(() => {
+    const isPlaying = playback.playState === "playing";
+    if (isPlaying) {
+      playback.pauseDictation();
+      setPlayingRef.current(false);
+      return;
+    }
+    playback.resumeDictation();
+    setPlayingRef.current(true);
+  }, [playback]);
+
+  // Ref-based callbacks so useBackgroundAudio never reads stale props
+  const remoteCallbacksRef = useRef({
+    onTogglePlayPause: handlePlayToggle,
+    onSkipToNext: playback.skipToNextWord,
+    onSkipToPrevious: () => {
+      playback.pauseDictation();
+      playback.resumeDictation();
+    },
+  });
+
+  // Keep the ref up to date whenever dependencies change
+  useEffect(() => {
+    remoteCallbacksRef.current.onTogglePlayPause = handlePlayToggle;
+    remoteCallbacksRef.current.onSkipToNext = playback.skipToNextWord;
+    remoteCallbacksRef.current.onSkipToPrevious = () => {
+      playback.pauseDictation();
+      playback.resumeDictation();
+    };
+  }, [handlePlayToggle, playback.skipToNextWord, playback.pauseDictation, playback.resumeDictation]);
+
+  const { startSession, setPlaying, updateMetadata, stopSession } =
+    useBackgroundAudio(remoteCallbacksRef);
+
+  // Wire up setPlayingRef so handlePlayToggle can call setPlaying
+  useEffect(() => {
+    setPlayingRef.current = setPlaying;
+  }, [setPlaying]);
 
   // Initialize audio then auto-start on mount
   useEffect(() => {
@@ -60,7 +101,7 @@ export function DictationScreen({
     (async () => {
       await initAudio();
       if (cancelled) return;
-      startSession();
+      startSession(true);
       playback.startDictation(words);
     })();
     return () => {
@@ -82,6 +123,23 @@ export function DictationScreen({
     }
   }, [isFinished, stopSession]);
 
+  // Update lock screen metadata when current word changes
+  useEffect(() => {
+    if (isActive && playback.wordList.length > 0) {
+      const word = playback.wordList[playback.currentIndex];
+      if (word) {
+        updateMetadata(
+          `${playback.currentIndex + 1} / ${playback.wordList.length}  ${word}`,
+        );
+      }
+    }
+  }, [
+    playback.currentIndex,
+    playback.wordList,
+    isActive,
+    updateMetadata,
+  ]);
+
   const markEnabled =
     isActive && playback.currentIndex < playback.wordList.length;
   const skipEnabled =
@@ -91,14 +149,6 @@ export function DictationScreen({
     if (!isActive || playback.currentIndex >= playback.wordList.length) return;
     markWrong(playback.wordList[playback.currentIndex]!);
   }, [isActive, markWrong, playback.currentIndex, playback.wordList]);
-
-  const handlePlayToggle = useCallback(() => {
-    if (playback.playState === "playing") {
-      playback.pauseDictation();
-      return;
-    }
-    playback.resumeDictation();
-  }, [playback]);
 
   const handleStop = useCallback(() => {
     playback.stopDictation();

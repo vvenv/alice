@@ -54,6 +54,7 @@ export async function initAudio(): Promise<void> {
     await setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
+      interruptionMode: "doNotMix",
       shouldRouteThroughEarpiece: false,
     });
   } catch (e) {
