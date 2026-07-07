@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
   Switch,
@@ -74,16 +75,19 @@ export function PlaybackControls({
             onPress={onPlayToggle}
             activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.mainBtnTextBase,
-                {
-                  color: colors.background,
-                },
-              ]}
-            >
-              ▶ 开始
-            </Text>
+            <View style={styles.mainBtnContent}>
+              <Ionicons name="play" size={20} color={colors.background} />
+              <Text
+                style={[
+                  styles.mainBtnTextBase,
+                  {
+                    color: colors.background,
+                  },
+                ]}
+              >
+                开始
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -139,5 +143,11 @@ const styles = StyleSheet.create({
   mainBtnTextBase: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  mainBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
   },
 });

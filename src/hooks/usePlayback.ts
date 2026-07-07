@@ -4,6 +4,7 @@ import { speakWord, stopSpeech } from "../lib/tts";
 
 type PlayState = "idle" | "playing" | "paused";
 
+const TICK_INTERVAL_MS = 50;
 const REPEAT_GAP_MS = 700;
 
 function sleep(ms: number): Promise<void> {
@@ -61,7 +62,7 @@ export function usePlayback({
         if (deadlineRef.current === null) return;
         const left = Math.max(0, deadlineRef.current - Date.now());
         setRemainingMs(left);
-      }, 50);
+      }, TICK_INTERVAL_MS);
     },
     [clearCountdown],
   );

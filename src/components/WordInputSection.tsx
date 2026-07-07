@@ -107,9 +107,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
-  textAreaDisabled: {
-    opacity: 0.5,
-  },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",

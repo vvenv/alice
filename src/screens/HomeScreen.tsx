@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -33,6 +34,7 @@ import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 
 const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
+const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
 
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -45,6 +47,8 @@ export function HomeScreen() {
   const [intervalSec, setIntervalSec] = useState(4.5);
   const [autoNext, setAutoNext] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { toast, showToast } = useToast();
 
@@ -66,8 +70,16 @@ export function HomeScreen() {
     };
   }, []);
 
+  // Debounced persistence to avoid writing AsyncStorage on every keystroke
   useEffect(() => {
-    if (ready) saveWordInput(wordInput);
+    if (!ready) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      saveWordInput(wordInput);
+    }, WORD_INPUT_SAVE_DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [wordInput, ready]);
 
   const handleOcrResult = useCallback((words: string[]) => {
@@ -127,9 +139,11 @@ export function HomeScreen() {
             onPress={toggleTheme}
             activeOpacity={0.7}
           >
-            <Text style={styles.themeBtnText}>
-              {mode === "dark" ? "☀️" : "🌙"}
-            </Text>
+            <Ionicons
+              name={mode === "dark" ? "sunny" : "moon"}
+              size={18}
+              color={colors.foreground}
+            />
           </TouchableOpacity>
         </View>
 
@@ -198,9 +212,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  themeBtnText: {
-    fontSize: 18,
   },
   scroll: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
@@ -9,12 +10,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PlaybackControls } from "../components/PlaybackControls";
+import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { initAudio } from "../lib/tts";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
+
+const STATUS_PLAYING = "#27ae60";
+const STATUS_PAUSED = "#f39c12";
 
 interface DictationScreenProps {
   words: string[];
@@ -168,9 +173,11 @@ export function DictationScreen({
             activeOpacity={0.7}
             accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
           >
-            <Text style={styles.toggleWordIcon}>
-              {showWord ? "👁" : "🙈"}
-            </Text>
+            <Ionicons
+              name={showWord ? "eye" : "eye-off"}
+              size={18}
+              color={showWord ? colors.primary : colors.muted}
+            />
           </TouchableOpacity>
 
           <Text style={[styles.wordText, { color: colors.foreground }]}>
@@ -193,9 +200,12 @@ export function DictationScreen({
           disabled={!markEnabled}
           activeOpacity={0.7}
         >
-          <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
-            ✕ 标记错词
-          </Text>
+          <View style={styles.markBtnContent}>
+            <Ionicons name="close" size={14} color={colors.dangerMuted} />
+            <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
+              标记错词
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -245,10 +255,10 @@ export function DictationScreen({
                 styles.stateDot,
                 { backgroundColor: colors.subtle },
                 playback.playState === "playing" && {
-                  backgroundColor: "#27ae60",
+                  backgroundColor: STATUS_PLAYING,
                 },
                 playback.playState === "paused" && {
-                  backgroundColor: "#f39c12",
+                  backgroundColor: STATUS_PAUSED,
                 },
               ]}
             />
@@ -266,9 +276,16 @@ export function DictationScreen({
               onPress={handlePlayToggle}
               activeOpacity={0.7}
             >
-              <Text style={[styles.controlBtnText, { color: colors.background }]}>
-                {playback.playState === "playing" ? "⏸ 暂停" : "▶ 继续"}
-              </Text>
+              <View style={styles.controlBtnContent}>
+                <Ionicons
+                  name={playback.playState === "playing" ? "pause" : "play"}
+                  size={16}
+                  color={colors.background}
+                />
+                <Text style={[styles.controlBtnText, { color: colors.background }]}>
+                  {playback.playState === "playing" ? "暂停" : "继续"}
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -284,9 +301,12 @@ export function DictationScreen({
               disabled={!skipEnabled}
               activeOpacity={0.7}
             >
-              <Text style={[styles.controlBtnTextOutline, { color: colors.secondary }]}>
-                ⏭ 跳过
-              </Text>
+              <View style={styles.controlBtnContent}>
+                <Ionicons name="play-skip-forward" size={16} color={colors.secondary} />
+                <Text style={[styles.controlBtnTextOutline, { color: colors.secondary }]}>
+                  跳过
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -302,9 +322,12 @@ export function DictationScreen({
               disabled={!isActive}
               activeOpacity={0.7}
             >
-              <Text style={[styles.controlBtnTextDanger, { color: colors.danger }]}>
-                ⏹ 结束
-              </Text>
+              <View style={styles.controlBtnContent}>
+                <Ionicons name="stop" size={16} color={colors.danger} />
+                <Text style={[styles.controlBtnTextDanger, { color: colors.danger }]}>
+                  结束
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -378,11 +401,7 @@ export function DictationScreen({
         </View>
       </View>
 
-      {toast ? (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>{toast}</Text>
-        </View>
-      ) : null}
+      <Toast message={toast} />
     </SafeAreaView>
   );
 }
@@ -421,9 +440,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
-  },
-  toggleWordIcon: {
-    fontSize: 16,
   },
 
   wordStage: {
@@ -519,6 +535,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
   },
+  controlBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
   controlBtnDisabled: {
     opacity: 0.4,
   },
@@ -539,6 +561,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: radii.full,
     borderWidth: 1,
+  },
+  markBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
   },
   markBtnText: {
     fontSize: 13,
@@ -597,21 +625,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   chipRemove: {
-    fontSize: 14,
-  },
-
-  toast: {
-    position: "absolute",
-    bottom: 40,
-    left: spacing.lg,
-    right: spacing.lg,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    paddingVertical: spacing.md,
-    borderRadius: radii.surface,
-    alignItems: "center",
-  },
-  toastText: {
-    color: "#fff",
     fontSize: 14,
   },
 });

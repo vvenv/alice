@@ -2,6 +2,8 @@ import { useCallback, useState } from "react";
 
 import { loadWrongWords, saveWrongWords } from "../lib/storage";
 
+const FLASH_DURATION_MS = 250;
+
 export function useWrongWords(initialWords?: string[]) {
   const [wrongWords, setWrongWords] = useState<string[]>(
     () => initialWords ?? loadWrongWords(),
@@ -16,7 +18,7 @@ export function useWrongWords(initialWords?: string[]) {
       return next;
     });
     setMarkedFlash(true);
-    setTimeout(() => setMarkedFlash(false), 250);
+    setTimeout(() => setMarkedFlash(false), FLASH_DURATION_MS);
   }, []);
 
   const exportWrong = useCallback(async () => {
