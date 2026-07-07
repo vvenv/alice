@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vvenv.alice",
       "infoPlist": {
-        "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别"
+        "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别",
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
