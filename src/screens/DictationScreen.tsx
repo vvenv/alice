@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { createAudioPlayer } from "expo-audio";
+import { createAudioPlayer, requestNotificationPermissionsAsync } from "expo-audio";
 import type { AudioPlayer } from "expo-audio";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
@@ -70,7 +70,7 @@ export function DictationScreen({
   useEffect(() => {
     if (playerRef.current) return; // already initialised
 
-    const player = createAudioPlayer(silentWav);
+    const player = createAudioPlayer(silentWav, { keepAudioSessionActive: true });
     playerRef.current = player;
 
     player.loop = true;
@@ -86,6 +86,10 @@ export function DictationScreen({
     (async () => {
       await initAudio();
       player.play(); // ensure playing before lock screen
+
+      try {
+        await requestNotificationPermissionsAsync();
+      } catch {}
 
       await new Promise((r) => setTimeout(r, 200));
 
