@@ -1,5 +1,4 @@
-import type { AudioPlayer } from "expo-audio";
-import { setAudioModeAsync } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Speech from "expo-speech";
 
 import { createLogger } from "./logger";
@@ -7,85 +6,94 @@ import { createLogger } from "./logger";
 const log = createLogger("TTS");
 
 const TTS_SPEED = 0.9;
-/** Approximate duration of assets/silent.wav (seconds). */
-const SILENT_DURATION_S = 5;
+const MIN_AUDIO_BYTES = 256;
+
+let currentAbort: AbortController | null = null;
 
 // ---------------------------------------------------------------------------
-// Module-level state (injected from React)
+// Cache helpers
 // ---------------------------------------------------------------------------
 
-let wordPlayer: AudioPlayer | null = null;
-let silentSrc: ReturnType<typeof require> | null = null;
-let currentAbort: (() => void) | null = null;
+const CACHE_DIR = `${FileSystem.cacheDirectory}tts/`;
 
-export function setWordPlayer(player: AudioPlayer | null): void {
-  wordPlayer = player;
+async function ensureCacheDir(): Promise<void> {
+  const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true });
+  }
 }
 
-export function setSilentSource(source: ReturnType<typeof require>): void {
-  silentSrc = source;
+function cachePath(word: string): string {
+  const safe = word.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "unknown";
+  return `${CACHE_DIR}${encodeURIComponent(safe)}.mp3`;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+function ttsSources(word: string): string[] {
+  const q = encodeURIComponent(word);
+  return [
+    `https://dict.youdao.com/dictvoice?audio=${q}&type=1`,
+    `https://dict.youdao.com/dictvoice?audio=${q}&type=2`,
+  ];
+}
 
-function safeOp(fn: () => void): void {
+async function isValidAudioFile(path: string): Promise<boolean> {
+  const info = await FileSystem.getInfoAsync(path);
+  return info.exists && "size" in info && (info.size ?? 0) >= MIN_AUDIO_BYTES;
+}
+
+export async function prefetchWordAudio(word: string): Promise<string | null> {
+  const text = word.trim();
+  if (!text) return null;
+
+  await ensureCacheDir();
+  const destPath = cachePath(text);
+  if (await isValidAudioFile(destPath)) return destPath;
+
   try {
-    fn();
-  } catch {}
+    return await downloadWordAudio(text, new AbortController().signal);
+  } catch {
+    return null;
+  }
 }
 
-/** Loop silent WAV quietly — keeps Android foreground service alive in background. */
-export function playSilentKeepAlive(): void {
-  if (!wordPlayer || !silentSrc) return;
-  safeOp(() => {
-    wordPlayer!.replace(silentSrc);
-    wordPlayer!.loop = true;
-    wordPlayer!.volume = 0.01;
-    wordPlayer!.play();
-  });
-}
+async function downloadWordAudio(
+  word: string,
+  signal: AbortSignal,
+): Promise<string> {
+  await ensureCacheDir();
+  const destPath = cachePath(word);
 
-function waitForAbort(signal: AbortSignal): Promise<void> {
-  if (signal.aborted) return Promise.resolve();
-  return new Promise((resolve) => {
-    const onAbort = () => {
-      signal.removeEventListener("abort", onAbort);
-      resolve();
-    };
-    signal.addEventListener("abort", onAbort);
-  });
-}
+  for (const url of ttsSources(word)) {
+    if (signal.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
 
-function waitForTimeout(ms: number, signal: AbortSignal): Promise<void> {
-  if (ms <= 0) return Promise.resolve();
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      signal.removeEventListener("abort", onAbort);
-      resolve();
-    }, ms);
-    const onAbort = () => {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", onAbort);
-      resolve();
-    };
-    signal.addEventListener("abort", onAbort);
-  });
+    try {
+      const result = await FileSystem.downloadAsync(url, destPath);
+      if (signal.aborted) {
+        await FileSystem.deleteAsync(destPath, { idempotent: true });
+        throw new DOMException("Aborted", "AbortError");
+      }
+      if (result.status === 200 && (await isValidAudioFile(destPath))) {
+        return destPath;
+      }
+    } catch (e) {
+      if (signal.aborted) throw e;
+    }
+
+    await FileSystem.deleteAsync(destPath, { idempotent: true });
+  }
+
+  throw new Error(`TTS download failed for "${word}"`);
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// Speech — uses expo-speech (system TTS)
 // ---------------------------------------------------------------------------
-
-export async function prefetchWordAudio(_word: string): Promise<string | null> {
-  // System TTS does not need prefetching.
-  return null;
-}
 
 export async function stopSpeech(): Promise<void> {
   if (currentAbort) {
-    currentAbort();
+    currentAbort.abort();
     currentAbort = null;
   }
   try {
@@ -93,15 +101,51 @@ export async function stopSpeech(): Promise<void> {
   } catch {}
 }
 
-/** Speak a dictation word using the platform en-US TTS engine. */
 export async function speakWord(word: string): Promise<boolean> {
-  await stopSpeech();
+  if (currentAbort) {
+    currentAbort.abort();
+    currentAbort = null;
+  }
 
   const text = word.trim();
   if (!text) return false;
 
-  // Keep the silent loop running so Android foreground service stays connected.
-  playSilentKeepAlive();
+  const abortController = new AbortController();
+  currentAbort = abortController;
+  const signal = abortController.signal;
+
+  try {
+    // Try downloaded audio first via expo-speech (it can't play files, so we use system TTS)
+    // Just download to cache for later, use system TTS for actual speech
+    const destPath = cachePath(text);
+    if (!(await isValidAudioFile(destPath))) {
+      try {
+        await downloadWordAudio(text, signal);
+      } catch {
+        // download failed — fall through to system TTS
+      }
+    }
+
+    if (signal.aborted) return false;
+
+    return await speakWithSystemTts(text, signal);
+  } catch (e) {
+    if (signal.aborted) return false;
+    log.warn("speakWord failed:", text, e);
+    return false;
+  } finally {
+    if (currentAbort === abortController) {
+      currentAbort = null;
+    }
+  }
+}
+
+async function speakWithSystemTts(
+  text: string,
+  signal: AbortSignal,
+): Promise<boolean> {
+  await Speech.stop();
+  if (signal.aborted) return false;
 
   return new Promise((resolve) => {
     let settled = false;
@@ -112,15 +156,15 @@ export async function speakWord(word: string): Promise<boolean> {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      currentAbort = null;
-      playSilentKeepAlive();
       resolve(ok);
     };
 
-    currentAbort = () => {
+    const onAbort = () => {
+      signal.removeEventListener("abort", onAbort);
       Speech.stop();
       finish(false);
     };
+    signal.addEventListener("abort", onAbort);
 
     Speech.speak(text, {
       language: "en-US",
@@ -130,68 +174,4 @@ export async function speakWord(word: string): Promise<boolean> {
       onError: () => finish(false),
     });
   });
-}
-
-export async function initAudio(): Promise<void> {
-  try {
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: "doNotMix",
-      shouldRouteThroughEarpiece: false,
-    });
-  } catch (e) {
-    log.warn("Failed to set audio mode:", e);
-  }
-}
-
-/**
- * Wait `seconds` between words.
- *
- * - Foreground: setTimeout (accurate).
- * - Background: silent loop (loop=true) keeps the service alive; we also
- *   track currentTime wraps via native events when they arrive.
- * - If JS is frozen, the caller's AppState handler catches up on resume.
- */
-export async function waitForSilentInterval(
-  seconds: number,
-  signal: AbortSignal,
-): Promise<void> {
-  if (!wordPlayer || seconds <= 0) return;
-
-  playSilentKeepAlive();
-
-  const deadline = Date.now() + seconds * 1000;
-  let lastTime = 0;
-  let elapsedS = 0;
-
-  await Promise.race([
-    waitForTimeout(seconds * 1000, signal),
-    waitForAbort(signal),
-    new Promise<void>((resolve) => {
-      const sub = wordPlayer!.addListener("playbackStatusUpdate", (status) => {
-        if (signal.aborted) {
-          sub.remove();
-          resolve();
-          return;
-        }
-
-        if (status.currentTime + 0.5 < lastTime) {
-          elapsedS += SILENT_DURATION_S;
-        }
-        lastTime = status.currentTime;
-
-        if (elapsedS + status.currentTime >= seconds) {
-          sub.remove();
-          resolve();
-          return;
-        }
-
-        if (Date.now() >= deadline) {
-          sub.remove();
-          resolve();
-        }
-      });
-    }),
-  ]);
 }

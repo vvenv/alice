@@ -9,21 +9,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { createAudioPlayer, requestNotificationPermissionsAsync } from "expo-audio";
-import type { AudioPlayer } from "expo-audio";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
-import { initAudio, setWordPlayer, setSilentSource, playSilentKeepAlive } from "../lib/tts";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 const STATUS_PLAYING = "#27ae60";
 const STATUS_PAUSED = "#f39c12";
-
-const silentWav = require("../../assets/silent.wav");
 
 interface DictationScreenProps {
   words: string[];
@@ -53,10 +48,12 @@ export function DictationScreen({
     removeWrongWord,
   } = useWrongWords();
 
-  // Player ref — created once, never released by React
-  const playerRef = useRef<AudioPlayer | null>(null);
-
   const playback = usePlayback({ intervalSec, autoNext });
+
+  useEffect(() => {
+    playback.startDictation(words);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePlayToggle = useCallback(() => {
     if (playback.playState === "playing") {
@@ -66,87 +63,11 @@ export function DictationScreen({
     }
   }, [playback]);
 
-  // ---- One-time init (mount only — no cleanup) ----
-  useEffect(() => {
-    if (playerRef.current) return; // already initialised
-
-    const player = createAudioPlayer(silentWav, { keepAudioSessionActive: true });
-    playerRef.current = player;
-
-    player.loop = true;
-    player.volume = 0.01;
-    player.play();
-
-    setSilentSource(silentWav);
-    setWordPlayer(player);
-    playSilentKeepAlive();
-
-    console.log("[Dictation] player created, silent keep-alive started");
-
-    (async () => {
-      await initAudio();
-      player.play(); // ensure playing before lock screen
-
-      try {
-        await requestNotificationPermissionsAsync();
-      } catch {}
-
-      await new Promise((r) => setTimeout(r, 200));
-
-      try {
-        player.setActiveForLockScreen(
-          true,
-          { title: "Alice 听写", artist: "单词听写中" },
-          { showSeekForward: false, showSeekBackward: false },
-        );
-        console.log("[Dictation] lock screen OK");
-      } catch (e) {
-        console.error("[Dictation] lock screen failed:", e);
-      }
-
-      playback.startDictation(words);
-    })();
-
-    return () => {
-      // Cleanup only on real unmount
-      try { playerRef.current?.setActiveForLockScreen(false); } catch {}
-      try { playerRef.current?.release(); } catch {}
-      setWordPlayer(null);
-      playerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const player = playerRef.current;
-
   // ---- Derived state ----
   const isActive =
     playback.playState === "playing" || playback.playState === "paused";
   const isFinished =
     playback.playState === "idle" && playback.wordList.length > 0;
-
-  useEffect(() => {
-    if (isFinished && player) {
-      try { player.setActiveForLockScreen(false); } catch {}
-      try { player.release(); } catch {}
-      setWordPlayer(null);
-    }
-  }, [isFinished, player]);
-
-  useEffect(() => {
-    if (isActive && playback.wordList.length > 0 && player) {
-      const rawWord = playback.wordList[playback.currentIndex];
-      if (rawWord) {
-        const displayText = showWord ? rawWord : "•••••";
-        try {
-          player.updateLockScreenMetadata({
-            title: `${playback.currentIndex + 1} / ${playback.wordList.length}  ${displayText}`,
-            artist: "单词听写中",
-          });
-        } catch {}
-      }
-    }
-  }, [playback.currentIndex, playback.wordList, isActive, showWord, player]);
 
   const markEnabled =
     isActive && playback.currentIndex < playback.wordList.length;
@@ -160,13 +81,8 @@ export function DictationScreen({
 
   const handleStop = useCallback(() => {
     playback.stopDictation();
-    if (player) {
-      try { player.setActiveForLockScreen(false); } catch {}
-      try { player.release(); } catch {}
-      setWordPlayer(null);
-    }
     onEnd();
-  }, [playback, player, onEnd]);
+  }, [onEnd, playback]);
 
   const handleExport = useCallback(async () => {
     const msg = await exportWrong();
