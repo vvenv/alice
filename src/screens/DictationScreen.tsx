@@ -9,19 +9,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAudioPlayer } from "expo-audio";
+import { createAudioPlayer } from "expo-audio";
+import type { AudioPlayer } from "expo-audio";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
-import { useBackgroundAudio } from "../hooks/useBackgroundAudio";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
-import { initAudio, setWordPlayer } from "../lib/tts";
+import { initAudio, setWordPlayer, setSilentSource, playSilentKeepAlive } from "../lib/tts";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 const STATUS_PLAYING = "#27ae60";
 const STATUS_PAUSED = "#f39c12";
+
+const silentWav = require("../../assets/silent.wav");
 
 interface DictationScreenProps {
   words: string[];
@@ -51,109 +53,96 @@ export function DictationScreen({
     removeWrongWord,
   } = useWrongWords();
 
-  // Ref to hold setPlaying from useBackgroundAudio (avoids circular dependency)
-  const setPlayingRef = useRef<(playing: boolean) => void>(() => {});
-
-  // Word audio player — used by tts module to speak words via expo-audio
-  // (required for background playback on Android)
-  const wordPlayer = useAudioPlayer(null);
+  // Player ref — created once, never released by React
+  const playerRef = useRef<AudioPlayer | null>(null);
 
   const playback = usePlayback({ intervalSec, autoNext });
 
-  // In-app play/pause — used both by the UI button AND the lock-screen callback
   const handlePlayToggle = useCallback(() => {
-    const isPlaying = playback.playState === "playing";
-    if (isPlaying) {
+    if (playback.playState === "playing") {
       playback.pauseDictation();
-      setPlayingRef.current(false);
-      return;
+    } else {
+      playback.resumeDictation();
     }
-    playback.resumeDictation();
-    setPlayingRef.current(true);
   }, [playback]);
 
-  // Ref-based callbacks so useBackgroundAudio never reads stale props
-  const remoteCallbacksRef = useRef({
-    onTogglePlayPause: handlePlayToggle,
-    onSkipToNext: playback.skipToNextWord,
-    onSkipToPrevious: () => {
-      playback.pauseDictation();
-      playback.resumeDictation();
-    },
-  });
-
-  // Keep the ref up to date whenever dependencies change
+  // ---- One-time init (mount only — no cleanup) ----
   useEffect(() => {
-    remoteCallbacksRef.current.onTogglePlayPause = handlePlayToggle;
-    remoteCallbacksRef.current.onSkipToNext = playback.skipToNextWord;
-    remoteCallbacksRef.current.onSkipToPrevious = () => {
-      playback.pauseDictation();
-      playback.resumeDictation();
-    };
-  }, [handlePlayToggle, playback.skipToNextWord, playback.pauseDictation, playback.resumeDictation]);
+    if (playerRef.current) return; // already initialised
 
-  const { startSession, setPlaying, updateMetadata, stopSession } =
-    useBackgroundAudio(remoteCallbacksRef);
+    const player = createAudioPlayer(silentWav);
+    playerRef.current = player;
 
-  // Wire up setPlayingRef so handlePlayToggle can call setPlaying
-  useEffect(() => {
-    setPlayingRef.current = setPlaying;
-  }, [setPlaying]);
+    player.loop = true;
+    player.volume = 0.01;
+    player.play();
 
-  // Inject the word player into the tts module (so speakWord uses expo-audio)
-  useEffect(() => {
-    setWordPlayer(wordPlayer);
-    return () => {
-      setWordPlayer(null);
-    };
-  }, [wordPlayer]);
+    setSilentSource(silentWav);
+    setWordPlayer(player);
+    playSilentKeepAlive();
 
-  // Initialize audio then auto-start on mount
-  useEffect(() => {
-    let cancelled = false;
+    console.log("[Dictation] player created, silent keep-alive started");
+
     (async () => {
       await initAudio();
-      if (cancelled) return;
-      startSession(true);
+      player.play(); // ensure playing before lock screen
+
+      await new Promise((r) => setTimeout(r, 200));
+
+      try {
+        player.setActiveForLockScreen(
+          true,
+          { title: "Alice 听写", artist: "单词听写中" },
+          { showSeekForward: false, showSeekBackward: false },
+        );
+        console.log("[Dictation] lock screen OK");
+      } catch (e) {
+        console.error("[Dictation] lock screen failed:", e);
+      }
+
       playback.startDictation(words);
     })();
+
     return () => {
-      cancelled = true;
-      stopSession();
+      // Cleanup only on real unmount
+      try { playerRef.current?.setActiveForLockScreen(false); } catch {}
+      try { playerRef.current?.release(); } catch {}
+      setWordPlayer(null);
+      playerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const player = playerRef.current;
+
+  // ---- Derived state ----
   const isActive =
     playback.playState === "playing" || playback.playState === "paused";
   const isFinished =
     playback.playState === "idle" && playback.wordList.length > 0;
 
-  // Stop background audio session when dictation finishes naturally.
   useEffect(() => {
-    if (isFinished) {
-      stopSession();
+    if (isFinished && player) {
+      try { player.setActiveForLockScreen(false); } catch {}
+      try { player.release(); } catch {}
+      setWordPlayer(null);
     }
-  }, [isFinished, stopSession]);
+  }, [isFinished, player]);
 
-  // Update lock screen metadata when current word changes
   useEffect(() => {
-    if (isActive && playback.wordList.length > 0) {
+    if (isActive && playback.wordList.length > 0 && player) {
       const rawWord = playback.wordList[playback.currentIndex];
       if (rawWord) {
         const displayText = showWord ? rawWord : "•••••";
-        updateMetadata(
-          `${playback.currentIndex + 1} / ${playback.wordList.length}  ${displayText}`,
-        );
+        try {
+          player.updateLockScreenMetadata({
+            title: `${playback.currentIndex + 1} / ${playback.wordList.length}  ${displayText}`,
+            artist: "单词听写中",
+          });
+        } catch {}
       }
     }
-  }, [
-    playback.currentIndex,
-    playback.wordList,
-    isActive,
-    showWord,
-    updateMetadata,
-  ]);
+  }, [playback.currentIndex, playback.wordList, isActive, showWord, player]);
 
   const markEnabled =
     isActive && playback.currentIndex < playback.wordList.length;
@@ -167,9 +156,13 @@ export function DictationScreen({
 
   const handleStop = useCallback(() => {
     playback.stopDictation();
-    stopSession();
+    if (player) {
+      try { player.setActiveForLockScreen(false); } catch {}
+      try { player.release(); } catch {}
+      setWordPlayer(null);
+    }
     onEnd();
-  }, [playback, stopSession, onEnd]);
+  }, [playback, player, onEnd]);
 
   const handleExport = useCallback(async () => {
     const msg = await exportWrong();
@@ -218,14 +211,12 @@ export function DictationScreen({
         />
       </View>
 
-      {/* Progress indicator */}
       <View style={styles.header}>
         <Text style={[styles.progressText, { color: colors.muted }]}>
           {playback.currentIndex + 1} / {playback.wordList.length}
         </Text>
       </View>
 
-      {/* Word card / Finished view — centered in remaining space */}
       <View style={styles.wordStage}>
         {isFinished ? (
           <View style={styles.finishedContainer}>
@@ -252,25 +243,13 @@ export function DictationScreen({
             </View>
 
             <TouchableOpacity
-              style={[
-                styles.returnBtn,
-                { backgroundColor: colors.primary },
-              ]}
+              style={[styles.returnBtn, { backgroundColor: colors.primary }]}
               onPress={onEnd}
               activeOpacity={0.7}
             >
               <View style={styles.returnBtnContent}>
-                <Ionicons
-                  name="arrow-back"
-                  size={18}
-                  color={colors.background}
-                />
-                <Text
-                  style={[
-                    styles.returnBtnText,
-                    { color: colors.background },
-                  ]}
-                >
+                <Ionicons name="arrow-back" size={18} color={colors.background} />
+                <Text style={[styles.returnBtnText, { color: colors.background }]}>
                   返回首页
                 </Text>
               </View>
@@ -355,7 +334,6 @@ export function DictationScreen({
         )}
       </View>
 
-      {/* Bottom panel — settings, controls, wrong words */}
       <View
         style={[
           styles.bottomPanel,
@@ -375,9 +353,7 @@ export function DictationScreen({
 
         {isActive && autoNext ? (
           <View style={styles.countdownSection}>
-            <View
-              style={[styles.countdownBar, { backgroundColor: colors.track }]}
-            >
+            <View style={[styles.countdownBar, { backgroundColor: colors.track }]}>
               <View
                 style={[
                   styles.countdownFill,
@@ -506,10 +482,7 @@ export function DictationScreen({
             <Text
               style={[
                 styles.emptyWrong,
-                {
-                  color: colors.subtle,
-                  backgroundColor: colors.surface,
-                },
+                { color: colors.subtle, backgroundColor: colors.surface },
               ]}
             >
               尚无错词
@@ -553,15 +526,9 @@ export function DictationScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  progressBar: {
-    height: 3,
-  },
-  progressFill: {
-    height: "100%",
-  },
+  container: { flex: 1 },
+  progressBar: { height: 3 },
+  progressFill: { height: "100%" },
 
   header: {
     alignItems: "center",
@@ -627,16 +594,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: -spacing.sm,
   },
-  countdownBar: {
-    flex: 1,
-    height: 6,
-    borderRadius: radii.xs,
-    overflow: "hidden",
-  },
-  countdownFill: {
-    height: "100%",
-    borderRadius: radii.xs,
-  },
+  countdownBar: { flex: 1, height: 6, borderRadius: radii.xs, overflow: "hidden" },
+  countdownFill: { height: "100%", borderRadius: radii.xs },
   countdownText: {
     fontSize: 13,
     fontWeight: "700",
@@ -645,29 +604,17 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
 
-  actionSection: {
-    gap: spacing.md,
-  },
+  actionSection: { gap: spacing.md },
   stateIndicator: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
   },
-  stateDot: {
-    width: 7,
-    height: 7,
-    borderRadius: radii.full,
-  },
-  stateText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  stateDot: { width: 7, height: 7, borderRadius: radii.full },
+  stateText: { fontSize: 13, fontWeight: "500" },
 
-  controlRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
+  controlRow: { flexDirection: "row", gap: spacing.sm },
   controlBtn: {
     flex: 1,
     height: 46,
@@ -682,21 +629,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.xs,
   },
-  controlBtnDisabled: {
-    opacity: 0.4,
-  },
-  controlBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  controlBtnTextOutline: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  controlBtnTextDanger: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  controlBtnDisabled: { opacity: 0.4 },
+  controlBtnText: { fontSize: 14, fontWeight: "600" },
+  controlBtnTextOutline: { fontSize: 14, fontWeight: "600" },
+  controlBtnTextDanger: { fontSize: 14, fontWeight: "600" },
   markBtn: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
@@ -709,23 +645,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.xs,
   },
-  markBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  markBtnText: { fontSize: 13, fontWeight: "600" },
   nextWordRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  nextWordLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  nextWordText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  nextWordLabel: { fontSize: 12, fontWeight: "500" },
+  nextWordText: { fontSize: 16, fontWeight: "600" },
   finishedContainer: {
     alignItems: "center",
     gap: spacing["2xl"],
@@ -741,13 +668,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.md,
   },
-  finishedTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  finishedSub: {
-    fontSize: 14,
-  },
+  finishedTitle: { fontSize: 22, fontWeight: "700" },
+  finishedSub: { fontSize: 14 },
   returnBtn: {
     width: "100%",
     maxWidth: 320,
@@ -761,51 +683,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  returnBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  returnBtnText: { fontSize: 16, fontWeight: "600" },
 
-  wrongSection: {
-    gap: spacing.sm,
-    maxHeight: 120,
-  },
+  wrongSection: { gap: spacing.sm, maxHeight: 120 },
   wrongHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  wrongTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  wrongActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
+  wrongTitle: { fontSize: 13, fontWeight: "600" },
+  wrongActions: { flexDirection: "row", gap: spacing.sm },
   smallBtn: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.xs,
   },
-  smallBtnText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  smallBtnText: { fontSize: 12, fontWeight: "500" },
   emptyWrong: {
     textAlign: "center",
     fontSize: 13,
     paddingVertical: spacing.md,
     borderRadius: radii.surface,
   },
-  wrongScroll: {
-    flexGrow: 0,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
+  wrongScroll: { flexGrow: 0 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -814,10 +715,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.full,
   },
-  chipText: {
-    fontSize: 13,
-  },
-  chipRemove: {
-    fontSize: 14,
-  },
+  chipText: { fontSize: 13 },
+  chipRemove: { fontSize: 14 },
 });
