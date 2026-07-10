@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  type NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  type TextInputContentSizeChangeEventData,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -13,9 +11,6 @@ import {
 import { parseWords } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
-
-const TEXT_AREA_MIN_HEIGHT = 88;
-const TEXT_AREA_PADDING_V = spacing.md * 2;
 
 interface WordInputSectionProps {
   value: string;
@@ -37,26 +32,8 @@ export function WordInputSection({
   const colors = useThemeColors();
   const parsedWords = useMemo(() => parseWords(value), [value]);
   const wordCount = useMemo(() => parsedWords.length, [parsedWords]);
-  const [textAreaHeight, setTextAreaHeight] = useState(TEXT_AREA_MIN_HEIGHT);
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const effectiveDisplayMode = isDisplayMode && wordCount > 0;
-
-  const handleContentSizeChange = useCallback(
-    (event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => {
-      const next = Math.max(
-        TEXT_AREA_MIN_HEIGHT,
-        Math.ceil(event.nativeEvent.contentSize.height) + TEXT_AREA_PADDING_V,
-      );
-      setTextAreaHeight((prev) => (prev === next ? prev : next));
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!value) {
-      setTextAreaHeight(TEXT_AREA_MIN_HEIGHT);
-    }
-  }, [value]);
 
   return (
     <View style={styles.container}>
@@ -124,11 +101,10 @@ export function WordInputSection({
           </ScrollView>
         </View>
       ) : (
-        /* ── 编辑态：保持现状 ── */
+        /* ── 编辑态：铺满剩余空间，内部滚动 ── */
         <TextInput
           style={[
             styles.textArea,
-            { height: textAreaHeight },
             {
               borderColor: colors.border,
               backgroundColor: colors.surfaceSunken,
@@ -136,12 +112,10 @@ export function WordInputSection({
             },
           ]}
           multiline
-          scrollEnabled={false}
           placeholder="每行一个，或用逗号/空格分隔\n例：apple banana cat"
           placeholderTextColor={colors.subtle}
           value={value}
           onChangeText={onChange}
-          onContentSizeChange={handleContentSizeChange}
           editable
           textAlignVertical="top"
         />
@@ -223,9 +197,13 @@ export function WordInputSection({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    minHeight: 0,
     gap: spacing.sm,
   },
   textArea: {
+    flex: 1,
+    minHeight: 0,
     borderWidth: 1,
     borderRadius: radii.card,
     paddingHorizontal: spacing.lg,
@@ -293,14 +271,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   displayContainer: {
+    flex: 1,
+    minHeight: 0,
     borderWidth: 1,
     borderRadius: radii.card,
     overflow: "hidden",
   },
   displayScroll: {
+    flex: 1,
+    minHeight: 0,
     paddingVertical: spacing.md,
-    minHeight: TEXT_AREA_MIN_HEIGHT,
-    maxHeight: 320,
   },
   displayRow: {
     flexDirection: "row",

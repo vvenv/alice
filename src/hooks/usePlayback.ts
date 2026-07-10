@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  prefetchWordAudio,
   speakWord,
   stopSpeech,
 } from "../lib/tts";
@@ -147,10 +146,6 @@ export function usePlayback({
       currentIndexRef.current = s.index;
       setCurrentIndex(s.index);
 
-      if (autoNextRef.current && s.index + 1 < list.length) {
-        void prefetchWordAudio(list[s.index + 1]!);
-      }
-
       const ok = await speakWord(word);
       if (isCancelled(gen)) return;
 
@@ -158,7 +153,12 @@ export function usePlayback({
       if (!cur || cur.gen !== gen) return;
       cur.speaking = false;
 
-      if (!ok) {
+      // If speaking failed, don't retry the same word forever — that turns a
+      // single TTS failure into an infinite loop (and a frozen app). Skip the
+      // repeat gap and let the scheduler advance to the next phase/word. The
+      // `speak2` pass still acts as a natural second attempt for `speak1`.
+      if (!ok && phase === "speak1") {
+        cur.phase = "speak2";
         runScheduler();
         return;
       }
@@ -267,8 +267,6 @@ export function usePlayback({
       }
 
       updatePlayState("playing");
-      void prefetchWordAudio(words[0] ?? "");
-      if (words[1]) void prefetchWordAudio(words[1]);
       startFrom(0, "speak1");
     },
     [abortCycle, clearCountdown, startFrom, updatePlayState],

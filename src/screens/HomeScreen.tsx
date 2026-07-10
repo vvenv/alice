@@ -248,6 +248,7 @@ export function HomeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
@@ -384,11 +385,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
+    minHeight: 0,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
   },
   content: {
+    flex: 1,
+    minHeight: 0,
     gap: spacing.lg,
     width: "100%",
     alignSelf: "center",
