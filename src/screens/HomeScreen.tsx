@@ -256,6 +256,17 @@ export function HomeScreen() {
               ocrUnlocked={ocrUnlocked}
               onOcrResult={handleOcrResult}
               onUnlockOcr={handleUnlockOcr}
+              extraActions={
+                ocrUnlocked
+                  ? [
+                      {
+                        icon: "time-outline" as const,
+                        label: "历史",
+                        onPress: () => setHistoryDrawerVisible(true),
+                      },
+                    ]
+                  : undefined
+              }
             />
             <WordInputSection
               value={wordInput}
@@ -266,33 +277,40 @@ export function HomeScreen() {
               onStartIndexChange={setStartIndex}
             />
 
-            {/* History entry — opens a drawer */}
-            <TouchableOpacity
-              style={[
-                styles.historyEntryBtn,
-                {
-                  backgroundColor: colors.surfaceSunken,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-              onPress={() => setHistoryDrawerVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="time-outline" size={20} color={colors.muted} />
-              <View style={styles.historyEntryInfo}>
-                <Text
-                  style={[styles.historyEntryLabel, { color: colors.muted }]}
-                >
-                  历史记录
-                </Text>
-                <Text
-                  style={[styles.historyEntrySub, { color: colors.subtle }]}
-                >
-                  {history.length} 条记录
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.subtle} />
-            </TouchableOpacity>
+            {/* History entry — shown when OCR is locked (when unlocked, the
+                history shortcut lives in the OCR button row above) */}
+            {!ocrUnlocked && (
+              <TouchableOpacity
+                style={[
+                  styles.historyEntryBtn,
+                  {
+                    backgroundColor: colors.surfaceSunken,
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+                onPress={() => setHistoryDrawerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="time-outline" size={20} color={colors.muted} />
+                <View style={styles.historyEntryInfo}>
+                  <Text
+                    style={[styles.historyEntryLabel, { color: colors.muted }]}
+                  >
+                    历史记录
+                  </Text>
+                  <Text
+                    style={[styles.historyEntrySub, { color: colors.subtle }]}
+                  >
+                    {history.length} 条记录
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.subtle}
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
 

@@ -30,6 +30,12 @@ interface OcrSectionProps {
   ocrUnlocked: boolean;
   onOcrResult: (words: string[]) => void;
   onUnlockOcr: (code: string) => boolean;
+  // Extra actions appended to the OCR button row (e.g. history shortcut)
+  extraActions?: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    onPress: () => void;
+  }[];
 }
 
 const ALPHANUMERIC = /^[a-zA-Z0-9]*$/;
@@ -97,6 +103,7 @@ export function OcrSection({
   ocrUnlocked,
   onOcrResult,
   onUnlockOcr,
+  extraActions,
 }: OcrSectionProps) {
   const colors = useThemeColors();
   const [ocrBusy, setOcrBusy] = useState(false);
@@ -320,6 +327,17 @@ export function OcrSection({
           busy={ocrBusy}
           onPress={processAlbum}
         />
+        {extraActions?.map((action) => (
+          <OcrActionButton
+            key={action.label}
+            icon={action.icon}
+            label={action.label}
+            variant="secondary"
+            colors={colors}
+            busy={false}
+            onPress={action.onPress}
+          />
+        ))}
       </View>
 
       {ocrStatus ? (
