@@ -74,6 +74,7 @@ export function WordInputSection({
           <ScrollView
             style={styles.displayScroll}
             showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
           >
             {parsedWords.map((word, idx) => {
               const isCursor = idx === startIndex;
@@ -294,12 +295,12 @@ const styles = StyleSheet.create({
   displayContainer: {
     borderWidth: 1,
     borderRadius: radii.card,
-    minHeight: TEXT_AREA_MIN_HEIGHT,
-    maxHeight: 320,
     overflow: "hidden",
   },
   displayScroll: {
     paddingVertical: spacing.md,
+    minHeight: TEXT_AREA_MIN_HEIGHT,
+    maxHeight: 320,
   },
   displayRow: {
     flexDirection: "row",
