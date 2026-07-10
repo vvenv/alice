@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { HistoryDrawer } from "../components/HistoryDrawer";
 import { OcrSection } from "../components/OcrSection";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
@@ -54,12 +55,6 @@ function isDefaultEntry(entry: WordHistoryEntry): boolean {
   return entry.id.startsWith("default_");
 }
 
-function formatDate(ts: number): string {
-  const d = new Date(ts);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function wordCount(text: string): number {
   return parseWords(text).length;
 }
@@ -76,6 +71,7 @@ export function HomeScreen() {
   const [shuffle, setShuffle] = useState(false);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
+  const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
 
   // Confirm dialog state
   const [dialog, setDialog] = useState<{
@@ -270,109 +266,33 @@ export function HomeScreen() {
               onStartIndexChange={setStartIndex}
             />
 
-            {/* History section */}
-            <View
+            {/* History entry — opens a drawer */}
+            <TouchableOpacity
               style={[
-                styles.historySection,
+                styles.historyEntryBtn,
                 {
                   backgroundColor: colors.surfaceSunken,
                   borderColor: colors.borderSubtle,
                 },
               ]}
+              onPress={() => setHistoryDrawerVisible(true)}
+              activeOpacity={0.7}
             >
-              <View style={styles.historyHeader}>
-                <Text style={[styles.sectionLabel, { color: colors.muted }]}>
-                  历史记录 ({history.length})
-                </Text>
-                {history.filter((e) => !isDefaultEntry(e)).length > 0 && (
-                  <TouchableOpacity
-                    style={[
-                      styles.smallBtn,
-                      { backgroundColor: colors.surface },
-                    ]}
-                    onPress={handleClearHistory}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.smallBtnText,
-                        { color: colors.dangerMuted },
-                      ]}
-                    >
-                      清空
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {history.length === 0 ? (
+              <Ionicons name="time-outline" size={20} color={colors.muted} />
+              <View style={styles.historyEntryInfo}>
                 <Text
-                  style={[
-                    styles.emptyHistory,
-                    { color: colors.subtle, backgroundColor: colors.surface },
-                  ]}
+                  style={[styles.historyEntryLabel, { color: colors.muted }]}
                 >
-                  尚无历史记录
+                  历史记录
                 </Text>
-              ) : (
-                <View>
-                  {history.map((entry) => (
-                    <View
-                      key={entry.id}
-                      style={[
-                        styles.historyItem,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: colors.borderSubtle,
-                        },
-                      ]}
-                    >
-                      <TouchableOpacity
-                        style={styles.historyItemContent}
-                        onPress={() => handleApplyHistory(entry.text)}
-                        activeOpacity={0.6}
-                      >
-                        <Text
-                          style={[
-                            styles.historyItemText,
-                            { color: colors.foreground },
-                          ]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {isDefaultEntry(entry)
-                            ? entry.id.replace("default_", "")
-                            : entry.text.replace(/\n/g, " ")}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.historyItemMeta,
-                            { color: colors.subtle },
-                          ]}
-                        >
-                          {wordCount(entry.text)}
-                          {isDefaultEntry(entry) ? " · 内置" : null}
-                        </Text>
-                      </TouchableOpacity>
-                      {!isDefaultEntry(entry) && (
-                        <TouchableOpacity
-                          style={styles.historyItemDelete}
-                          onPress={() => handleDeleteHistory(entry.id)}
-                          activeOpacity={0.6}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <Ionicons
-                            name="close-circle"
-                            size={20}
-                            color={colors.subtle}
-                          />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
+                <Text
+                  style={[styles.historyEntrySub, { color: colors.subtle }]}
+                >
+                  {history.length} 条记录
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.subtle} />
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -401,6 +321,14 @@ export function HomeScreen() {
               visible: false,
             })
           }
+        />
+        <HistoryDrawer
+          visible={historyDrawerVisible}
+          history={history}
+          onClose={() => setHistoryDrawerVisible(false)}
+          onApply={handleApplyHistory}
+          onDelete={handleDeleteHistory}
+          onClear={handleClearHistory}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -461,63 +389,24 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
 
-  // History styles
-  historySection: {
+  // History entry button
+  historyEntryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     borderRadius: radii.surface,
     borderWidth: 1,
     padding: spacing.lg,
-    gap: spacing.sm,
   },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  historyEntryInfo: {
+    flex: 1,
+    gap: 2,
   },
-  sectionLabel: {
-    fontSize: 13,
+  historyEntryLabel: {
+    fontSize: 14,
     fontWeight: "600",
   },
-  smallBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.xs,
-  },
-  smallBtnText: {
+  historyEntrySub: {
     fontSize: 12,
-    fontWeight: "500",
-  },
-  emptyHistory: {
-    textAlign: "center",
-    fontSize: 13,
-    paddingVertical: spacing.md,
-    borderRadius: radii.surface,
-  },
-  historyItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: radii.control,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
-    overflow: "hidden",
-  },
-  historyItemContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    padding: spacing.sm + 2,
-  },
-  historyItemText: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  historyItemMeta: {
-    fontSize: 11,
-  },
-  historyItemDelete: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.sm + 2,
   },
 });
