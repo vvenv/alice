@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  prefetchWordAudio,
   speakWord,
   stopSpeech,
 } from "../lib/tts";
@@ -145,6 +146,9 @@ export function usePlayback({
       const phase = s.phase;
       currentIndexRef.current = s.index;
       setCurrentIndex(s.index);
+
+      const nextWord = list[s.index + 1];
+      if (nextWord) void prefetchWordAudio(nextWord);
 
       const ok = await speakWord(word);
       if (isCancelled(gen)) return;

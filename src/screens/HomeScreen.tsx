@@ -35,6 +35,7 @@ import {
 import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
+import { clearTtsCache } from "../lib/tts";
 
 const SAMPLE_WORDS = "apple\nbanana\ncat\ndog\nelephant\nfish\ngrape";
 const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
@@ -202,6 +203,26 @@ export function HomeScreen() {
     });
   }, [history]);
 
+  const handleClearTtsCache = useCallback(() => {
+    setDialog({
+      visible: true,
+      title: "清空发音缓存",
+      message: "确定要删除本地缓存的有道发音文件吗？\n下次听写会重新下载。",
+      confirmLabel: "清空",
+      action: () => {
+        clearTtsCache()
+          .then((count) => {
+            showToast(
+              count > 0 ? `已清空 ${count} 个发音缓存` : "暂无发音缓存",
+            );
+          })
+          .catch(() => {
+            showToast("清空发音缓存失败");
+          });
+      },
+    });
+  }, [showToast]);
+
   const parsedWordCount = wordCount(wordInput);
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
@@ -290,6 +311,31 @@ export function HomeScreen() {
                   ]}
                 >
                   历史
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.secondaryActionBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={handleClearTtsCache}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.foreground}
+                />
+                <Text
+                  style={[
+                    styles.secondaryActionText,
+                    { color: colors.foreground },
+                  ]}
+                >
+                  缓存
                 </Text>
               </TouchableOpacity>
               {editAction && (
