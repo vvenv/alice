@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Text,
@@ -244,76 +243,68 @@ export function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={false}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <OcrSection
-              wordInput={wordInput}
-              ocrUnlocked={ocrUnlocked}
-              onOcrResult={handleOcrResult}
-              onUnlockOcr={handleUnlockOcr}
-              extraActions={
-                ocrUnlocked
-                  ? [
-                      {
-                        icon: "time-outline" as const,
-                        label: "历史",
-                        onPress: () => setHistoryDrawerVisible(true),
-                      },
-                    ]
-                  : undefined
-              }
-            />
-            <WordInputSection
-              value={wordInput}
-              onChange={setWordInput}
-              onSetSample={() => setWordInput(SAMPLE_WORDS)}
-              onClear={() => setWordInput("")}
-              startIndex={startIndex}
-              onStartIndexChange={setStartIndex}
-            />
+        <View style={styles.main}>
+          <OcrSection
+            wordInput={wordInput}
+            ocrUnlocked={ocrUnlocked}
+            onOcrResult={handleOcrResult}
+            onUnlockOcr={handleUnlockOcr}
+            extraActions={
+              ocrUnlocked
+                ? [
+                    {
+                      icon: "time-outline" as const,
+                      label: "历史",
+                      onPress: () => setHistoryDrawerVisible(true),
+                    },
+                  ]
+                : undefined
+            }
+          />
+          <WordInputSection
+            value={wordInput}
+            onChange={setWordInput}
+            onSetSample={() => setWordInput(SAMPLE_WORDS)}
+            onClear={() => setWordInput("")}
+            startIndex={startIndex}
+            onStartIndexChange={setStartIndex}
+          />
 
-            {/* History entry — shown when OCR is locked (when unlocked, the
-                history shortcut lives in the OCR button row above) */}
-            {!ocrUnlocked && (
-              <TouchableOpacity
-                style={[
-                  styles.historyEntryBtn,
-                  {
-                    backgroundColor: colors.surfaceSunken,
-                    borderColor: colors.borderSubtle,
-                  },
-                ]}
-                onPress={() => setHistoryDrawerVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="time-outline" size={20} color={colors.muted} />
-                <View style={styles.historyEntryInfo}>
-                  <Text
-                    style={[styles.historyEntryLabel, { color: colors.muted }]}
-                  >
-                    历史记录
-                  </Text>
-                  <Text
-                    style={[styles.historyEntrySub, { color: colors.subtle }]}
-                  >
-                    {history.length} 条记录
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.subtle}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
+          {/* History entry — shown when OCR is locked (when unlocked, the
+              history shortcut lives in the OCR button row above) */}
+          {!ocrUnlocked && (
+            <TouchableOpacity
+              style={[
+                styles.historyEntryBtn,
+                {
+                  backgroundColor: colors.surfaceSunken,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+              onPress={() => setHistoryDrawerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="time-outline" size={20} color={colors.muted} />
+              <View style={styles.historyEntryInfo}>
+                <Text
+                  style={[styles.historyEntryLabel, { color: colors.muted }]}
+                >
+                  历史记录
+                </Text>
+                <Text
+                  style={[styles.historyEntrySub, { color: colors.subtle }]}
+                >
+                  {history.length} 条记录
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={colors.subtle}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={[styles.bottomPanel, { borderTopColor: colors.border }]}>
           <PlaybackControls
@@ -381,22 +372,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    minHeight: 0,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  content: {
+  main: {
     flex: 1,
     minHeight: 0,
     gap: spacing.lg,
     width: "100%",
     alignSelf: "center",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   loadingContainer: {
     flex: 1,
