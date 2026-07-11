@@ -1,5 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   LayoutAnimation,
@@ -22,314 +27,357 @@ if (
 
 import { config } from "../lib/config";
 import { takePhoto, pickFromAlbum, ocrWordsFromImage } from "../lib/ocr";
-import { useThemeColors, type ThemeColors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import { radii, spacing } from "../lib/designTokens";
 
 interface OcrSectionProps {
   ocrUnlocked: boolean;
   onOcrResult: (words: string[]) => void;
   onUnlockOcr: (code: string) => boolean;
+  /** When true, hide the inline 拍照/相册 buttons (actions live in header menu). */
+  hideActions?: boolean;
 }
+
+export type OcrSectionHandle = {
+  processPhoto: () => void;
+  processAlbum: () => void;
+  busy: boolean;
+};
 
 const ALPHANUMERIC = /^[a-zA-Z0-9]*$/;
 
-type OcrActionButtonProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  variant: "primary" | "secondary";
-  colors: ThemeColors;
-  busy: boolean;
-  onPress: () => void;
-};
+export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
+  function OcrSection(
+    { ocrUnlocked, onOcrResult, onUnlockOcr, hideActions = false },
+    ref,
+  ) {
+    const colors = useThemeColors();
+    const [ocrBusy, setOcrBusy] = useState(false);
+    const [ocrStatus, setOcrStatus] = useState("");
+    const [unlockCode, setUnlockCode] = useState("");
+    const [unlockError, setUnlockError] = useState(false);
+    const [showUnlock, setShowUnlock] = useState(false);
+    const [paywallCollapsed, setPaywallCollapsed] = useState(true);
 
-function OcrActionButton({
-  icon,
-  label,
-  variant,
-  colors,
-  busy,
-  onPress,
-}: OcrActionButtonProps) {
-  const isPrimary = variant === "primary";
-  const contentColor = isPrimary ? colors.background : colors.foreground;
+    const togglePaywall = useCallback(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setPaywallCollapsed((v) => !v);
+    }, []);
 
-  return (
-    <TouchableOpacity
-      style={[
-        styles.actionBtn,
-        isPrimary
-          ? {
-              backgroundColor: colors.primary,
-              shadowColor: colors.primary,
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }
-          : {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderWidth: 1,
-            },
-        busy && styles.btnDisabled,
-      ]}
-      onPress={onPress}
-      disabled={busy}
-      activeOpacity={0.7}
-    >
-      {busy ? (
-        <ActivityIndicator size="small" color={contentColor} />
-      ) : (
-        <View style={styles.actionBtnContent}>
-          <Ionicons name={icon} size={16} color={contentColor} />
-          <Text style={[styles.actionBtnText, { color: contentColor }]}>
-            {label}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-export function OcrSection({
-  ocrUnlocked,
-  onOcrResult,
-  onUnlockOcr,
-}: OcrSectionProps) {
-  const colors = useThemeColors();
-  const [ocrBusy, setOcrBusy] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState("");
-  const [unlockCode, setUnlockCode] = useState("");
-  const [unlockError, setUnlockError] = useState(false);
-  const [showUnlock, setShowUnlock] = useState(false);
-  const [paywallCollapsed, setPaywallCollapsed] = useState(true);
-
-  const togglePaywall = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setPaywallCollapsed((v) => !v);
-  }, []);
-
-  const runOcr = useCallback(
-    async (getUri: () => Promise<string | null>, messagePrefix: string) => {
-      if (ocrBusy) return;
-      setOcrBusy(true);
-      try {
-        const uri = await getUri();
-        if (!uri) {
-          setOcrBusy(false);
-          return;
-        }
-
-        setOcrStatus(`${messagePrefix}，准备识别…`);
-        const { words, rawText } = await ocrWordsFromImage(uri, setOcrStatus);
-
-        if (words.length === 0) {
-          const hint = rawText ? `：${rawText.slice(0, 40)}` : "";
-          setOcrStatus(`未识别到英文单词${hint}`);
-          return;
-        }
-
-        onOcrResult(words);
-        setOcrStatus(`已识别 ${words.length} 个单词`);
-      } catch (error) {
-        setOcrStatus(error instanceof Error ? error.message : "识别失败");
-      } finally {
-        setOcrBusy(false);
-      }
-    },
-    [ocrBusy, onOcrResult],
-  );
-
-  const processOcr = useCallback(() => runOcr(takePhoto, "已拍摄"), [runOcr]);
-
-  const processAlbum = useCallback(
-    () => runOcr(pickFromAlbum, "已选图"),
-    [runOcr],
-  );
-
-  const handleUnlockSubmit = useCallback(() => {
-    if (unlockCode.length !== 4) return;
-    setUnlockError(false);
-    const ok = onUnlockOcr(unlockCode);
-    if (ok) {
+    const revealPaywall = useCallback(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setShowUnlock(false);
-      setUnlockCode("");
-    } else {
-      setUnlockError(true);
-      setUnlockCode("");
-    }
-  }, [unlockCode, onUnlockOcr]);
+      setPaywallCollapsed(false);
+    }, []);
 
-  // ---- Paywall view (step 1: show WeChat ID) ----
-  if (!ocrUnlocked && !showUnlock) {
-    return (
-      <View
-        style={[styles.container, styles.paywallContainer, { borderColor: colors.border }]}
-      >
-        <TouchableOpacity
-          style={styles.paywallHeader}
-          onPress={togglePaywall}
-          activeOpacity={0.6}
-        >
-          <Text style={styles.paywallLockIcon}>🔒</Text>
-          <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-            拍照识别
-          </Text>
-          <Text style={[styles.chevron, { color: colors.muted }]}>
-            {paywallCollapsed ? "▸" : "▾"}
-          </Text>
-        </TouchableOpacity>
-        {!paywallCollapsed && (
-          <>
-            <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-              拍照或从相册选取图片，自动识别图片中的英文单词，快速生成听写列表。
-            </Text>
-            <View style={styles.priceBadge}>
-              <Text style={[styles.priceAmount, { color: colors.foreground }]}>
-                ¥9.9
-              </Text>
-              <Text style={[styles.priceLabel, { color: colors.muted }]}>
-                一次性解锁，永久使用
-              </Text>
-            </View>
-            <View style={styles.wechatRow}>
-              <Text style={styles.wechatIcon}>💬</Text>
-              <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-                添加微信号
-              </Text>
-              <Text style={[styles.wechatId, { color: colors.primary }]}>
-                {config.wechatId}
-              </Text>
-              <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-                完成支付
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.unlockBtn, { backgroundColor: colors.primary }]}
-              onPress={() => setShowUnlock(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.unlockBtnText, { color: colors.background }]}>
-                我已支付，输入解锁码
-              </Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+    const runOcr = useCallback(
+      async (getUri: () => Promise<string | null>, messagePrefix: string) => {
+        if (ocrBusy) return;
+        if (!ocrUnlocked) {
+          revealPaywall();
+          return;
+        }
+        setOcrBusy(true);
+        try {
+          const uri = await getUri();
+          if (!uri) {
+            setOcrBusy(false);
+            return;
+          }
+
+          setOcrStatus(`${messagePrefix}，准备识别…`);
+          const { words, rawText } = await ocrWordsFromImage(uri, setOcrStatus);
+
+          if (words.length === 0) {
+            const hint = rawText ? `：${rawText.slice(0, 40)}` : "";
+            setOcrStatus(`未识别到英文单词${hint}`);
+            return;
+          }
+
+          onOcrResult(words);
+          setOcrStatus(`已识别 ${words.length} 个单词`);
+        } catch (error) {
+          setOcrStatus(error instanceof Error ? error.message : "识别失败");
+        } finally {
+          setOcrBusy(false);
+        }
+      },
+      [ocrBusy, ocrUnlocked, onOcrResult, revealPaywall],
     );
-  }
 
-  // ---- Unlock code input (step 2) ----
-  if (!ocrUnlocked && showUnlock) {
-    return (
-      <View
-        style={[styles.container, styles.paywallContainer, { borderColor: colors.border }]}
-      >
-        <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-          输入解锁码
-        </Text>
-        <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-          支付完成后，请输入您收到的 4 位解锁码
-        </Text>
-        <TextInput
+    const processOcr = useCallback(
+      () => runOcr(takePhoto, "已拍摄"),
+      [runOcr],
+    );
+
+    const processAlbum = useCallback(
+      () => runOcr(pickFromAlbum, "已选图"),
+      [runOcr],
+    );
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        processPhoto: processOcr,
+        processAlbum,
+        busy: ocrBusy,
+      }),
+      [processOcr, processAlbum, ocrBusy],
+    );
+
+    const handleUnlockSubmit = useCallback(() => {
+      if (unlockCode.length !== 4) return;
+      setUnlockError(false);
+      const ok = onUnlockOcr(unlockCode);
+      if (ok) {
+        setShowUnlock(false);
+        setUnlockCode("");
+      } else {
+        setUnlockError(true);
+        setUnlockCode("");
+      }
+    }, [unlockCode, onUnlockOcr]);
+
+    // ---- Paywall view (step 1: show WeChat ID) ----
+    if (!ocrUnlocked && !showUnlock) {
+      return (
+        <View
           style={[
-            styles.unlockInput,
-            {
-              borderColor: unlockError ? colors.danger : colors.border,
-              color: colors.foreground,
-              backgroundColor: colors.surface,
-            },
+            styles.container,
+            styles.paywallContainer,
+            { borderColor: colors.border },
           ]}
-          autoCapitalize="characters"
-          maxLength={4}
-          value={unlockCode}
-          onChangeText={(text) => {
-            const filtered = text
-              .toUpperCase()
-              .split("")
-              .filter((ch) => ALPHANUMERIC.test(ch))
-              .join("")
-              .slice(0, 4);
-            setUnlockCode(filtered);
-            setUnlockError(false);
-          }}
-          placeholder="••••"
-          placeholderTextColor={colors.subtle}
-          textAlign="center"
-          autoFocus
-        />
-        {unlockError ? (
-          <Text style={[styles.errorText, { color: colors.danger }]}>
-            解锁码无效，请检查后重试
-          </Text>
-        ) : null}
-        <View style={styles.unlockBtnRow}>
+        >
           <TouchableOpacity
-            style={[styles.cancelBtn, { borderColor: colors.border }]}
-            onPress={() => {
-              setShowUnlock(false);
-              setUnlockCode("");
+            style={styles.paywallHeader}
+            onPress={togglePaywall}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.paywallLockIcon}>🔒</Text>
+            <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
+              拍照识别
+            </Text>
+            <Text style={[styles.chevron, { color: colors.muted }]}>
+              {paywallCollapsed ? "▸" : "▾"}
+            </Text>
+          </TouchableOpacity>
+          {!paywallCollapsed && (
+            <>
+              <Text style={[styles.paywallDesc, { color: colors.muted }]}>
+                拍照或从相册选取图片，自动识别图片中的英文单词，快速生成听写列表。
+              </Text>
+              <View style={styles.priceBadge}>
+                <Text
+                  style={[styles.priceAmount, { color: colors.foreground }]}
+                >
+                  ¥9.9
+                </Text>
+                <Text style={[styles.priceLabel, { color: colors.muted }]}>
+                  一次性解锁，永久使用
+                </Text>
+              </View>
+              <View style={styles.wechatRow}>
+                <Text style={styles.wechatIcon}>💬</Text>
+                <Text style={[styles.wechatLabel, { color: colors.muted }]}>
+                  添加微信号
+                </Text>
+                <Text style={[styles.wechatId, { color: colors.primary }]}>
+                  {config.wechatId}
+                </Text>
+                <Text style={[styles.wechatLabel, { color: colors.muted }]}>
+                  完成支付
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.unlockBtn, { backgroundColor: colors.primary }]}
+                onPress={() => setShowUnlock(true)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[styles.unlockBtnText, { color: colors.background }]}
+                >
+                  我已支付，输入解锁码
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      );
+    }
+
+    // ---- Unlock code input (step 2) ----
+    if (!ocrUnlocked && showUnlock) {
+      return (
+        <View
+          style={[
+            styles.container,
+            styles.paywallContainer,
+            { borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
+            输入解锁码
+          </Text>
+          <Text style={[styles.paywallDesc, { color: colors.muted }]}>
+            支付完成后，请输入您收到的 4 位解锁码
+          </Text>
+          <TextInput
+            style={[
+              styles.unlockInput,
+              {
+                borderColor: unlockError ? colors.danger : colors.border,
+                color: colors.foreground,
+                backgroundColor: colors.surface,
+              },
+            ]}
+            autoCapitalize="characters"
+            maxLength={4}
+            value={unlockCode}
+            onChangeText={(text) => {
+              const filtered = text
+                .toUpperCase()
+                .split("")
+                .filter((ch) => ALPHANUMERIC.test(ch))
+                .join("")
+                .slice(0, 4);
+              setUnlockCode(filtered);
               setUnlockError(false);
             }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.cancelBtnText, { color: colors.foreground }]}>
-              返回
+            placeholder="••••"
+            placeholderTextColor={colors.subtle}
+            textAlign="center"
+            autoFocus
+          />
+          {unlockError ? (
+            <Text style={[styles.errorText, { color: colors.danger }]}>
+              解锁码无效，请检查后重试
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.unlockSubmitBtn,
-              { backgroundColor: colors.primary },
-              (unlockCode.length !== 4) && styles.btnDisabled,
-            ]}
-            onPress={handleUnlockSubmit}
-            disabled={unlockCode.length !== 4}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[styles.unlockSubmitBtnText, { color: colors.background }]}
+          ) : null}
+          <View style={styles.unlockBtnRow}>
+            <TouchableOpacity
+              style={[styles.cancelBtn, { borderColor: colors.border }]}
+              onPress={() => {
+                setShowUnlock(false);
+                setUnlockCode("");
+                setUnlockError(false);
+              }}
+              activeOpacity={0.7}
             >
-              确认
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[styles.cancelBtnText, { color: colors.foreground }]}
+              >
+                返回
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.unlockSubmitBtn,
+                { backgroundColor: colors.primary },
+                unlockCode.length !== 4 && styles.btnDisabled,
+              ]}
+              onPress={handleUnlockSubmit}
+              disabled={unlockCode.length !== 4}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.unlockSubmitBtnText,
+                  { color: colors.background },
+                ]}
+              >
+                确认
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+      );
+    }
+
+    // ---- Normal OCR view (unlocked) ----
+    const showButtons = !hideActions;
+    if (!showButtons && !ocrStatus) {
+      return null;
+    }
+
+    return (
+      <View style={styles.container}>
+        {showButtons ? (
+          <View style={styles.btnRow}>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
+                },
+                ocrBusy && styles.btnDisabled,
+              ]}
+              onPress={processOcr}
+              disabled={ocrBusy}
+              activeOpacity={0.7}
+            >
+              {ocrBusy ? (
+                <ActivityIndicator size="small" color={colors.background} />
+              ) : (
+                <View style={styles.actionBtnContent}>
+                  <Ionicons name="camera" size={16} color={colors.background} />
+                  <Text
+                    style={[styles.actionBtnText, { color: colors.background }]}
+                  >
+                    拍照
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                },
+                ocrBusy && styles.btnDisabled,
+              ]}
+              onPress={processAlbum}
+              disabled={ocrBusy}
+              activeOpacity={0.7}
+            >
+              {ocrBusy ? (
+                <ActivityIndicator size="small" color={colors.foreground} />
+              ) : (
+                <View style={styles.actionBtnContent}>
+                  <Ionicons
+                    name="images-outline"
+                    size={16}
+                    color={colors.foreground}
+                  />
+                  <Text
+                    style={[styles.actionBtnText, { color: colors.foreground }]}
+                  >
+                    相册
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {ocrStatus ? (
+          <View style={[styles.statusBox, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.statusText, { color: colors.muted }]}>
+              {ocrStatus}
+            </Text>
+          </View>
+        ) : null}
       </View>
     );
-  }
-
-  // ---- Normal OCR view (unlocked) ----
-  return (
-    <View style={styles.container}>
-      <View style={styles.btnRow}>
-        <OcrActionButton
-          icon="camera"
-          label="拍照"
-          variant="primary"
-          colors={colors}
-          busy={ocrBusy}
-          onPress={processOcr}
-        />
-        <OcrActionButton
-          icon="images-outline"
-          label="相册"
-          variant="secondary"
-          colors={colors}
-          busy={ocrBusy}
-          onPress={processAlbum}
-        />
-      </View>
-
-      {ocrStatus ? (
-        <View style={[styles.statusBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.statusText, { color: colors.muted }]}>
-            {ocrStatus}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
+  },
+);
 
 const styles = StyleSheet.create({
   container: {

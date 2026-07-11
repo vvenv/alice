@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   StyleSheet,
   TouchableOpacity,
   Text,
@@ -11,11 +13,14 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryDrawer } from "../components/HistoryDrawer";
-import { OcrSection } from "../components/OcrSection";
+import { OcrSection, type OcrSectionHandle } from "../components/OcrSection";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
@@ -59,8 +64,18 @@ function wordCount(text: string): number {
   return parseWords(text).length;
 }
 
+type MenuItem = {
+  key: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  accent?: boolean;
+};
+
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigation>();
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { mode, toggleTheme } = useThemeMode();
   const [ready, setReady] = useState(false);
@@ -73,6 +88,8 @@ export function HomeScreen() {
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const ocrRef = useRef<OcrSectionHandle>(null);
 
   // Confirm dialog state
   const [dialog, setDialog] = useState<{
@@ -227,15 +244,43 @@ export function HomeScreen() {
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
 
-  const editAction = canToggleDisplayMode
-    ? {
-        icon: effectiveDisplayMode
-          ? ("create-outline" as const)
-          : ("checkmark-outline" as const),
-        label: effectiveDisplayMode ? "编辑" : "完成",
-        onPress: () => setIsDisplayMode((prev) => !prev),
-      }
-    : null;
+  const closeMenu = useCallback(() => setMenuVisible(false), []);
+
+  const runMenuAction = useCallback(
+    (action: () => void) => {
+      closeMenu();
+      // Let the menu close before opening camera / another modal
+      requestAnimationFrame(action);
+    },
+    [closeMenu],
+  );
+
+  const menuItems: MenuItem[] = [
+    {
+      key: "photo",
+      icon: "camera-outline",
+      label: "拍照",
+      onPress: () => runMenuAction(() => ocrRef.current?.processPhoto()),
+    },
+    {
+      key: "album",
+      icon: "images-outline",
+      label: "相册",
+      onPress: () => runMenuAction(() => ocrRef.current?.processAlbum()),
+    },
+    {
+      key: "history",
+      icon: "time-outline",
+      label: "历史",
+      onPress: () => runMenuAction(() => setHistoryDrawerVisible(true)),
+    },
+    {
+      key: "cache",
+      icon: "trash-outline",
+      label: "清缓",
+      onPress: () => runMenuAction(handleClearTtsCache),
+    },
+  ];
 
   if (!ready) {
     return (
@@ -257,12 +302,9 @@ export function HomeScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            Alice Dictation
-          </Text>
           <TouchableOpacity
             style={[
-              styles.themeBtn,
+              styles.headerBtn,
               {
                 borderColor: colors.border,
                 backgroundColor: colors.surface,
@@ -277,106 +319,76 @@ export function HomeScreen() {
               color={colors.foreground}
             />
           </TouchableOpacity>
+
+          {canToggleDisplayMode ? (
+            <View style={styles.headerCenter} pointerEvents="box-none">
+              <TouchableOpacity
+                style={[
+                  styles.headerCenterBtn,
+                  {
+                    backgroundColor: effectiveDisplayMode
+                      ? colors.primarySoft
+                      : colors.surface,
+                    borderColor: effectiveDisplayMode
+                      ? colors.primary
+                      : colors.border,
+                  },
+                ]}
+                onPress={() => setIsDisplayMode((prev) => !prev)}
+                activeOpacity={0.7}
+                accessibilityLabel={effectiveDisplayMode ? "编辑" : "完成"}
+              >
+                <Ionicons
+                  name={
+                    effectiveDisplayMode
+                      ? "create-outline"
+                      : "checkmark-outline"
+                  }
+                  size={16}
+                  color={
+                    effectiveDisplayMode ? colors.primary : colors.foreground
+                  }
+                />
+                <Text
+                  style={[
+                    styles.headerCenterText,
+                    {
+                      color: effectiveDisplayMode
+                        ? colors.primary
+                        : colors.foreground,
+                    },
+                  ]}
+                >
+                  {effectiveDisplayMode ? "编辑" : "完成"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[
+              styles.headerBtn,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              },
+            ]}
+            onPress={() => setMenuVisible(true)}
+            activeOpacity={0.7}
+            accessibilityLabel="菜单"
+          >
+            <Ionicons name="menu-outline" size={18} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.main}>
-          <View style={styles.ocrAndActions}>
-            <OcrSection
-              ocrUnlocked={ocrUnlocked}
-              onOcrResult={handleOcrResult}
-              onUnlockOcr={handleUnlockOcr}
-            />
-
-            <View style={styles.secondaryActionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.secondaryActionBtn,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={() => setHistoryDrawerVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="time-outline"
-                  size={16}
-                  color={colors.foreground}
-                />
-                <Text
-                  style={[
-                    styles.secondaryActionText,
-                    { color: colors.foreground },
-                  ]}
-                >
-                  历史
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.secondaryActionBtn,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={handleClearTtsCache}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.foreground}
-                />
-                <Text
-                  style={[
-                    styles.secondaryActionText,
-                    { color: colors.foreground },
-                  ]}
-                >
-                  缓存
-                </Text>
-              </TouchableOpacity>
-              {editAction && (
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryActionBtn,
-                    {
-                      backgroundColor: effectiveDisplayMode
-                        ? colors.primarySoft
-                        : colors.surface,
-                      borderColor: effectiveDisplayMode
-                        ? colors.primary
-                        : colors.border,
-                    },
-                  ]}
-                  onPress={editAction.onPress}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={editAction.icon}
-                    size={16}
-                    color={
-                      effectiveDisplayMode ? colors.primary : colors.foreground
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.secondaryActionText,
-                      {
-                        color: effectiveDisplayMode
-                          ? colors.primary
-                          : colors.foreground,
-                      },
-                    ]}
-                  >
-                    {editAction.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <OcrSection
+            ref={ocrRef}
+            ocrUnlocked={ocrUnlocked}
+            onOcrResult={handleOcrResult}
+            onUnlockOcr={handleUnlockOcr}
+            hideActions
+          />
 
           <WordInputSection
             value={wordInput}
@@ -423,6 +435,57 @@ export function HomeScreen() {
           onDelete={handleDeleteHistory}
           onClear={handleClearHistory}
         />
+
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={closeMenu}
+        >
+          <Pressable style={styles.menuBackdrop} onPress={closeMenu}>
+            <Pressable
+              style={[
+                styles.menuPanel,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  marginTop: insets.top + spacing.sm + 36,
+                  marginRight: spacing.lg,
+                },
+              ]}
+              onPress={() => {}}
+            >
+              {menuItems.map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.menuItem,
+                    item.accent && { backgroundColor: colors.primarySoft },
+                  ]}
+                  onPress={item.onPress}
+                  disabled={item.disabled}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={item.icon}
+                    size={18}
+                    color={item.accent ? colors.primary : colors.foreground}
+                  />
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      {
+                        color: item.accent ? colors.primary : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Pressable>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -443,17 +506,35 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  themeBtn: {
+  headerBtn: {
     width: 32,
     height: 32,
     borderRadius: radii.full,
-    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  headerCenter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    height: 32,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.full,
+    borderWidth: 1,
+  },
+  headerCenterText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   main: {
     flex: 1,
@@ -463,35 +544,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-  },
-  ocrAndActions: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.xl,
-  },
-  secondaryActionRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  secondaryActionBtn: {
-    flex: 1,
-    minWidth: 72,
-    minHeight: 32,
-    borderRadius: radii.button,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  secondaryActionText: {
-    fontSize: 13,
-    fontWeight: "600",
   },
   loadingContainer: {
     flex: 1,
@@ -505,5 +557,35 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     width: "100%",
     alignSelf: "center",
+  },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: "transparent",
+    alignItems: "flex-end",
+  },
+  menuPanel: {
+    minWidth: 168,
+    borderRadius: radii.surface,
+    borderWidth: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.control,
+    marginHorizontal: spacing.xs,
+  },
+  menuItemText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
