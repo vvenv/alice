@@ -112,7 +112,7 @@ export async function ocrWordsFromImage(
                 type: "text",
                 text: [
                   "这是一张包含英文单词列表的图片。",
-                  "请识别图中所有英文单词，每行一个，只输出单词本身。",
+                  "请识别图中所有英文单词或词组，每行一个，只输出单词/词组本身。像 actor / actress 这样的应作为一行输出。",
                   "不要编号、不要解释、不要标点。",
                 ].join(""),
               },
@@ -139,10 +139,9 @@ export async function ocrWordsFromImage(
   };
   const rawText = payload.choices?.[0]?.message?.content?.trim() ?? "";
   const words = rawText
-    .split(/[\n\r,，\t]+/)
-    .flatMap((part) => part.trim().split(/\s+/))
+    .split(/[\n\r]+/)
     .map((word) => word.replace(/^[\d.)\-•]+\s*/, "").trim())
-    .filter((word) => /^[a-zA-Z][a-zA-Z'-]*$/.test(word));
+    .filter((word) => /^[a-zA-Z][a-zA-Z'/\-\s]*$/.test(word));
 
   return { words, rawText };
 }

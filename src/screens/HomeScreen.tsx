@@ -36,7 +36,7 @@ import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 
-const SAMPLE_WORDS = "apple banana cat dog elephant fish grape";
+const SAMPLE_WORDS = "apple\nbanana\ncat\ndog\nelephant\nfish\ngrape";
 const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -259,30 +259,17 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.main}>
-          <OcrSection
-            ocrUnlocked={ocrUnlocked}
-            onOcrResult={handleOcrResult}
-            onUnlockOcr={handleUnlockOcr}
-            extraActions={
-              ocrUnlocked
-                ? [
-                    {
-                      icon: "time-outline" as const,
-                      label: "历史",
-                      onPress: () => setHistoryDrawerVisible(true),
-                    },
-                    ...(editAction ? [editAction] : []),
-                  ]
-                : undefined
-            }
-          />
+          <View style={styles.ocrAndActions}>
+            <OcrSection
+              ocrUnlocked={ocrUnlocked}
+              onOcrResult={handleOcrResult}
+              onUnlockOcr={handleUnlockOcr}
+            />
 
-          {/* When OCR is locked: compact history + edit on one row */}
-          {!ocrUnlocked && (
-            <View style={styles.lockedActionRow}>
+            <View style={styles.secondaryActionRow}>
               <TouchableOpacity
                 style={[
-                  styles.lockedActionBtn,
+                  styles.secondaryActionBtn,
                   {
                     backgroundColor: colors.surface,
                     borderColor: colors.border,
@@ -298,7 +285,7 @@ export function HomeScreen() {
                 />
                 <Text
                   style={[
-                    styles.lockedActionText,
+                    styles.secondaryActionText,
                     { color: colors.foreground },
                   ]}
                 >
@@ -308,7 +295,7 @@ export function HomeScreen() {
               {editAction && (
                 <TouchableOpacity
                   style={[
-                    styles.lockedActionBtn,
+                    styles.secondaryActionBtn,
                     {
                       backgroundColor: effectiveDisplayMode
                         ? colors.primarySoft
@@ -330,7 +317,7 @@ export function HomeScreen() {
                   />
                   <Text
                     style={[
-                      styles.lockedActionText,
+                      styles.secondaryActionText,
                       {
                         color: effectiveDisplayMode
                           ? colors.primary
@@ -343,7 +330,7 @@ export function HomeScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          )}
+          </View>
 
           <WordInputSection
             value={wordInput}
@@ -431,13 +418,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  lockedActionRow: {
+  ocrAndActions: {
+    display: "flex",
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xl,
+  },
+  secondaryActionRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
-  lockedActionBtn: {
+  secondaryActionBtn: {
     flex: 1,
-    minHeight: 40,
+    minWidth: 72,
+    minHeight: 32,
     borderRadius: radii.button,
     borderWidth: 1,
     flexDirection: "row",
@@ -446,7 +443,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
   },
-  lockedActionText: {
+  secondaryActionText: {
     fontSize: 13,
     fontWeight: "600",
   },

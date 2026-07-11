@@ -111,7 +111,7 @@ export function WordInputSection({
             },
           ]}
           multiline
-          placeholder="每行一个，或用逗号/空格分隔\n例：apple banana cat"
+          placeholder="每行一个单词或词组\n例：apple\nactor / actress"
           placeholderTextColor={colors.subtle}
           value={value}
           onChangeText={onChange}
