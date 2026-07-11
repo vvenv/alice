@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -19,6 +19,7 @@ interface WordInputSectionProps {
   onClear: () => void;
   startIndex: number;
   onStartIndexChange: (index: number) => void;
+  isDisplayMode: boolean;
 }
 
 export function WordInputSection({
@@ -28,17 +29,16 @@ export function WordInputSection({
   onClear,
   startIndex,
   onStartIndexChange,
+  isDisplayMode,
 }: WordInputSectionProps) {
   const colors = useThemeColors();
   const parsedWords = useMemo(() => parseWords(value), [value]);
-  const wordCount = useMemo(() => parsedWords.length, [parsedWords]);
-  const [isDisplayMode, setIsDisplayMode] = useState(true);
+  const wordCount = parsedWords.length;
   const effectiveDisplayMode = isDisplayMode && wordCount > 0;
 
   return (
     <View style={styles.container}>
       {effectiveDisplayMode ? (
-        /* ── 展示态：一行一个单词，可移动游标 ── */
         <View
           style={[
             styles.displayContainer,
@@ -101,7 +101,6 @@ export function WordInputSection({
           </ScrollView>
         </View>
       ) : (
-        /* ── 编辑态：铺满剩余空间，内部滚动 ── */
         <TextInput
           style={[
             styles.textArea,
@@ -121,76 +120,33 @@ export function WordInputSection({
         />
       )}
 
-      <View style={styles.footer}>
-        {effectiveDisplayMode ? (
-          <Text style={[styles.start, { color: colors.secondary }]}>
-            起始：{parsedWords[startIndex] || "无"}
-          </Text>
-        ) : (
+      {!effectiveDisplayMode && (
+        <View style={styles.footer}>
           <Text style={[styles.count, { color: colors.muted }]}>
             共 {wordCount} 个单词
           </Text>
-        )}
-
-        <View style={styles.actions}>
-          {wordCount > 0 && (
+          <View style={styles.actions}>
             <TouchableOpacity
-              style={[
-                styles.smallBtn,
-                {
-                  borderColor: effectiveDisplayMode
-                    ? colors.primary
-                    : colors.border,
-                  backgroundColor: effectiveDisplayMode
-                    ? colors.primarySoft
-                    : "transparent",
-                },
-              ]}
-              onPress={() => setIsDisplayMode((prev) => !prev)}
+              style={[styles.smallBtn, { borderColor: colors.border }]}
+              onPress={onSetSample}
               activeOpacity={0.6}
             >
-              <Text
-                style={[
-                  styles.smallBtnText,
-                  {
-                    color: effectiveDisplayMode
-                      ? colors.primary
-                      : colors.secondary,
-                  },
-                ]}
-              >
-                {effectiveDisplayMode ? "编辑" : "退出编辑"}
+              <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                示例
               </Text>
             </TouchableOpacity>
-          )}
-          {!effectiveDisplayMode && (
-            <>
-              <TouchableOpacity
-                style={[styles.smallBtn, { borderColor: colors.border }]}
-                onPress={onSetSample}
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[styles.smallBtnText, { color: colors.secondary }]}
-                >
-                  示例
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallBtn, { borderColor: colors.border }]}
-                onPress={onClear}
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[styles.smallBtnText, { color: colors.secondary }]}
-                >
-                  清空
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
+            <TouchableOpacity
+              style={[styles.smallBtn, { borderColor: colors.border }]}
+              onPress={onClear}
+              activeOpacity={0.6}
+            >
+              <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
+                清空
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -199,7 +155,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     minHeight: 0,
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   textArea: {
     flex: 1,
@@ -215,10 +171,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  start: {
-    fontSize: 14,
-    fontWeight: "500",
   },
   count: {
     fontSize: 12,
@@ -237,39 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  optionsSection: {
-    gap: spacing.sm,
-  },
-  optionsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  optionTitle: {
-    fontSize: 12,
-  },
-  wordChipRow: {
-    gap: spacing.xs,
-    paddingBottom: spacing.xs,
-  },
-  wordChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.full,
-    borderWidth: 1,
-  },
-  wordChipIndex: {
-    fontSize: 10,
-    fontWeight: "600",
-    fontVariant: ["tabular-nums"],
-  },
-  wordChipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   displayContainer: {
     flex: 1,
     minHeight: 0,
@@ -280,13 +199,13 @@ const styles = StyleSheet.create({
   displayScroll: {
     flex: 1,
     minHeight: 0,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   displayRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: 3,
     borderLeftColor: "transparent",

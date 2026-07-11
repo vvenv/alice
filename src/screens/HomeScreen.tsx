@@ -68,6 +68,7 @@ export function HomeScreen() {
   const [autoNext, setAutoNext] = useState(true);
   const [startIndex, setStartIndex] = useState(0);
   const [shuffle, setShuffle] = useState(false);
+  const [isDisplayMode, setIsDisplayMode] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
@@ -201,6 +202,20 @@ export function HomeScreen() {
     });
   }, [history]);
 
+  const parsedWordCount = wordCount(wordInput);
+  const canToggleDisplayMode = parsedWordCount > 0;
+  const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
+
+  const editAction = canToggleDisplayMode
+    ? {
+        icon: effectiveDisplayMode
+          ? ("create-outline" as const)
+          : ("checkmark-outline" as const),
+        label: effectiveDisplayMode ? "编辑" : "完成",
+        onPress: () => setIsDisplayMode((prev) => !prev),
+      }
+    : null;
+
   if (!ready) {
     return (
       <View
@@ -245,7 +260,6 @@ export function HomeScreen() {
 
         <View style={styles.main}>
           <OcrSection
-            wordInput={wordInput}
             ocrUnlocked={ocrUnlocked}
             onOcrResult={handleOcrResult}
             onUnlockOcr={handleUnlockOcr}
@@ -257,10 +271,80 @@ export function HomeScreen() {
                       label: "历史",
                       onPress: () => setHistoryDrawerVisible(true),
                     },
+                    ...(editAction ? [editAction] : []),
                   ]
                 : undefined
             }
           />
+
+          {/* When OCR is locked: compact history + edit on one row */}
+          {!ocrUnlocked && (
+            <View style={styles.lockedActionRow}>
+              <TouchableOpacity
+                style={[
+                  styles.lockedActionBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setHistoryDrawerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={colors.foreground}
+                />
+                <Text
+                  style={[
+                    styles.lockedActionText,
+                    { color: colors.foreground },
+                  ]}
+                >
+                  历史
+                </Text>
+              </TouchableOpacity>
+              {editAction && (
+                <TouchableOpacity
+                  style={[
+                    styles.lockedActionBtn,
+                    {
+                      backgroundColor: effectiveDisplayMode
+                        ? colors.primarySoft
+                        : colors.surface,
+                      borderColor: effectiveDisplayMode
+                        ? colors.primary
+                        : colors.border,
+                    },
+                  ]}
+                  onPress={editAction.onPress}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={editAction.icon}
+                    size={16}
+                    color={
+                      effectiveDisplayMode ? colors.primary : colors.foreground
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.lockedActionText,
+                      {
+                        color: effectiveDisplayMode
+                          ? colors.primary
+                          : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {editAction.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           <WordInputSection
             value={wordInput}
             onChange={setWordInput}
@@ -268,42 +352,8 @@ export function HomeScreen() {
             onClear={() => setWordInput("")}
             startIndex={startIndex}
             onStartIndexChange={setStartIndex}
+            isDisplayMode={isDisplayMode}
           />
-
-          {/* History entry — shown when OCR is locked (when unlocked, the
-              history shortcut lives in the OCR button row above) */}
-          {!ocrUnlocked && (
-            <TouchableOpacity
-              style={[
-                styles.historyEntryBtn,
-                {
-                  backgroundColor: colors.surfaceSunken,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-              onPress={() => setHistoryDrawerVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="time-outline" size={20} color={colors.muted} />
-              <View style={styles.historyEntryInfo}>
-                <Text
-                  style={[styles.historyEntryLabel, { color: colors.muted }]}
-                >
-                  历史记录
-                </Text>
-                <Text
-                  style={[styles.historyEntrySub, { color: colors.subtle }]}
-                >
-                  {history.length} 条记录
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={colors.subtle}
-              />
-            </TouchableOpacity>
-          )}
         </View>
 
         <View style={[styles.bottomPanel, { borderTopColor: colors.border }]}>
@@ -357,16 +407,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
   },
   themeBtn: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     borderWidth: 1,
     justifyContent: "center",
@@ -375,12 +425,30 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     minHeight: 0,
-    gap: spacing.lg,
+    gap: spacing.sm,
     width: "100%",
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  lockedActionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  lockedActionBtn: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: radii.button,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  lockedActionText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   loadingContainer: {
     flex: 1,
@@ -390,30 +458,9 @@ const styles = StyleSheet.create({
   bottomPanel: {
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
     width: "100%",
     alignSelf: "center",
-  },
-
-  // History entry button
-  historyEntryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    borderRadius: radii.surface,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
-  historyEntryInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  historyEntryLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  historyEntrySub: {
-    fontSize: 12,
   },
 });

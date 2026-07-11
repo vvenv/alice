@@ -52,60 +52,56 @@ export function PlaybackControls({
         </View>
       </View>
 
-      <View style={styles.autoRow}>
-        <Text style={[styles.autoLabel, { color: colors.muted }]}>自动</Text>
-        <Switch
-          value={autoNext}
-          onValueChange={onAutoNextChange}
-          trackColor={{ false: colors.track, true: colors.primarySoft }}
-          thumbColor={autoNext ? colors.primary : colors.background}
-        />
-      </View>
-
-      {onShuffleChange !== undefined && (
-        <View style={styles.autoRow}>
-          <Text style={[styles.autoLabel, { color: colors.muted }]}>随机顺序</Text>
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleItem}>
+          <Text style={[styles.toggleLabel, { color: colors.muted }]}>
+            自动
+          </Text>
           <Switch
-            value={shuffle}
-            onValueChange={onShuffleChange}
+            value={autoNext}
+            onValueChange={onAutoNextChange}
             trackColor={{ false: colors.track, true: colors.primarySoft }}
-            thumbColor={shuffle ? colors.primary : colors.background}
+            thumbColor={autoNext ? colors.primary : colors.background}
           />
         </View>
-      )}
+        {onShuffleChange !== undefined && (
+          <View style={styles.toggleItem}>
+            <Text style={[styles.toggleLabel, { color: colors.muted }]}>
+              随机
+            </Text>
+            <Switch
+              value={shuffle}
+              onValueChange={onShuffleChange}
+              trackColor={{ false: colors.track, true: colors.primarySoft }}
+              thumbColor={shuffle ? colors.primary : colors.background}
+            />
+          </View>
+        )}
+      </View>
 
       {showPlayButton && onPlayToggle ? (
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.mainBtn,
-              {
-                backgroundColor: colors.primary,
-                shadowColor: colors.primary,
-                shadowOpacity: 0.35,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-              },
-            ]}
-            onPress={onPlayToggle}
-            activeOpacity={0.7}
-          >
-            <View style={styles.mainBtnContent}>
-              <Ionicons name="play" size={20} color={colors.background} />
-              <Text
-                style={[
-                  styles.mainBtnTextBase,
-                  {
-                    color: colors.background,
-                  },
-                ]}
-              >
-                开始
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.mainBtn,
+            {
+              backgroundColor: colors.primary,
+              shadowColor: colors.primary,
+              shadowOpacity: 0.35,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            },
+          ]}
+          onPress={onPlayToggle}
+          activeOpacity={0.7}
+        >
+          <View style={styles.mainBtnContent}>
+            <Ionicons name="play" size={20} color={colors.background} />
+            <Text style={[styles.mainBtnTextBase, { color: colors.background }]}>
+              开始
+            </Text>
+          </View>
+        </TouchableOpacity>
       ) : null}
     </View>
   );
@@ -113,7 +109,7 @@ export function PlaybackControls({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   intervalRow: {
     flexDirection: "row",
@@ -121,7 +117,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     flexShrink: 0,
   },
   sliderArea: {
@@ -131,26 +127,27 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   countValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     minWidth: 36,
     textAlign: "right",
     fontVariant: ["tabular-nums"],
   },
-  autoRow: {
+  toggleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  autoLabel: {
-    fontSize: 14,
-  },
-  buttonRow: {
+  toggleItem: {
     flexDirection: "row",
-    gap: spacing.md,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.lg,
+  },
+  toggleLabel: {
+    fontSize: 13,
   },
   mainBtn: {
-    flex: 1,
     minHeight: 52,
     borderRadius: radii.button,
     justifyContent: "center",

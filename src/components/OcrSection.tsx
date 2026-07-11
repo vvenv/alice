@@ -26,7 +26,6 @@ import { useThemeColors, type ThemeColors } from "../lib/theme";
 import { radii, spacing } from "../lib/designTokens";
 
 interface OcrSectionProps {
-  wordInput: string;
   ocrUnlocked: boolean;
   onOcrResult: (words: string[]) => void;
   onUnlockOcr: (code: string) => boolean;
@@ -35,6 +34,7 @@ interface OcrSectionProps {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
     onPress: () => void;
+    variant?: "primary" | "secondary";
   }[];
 }
 
@@ -88,7 +88,7 @@ function OcrActionButton({
         <ActivityIndicator size="small" color={contentColor} />
       ) : (
         <View style={styles.actionBtnContent}>
-          <Ionicons name={icon} size={20} color={contentColor} />
+          <Ionicons name={icon} size={16} color={contentColor} />
           <Text style={[styles.actionBtnText, { color: contentColor }]}>
             {label}
           </Text>
@@ -99,7 +99,6 @@ function OcrActionButton({
 }
 
 export function OcrSection({
-  wordInput,
   ocrUnlocked,
   onOcrResult,
   onUnlockOcr,
@@ -111,7 +110,7 @@ export function OcrSection({
   const [unlockCode, setUnlockCode] = useState("");
   const [unlockError, setUnlockError] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
-  const [paywallCollapsed, setPaywallCollapsed] = useState(false);
+  const [paywallCollapsed, setPaywallCollapsed] = useState(true);
 
   const togglePaywall = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -332,7 +331,7 @@ export function OcrSection({
             key={action.label}
             icon={action.icon}
             label={action.label}
-            variant="secondary"
+            variant={action.variant ?? "secondary"}
             colors={colors}
             busy={false}
             onPress={action.onPress}
@@ -353,14 +352,14 @@ export function OcrSection({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: spacing.sm,
   },
   paywallContainer: {
     borderWidth: 1,
     borderRadius: radii.card,
-    padding: spacing.lg,
+    padding: spacing.md,
     alignItems: "center",
-    gap: 10,
+    gap: spacing.sm,
   },
   paywallHeader: {
     flexDirection: "row",
@@ -469,26 +468,26 @@ const styles = StyleSheet.create({
   },
   btnRow: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   actionBtn: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 40,
     borderRadius: radii.button,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
   actionBtnContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   actionBtnText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600",
-    lineHeight: 20,
+    lineHeight: 16,
   },
   btnDisabled: {
     opacity: 0.4,
