@@ -112,8 +112,9 @@ export async function ocrWordsFromImage(
                 type: "text",
                 text: [
                   "这是一张包含英文单词列表的图片。",
-                  "请识别图中所有英文单词或词组，每行一个，只输出单词/词组本身。像 actor / actress 这样的应作为一行输出。",
-                  "不要编号、不要解释、不要标点。",
+                  "请识别图中所有英文单词或词组，每个单词单独占一行，只输出单词/词组本身。",
+                  "像 actor / actress 这样的斜杠词组应作为一整行输出，不要拆开。",
+                  "不要用逗号连接、不要编号、不要解释、不要其他标点。",
                 ].join(""),
               },
             ],
@@ -138,10 +139,41 @@ export async function ocrWordsFromImage(
     choices?: Array<{ message?: { content?: string } }>;
   };
   const rawText = payload.choices?.[0]?.message?.content?.trim() ?? "";
-  const words = rawText
-    .split(/[\n\r]+/)
-    .map((word) => word.replace(/^[\d.)\-•]+\s*/, "").trim())
-    .filter((word) => /^[a-zA-Z][a-zA-Z'/\-\s]*$/.test(word));
+  const words = extractWordsFromOcrText(rawText);
 
   return { words, rawText };
+}
+
+/**
+ * Vision models often ignore "one per line" and return comma-separated lists
+ * (e.g. "driver, apple, banana"). Also strip list markers / trailing punctuation.
+ */
+export function extractWordsFromOcrText(rawText: string): string[] {
+  const cleaned = rawText
+    .replace(/```[\s\S]*?```/g, (block) =>
+      block.replace(/^```\w*\n?/, "").replace(/\n?```$/, ""),
+    )
+    .replace(/\r\n?/g, "\n");
+
+  const candidates = cleaned
+    .split(/[\n,，;；、]+/)
+    .map((part) =>
+      part
+        .replace(/^[\d.)\-•*、]+\s*/, "")
+        .replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, "")
+        .replace(/[.。:：]+$/g, "")
+        .trim(),
+    )
+    .filter((word) => word.length > 0);
+
+  const seen = new Set<string>();
+  const words: string[] = [];
+  for (const word of candidates) {
+    if (!/^[a-zA-Z][a-zA-Z'/\-\s]*$/.test(word)) continue;
+    const key = word.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    words.push(word);
+  }
+  return words;
 }

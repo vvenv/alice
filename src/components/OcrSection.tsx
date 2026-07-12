@@ -89,8 +89,11 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           const { words, rawText } = await ocrWordsFromImage(uri, setOcrStatus);
 
           if (words.length === 0) {
-            const hint = rawText ? `：${rawText.slice(0, 40)}` : "";
-            setOcrStatus(`未识别到英文单词${hint}`);
+            setOcrStatus(
+              rawText
+                ? "未能从识别结果中提取英文单词，请换一张更清晰的单词列表再试"
+                : "未识别到英文单词，请换一张更清晰的图片再试",
+            );
             return;
           }
 
