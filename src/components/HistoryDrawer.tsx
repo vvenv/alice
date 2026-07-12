@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Dimensions,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseWords } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
@@ -39,7 +42,20 @@ export function HistoryDrawer({
   onClear,
 }: HistoryDrawerProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const userEntries = history.filter((e) => !isDefaultEntry(e));
+  // Percentage maxHeight + flex:1 ScrollView is unreliable on Android Modal.
+  const drawerMaxHeight = Dimensions.get("window").height * 0.8;
+  const bottomPad = Math.max(insets.bottom, spacing.xl);
+  const chromeHeight =
+    spacing.lg + // paddingTop
+    4 +
+    spacing.md + // handle
+    28 +
+    spacing.sm + // header
+    (userEntries.length > 0 ? 28 + spacing.md : 0) + // clear button
+    bottomPad;
+  const listMaxHeight = Math.max(160, drawerMaxHeight - chromeHeight);
 
   return (
     <Modal
@@ -47,6 +63,7 @@ export function HistoryDrawer({
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      statusBarTranslucent={Platform.OS === "android"}
     >
       <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
         <Pressable style={styles.backdropSpacer} onPress={onClose} />
@@ -56,6 +73,8 @@ export function HistoryDrawer({
             {
               backgroundColor: colors.background,
               borderColor: colors.borderSubtle,
+              maxHeight: drawerMaxHeight,
+              paddingBottom: bottomPad,
             },
           ]}
         >
@@ -87,9 +106,11 @@ export function HistoryDrawer({
           )}
 
           <ScrollView
-            style={styles.list}
+            style={{ maxHeight: listMaxHeight }}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            bounces={false}
+            nestedScrollEnabled
           >
             {history.length === 0 ? (
               <Text
@@ -167,13 +188,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   drawer: {
-    maxHeight: "80%",
     borderTopLeftRadius: radii.shell,
     borderTopRightRadius: radii.shell,
     borderWidth: 1,
     borderBottomWidth: 0,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   handle: {
     width: 36,
@@ -203,12 +223,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  list: {
-    flex: 1,
-    minHeight: 0,
-  },
   listContent: {
     gap: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   empty: {
     textAlign: "center",

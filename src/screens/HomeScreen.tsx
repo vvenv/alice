@@ -249,8 +249,15 @@ export function HomeScreen() {
   const runMenuAction = useCallback(
     (action: () => void) => {
       closeMenu();
-      // Let the menu close before opening camera / another modal
-      requestAnimationFrame(action);
+      // Android Dialog teardown needs a beat before presenting another Modal;
+      // a single rAF is often too early on real devices and leaves the sheet
+      // stuck mid-open.
+      const delayMs = Platform.OS === "android" ? 320 : 0;
+      if (delayMs === 0) {
+        requestAnimationFrame(action);
+      } else {
+        setTimeout(action, delayMs);
+      }
     },
     [closeMenu],
   );
