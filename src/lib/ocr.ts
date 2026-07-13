@@ -174,8 +174,15 @@ export async function ocrWordsFromImage(
 }
 
 /**
- * Vision models often ignore "one per line" and return comma-separated lists
- * (e.g. "driver, apple, banana"). Also strip list markers / trailing punctuation.
+ * Real dictation phrases are almost never longer than this many space-separated
+ * tokens (e.g. "ice cream", "look forward to", "actor / actress"). Longer runs
+ * are treated as a failed one-line dump from the vision model.
+ */
+const MAX_PHRASE_TOKENS = 4;
+
+/**
+ * Vision models often ignore "one per line" and return comma- or space-separated
+ * lists. Also strip list markers / trailing punctuation.
  */
 export function extractWordsFromOcrText(rawText: string): string[] {
   const cleaned = rawText
@@ -193,7 +200,11 @@ export function extractWordsFromOcrText(rawText: string): string[] {
         .replace(/[.。:：]+$/g, "")
         .trim(),
     )
-    .filter((word) => word.length > 0);
+    .filter((word) => word.length > 0)
+    .flatMap((candidate) => {
+      const tokens = candidate.split(/\s+/).filter(Boolean);
+      return tokens.length <= MAX_PHRASE_TOKENS ? [candidate] : tokens;
+    });
 
   const seen = new Set<string>();
   const words: string[] = [];
