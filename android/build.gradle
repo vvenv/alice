@@ -2,6 +2,10 @@
 
 buildscript {
   repositories {
+    // Aliyun first: avoids intermittent TLS failures to Maven Central on some networks
+    maven { url 'https://maven.aliyun.com/repository/google' }
+    maven { url 'https://maven.aliyun.com/repository/central' }
+    maven { url 'https://maven.aliyun.com/repository/public' }
     google()
     mavenCentral()
   }
@@ -14,6 +18,9 @@ buildscript {
 
 allprojects {
   repositories {
+    maven { url 'https://maven.aliyun.com/repository/google' }
+    maven { url 'https://maven.aliyun.com/repository/central' }
+    maven { url 'https://maven.aliyun.com/repository/public' }
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }

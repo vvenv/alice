@@ -1,4 +1,4 @@
-const { withGradleProperties } = require("@expo/config-plugins");
+const { withGradleProperties } = require("expo/config-plugins");
 
 /**
  * Config plugin to add JVM args for Java 17+ compatibility.
