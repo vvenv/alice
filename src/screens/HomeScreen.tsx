@@ -37,7 +37,7 @@ import {
   addWordHistory,
   deleteWordHistory,
   clearWordHistory,
-  replaceHistoryText,
+  enrichHistoryEntry,
   WordHistoryEntry,
 } from "../lib/storage";
 import { consumeEnrichedResult } from "../lib/dictationResult";
@@ -215,8 +215,9 @@ export function HomeScreen() {
   ]);
 
   // Consume enriched text (with fetched pos/meaning) returned from the
-  // Dictation screen. Update the input box and replace the original history
-  // entry with the enriched version.
+  // Dictation screen. Update the input box to the enriched version and attach
+  // it as expansion data to the original history entry (without overwriting
+  // the original plain-word text).
   useFocusEffect(
     useCallback(() => {
       const enriched = consumeEnrichedResult();
@@ -225,7 +226,7 @@ export function HomeScreen() {
       setWordInput(enriched);
       originalTextRef.current = "";
       if (original && original !== enriched) {
-        replaceHistoryText(original, enriched).then(() =>
+        enrichHistoryEntry(original, enriched).then(() =>
           loadWordHistory().then(setHistory),
         );
       }
@@ -233,8 +234,8 @@ export function HomeScreen() {
   );
 
   const handleApplyHistory = useCallback(
-    (text: string) => {
-      setWordInput(text);
+    (entry: WordHistoryEntry) => {
+      setWordInput(entry.enrichedText ?? entry.text);
       showToast("已载入历史记录");
     },
     [showToast],

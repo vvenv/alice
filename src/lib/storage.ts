@@ -10,6 +10,9 @@ export interface WordHistoryEntry {
   id: string;
   text: string;
   timestamp: number;
+  /** Enriched version (word | pos | meaning) — stored as expansion data so
+   *  the original plain-word `text` is preserved for history display. */
+  enrichedText?: string;
 }
 
 export function loadWrongWords(): string[] {
@@ -78,14 +81,23 @@ export async function loadWordHistory(): Promise<WordHistoryEntry[]> {
       await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
       return defaults;
     }
-    const filtered = parsed.filter(
-      (item): item is WordHistoryEntry =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as WordHistoryEntry).id === "string" &&
-        typeof (item as WordHistoryEntry).text === "string" &&
-        typeof (item as WordHistoryEntry).timestamp === "number",
-    );
+    const filtered = parsed
+      .filter(
+        (item): item is WordHistoryEntry =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as WordHistoryEntry).id === "string" &&
+          typeof (item as WordHistoryEntry).text === "string" &&
+          typeof (item as WordHistoryEntry).timestamp === "number",
+      )
+      .map((item) => ({
+        ...item,
+        // Sanitize optional enrichedText: drop if not a string
+        enrichedText:
+          typeof item.enrichedText === "string" && item.enrichedText.length > 0
+            ? item.enrichedText
+            : undefined,
+      }));
     // If after filtering the array is empty, re-seed
     if (filtered.length === 0) {
       const defaults = DEFAULT_HISTORY.map((h) => h.entry);
@@ -110,14 +122,28 @@ export async function addWordHistory(text: string): Promise<void> {
   if (!trimmed) return;
   try {
     const history = await loadWordHistory();
-    // Remove duplicate (same text) if exists, to move it to top
-    const filtered = history.filter((e) => e.text !== trimmed);
-    const entry: WordHistoryEntry = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      text: trimmed,
-      timestamp: Date.now(),
-    };
-    const updated = [entry, ...filtered].slice(0, MAX_HISTORY_ENTRIES);
+    // Dedupe against both `text` and `enrichedText` so that re-dictating
+    // from an enriched input box (whose text matches a prior entry's
+    // enrichedText) moves the existing entry to top instead of creating a
+    // duplicate — preserving the original plain-word `text`.
+    const existing = history.find(
+      (e) => e.text === trimmed || e.enrichedText === trimmed,
+    );
+    let updated: WordHistoryEntry[];
+    if (existing) {
+      const filtered = history.filter((e) => e.id !== existing.id);
+      updated = [
+        { ...existing, timestamp: Date.now() },
+        ...filtered,
+      ].slice(0, MAX_HISTORY_ENTRIES);
+    } else {
+      const entry: WordHistoryEntry = {
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        text: trimmed,
+        timestamp: Date.now(),
+      };
+      updated = [entry, ...history].slice(0, MAX_HISTORY_ENTRIES);
+    }
     await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
   } catch {
     // ignore
@@ -125,17 +151,17 @@ export async function addWordHistory(text: string): Promise<void> {
 }
 
 /**
- * Replace a history entry's text (used after dictation to update the original
- * plain-word entry with an enriched version containing pos/meaning).
+ * Attach enriched text (word | pos | meaning) to a history entry as expansion
+ * data, keeping the original plain-word `text` intact for history display.
  */
-export async function replaceHistoryText(
-  oldText: string,
-  newText: string,
+export async function enrichHistoryEntry(
+  originalText: string,
+  enrichedText: string,
 ): Promise<void> {
   try {
     const history = await loadWordHistory();
     const updated = history.map((e) =>
-      e.text === oldText ? { ...e, text: newText } : e,
+      e.text === originalText ? { ...e, enrichedText } : e,
     );
     await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
   } catch {

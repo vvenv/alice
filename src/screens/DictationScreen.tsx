@@ -45,7 +45,8 @@ export function DictationScreen({
   const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
   const [autoNext, setAutoNext] = useState(initialAutoNext);
   const [metaMap, setMetaMap] = useState<Map<string, WordMeta>>(new Map());
-  const metaQueriedRef = useRef<Set<string>>(new Set());
+  /** Prevents duplicate offline lookups when React re-invokes the mount effect. */
+  const metaStartedRef = useRef(false);
 
   const { toast, showToast } = useToast();
   const {
@@ -59,50 +60,32 @@ export function DictationScreen({
 
   const playback = usePlayback({ intervalSec, autoNext });
 
+  // Start playback + offline meta lookup once on mount.
   useEffect(() => {
     playback.startDictation(words);
+
+    if (metaStartedRef.current) return;
+    metaStartedRef.current = true;
+
+    const toFetch: string[] = [];
+    for (const line of words) {
+      const entry = parseWordLine(line);
+      if (entry.pos || entry.meaning) continue;
+      const speakable = speakTextFromEntry(line);
+      if (speakable) toFetch.push(speakable);
+    }
+    if (toFetch.length === 0) return;
+
+    fetchWordMetaBatch(toFetch, (word, meta) => {
+      setMetaMap((prev) => new Map(prev).set(word, meta));
+    }).catch(() => {
+      // Best-effort: word still displays without pos/meaning.
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isActive =
     playback.playState === "playing" || playback.playState === "paused";
-
-  // ---- Fetch word meta (pos + meaning) in batch at playback start ----
-  useEffect(() => {
-    if (!isActive) return;
-    const list = playback.wordList;
-    if (list.length === 0) return;
-
-    // Collect words that still need meta (skip already-enriched lines and
-    // previously-queried words).
-    const toFetch: string[] = [];
-    for (const line of list) {
-      const entry = parseWordLine(line);
-      if (entry.pos || entry.meaning) continue; // already enriched inline
-      const speakable = speakTextFromEntry(line);
-      if (!speakable || metaQueriedRef.current.has(speakable)) continue;
-      metaQueriedRef.current.add(speakable);
-      toFetch.push(speakable);
-    }
-    if (toFetch.length === 0) return;
-
-    const controller = new AbortController();
-    // Youdao per-word (concurrent) → LLM batch for misses. Each resolved
-    // word updates metaMap progressively via onPartial.
-    fetchWordMetaBatch(
-      toFetch,
-      (word, meta) => {
-        setMetaMap((prev) => new Map(prev).set(word, meta));
-      },
-      controller.signal,
-    ).catch(() => {
-      // Best-effort: failures leave metaMap without these entries, and the
-      // word still displays without pos/meaning.
-    });
-
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive, playback.wordList]);
 
   const handlePlayToggle = useCallback(() => {
     if (playback.playState === "playing") {

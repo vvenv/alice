@@ -22,7 +22,7 @@ interface HistoryDrawerProps {
   visible: boolean;
   history: WordHistoryEntry[];
   onClose: () => void;
-  onApply: (text: string) => void;
+  onApply: (entry: WordHistoryEntry) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
 }
@@ -151,7 +151,7 @@ export function HistoryDrawer({
                   <TouchableOpacity
                     style={styles.itemContent}
                     onPress={() => {
-                      onApply(entry.text);
+                      onApply(entry);
                       onClose();
                     }}
                     activeOpacity={0.6}

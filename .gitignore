@@ -10,6 +10,7 @@ lerna-debug.log*
 
 .pnpm-store/
 .expo/
+.cache/
 node_modules/
 coverage/
 dist/
