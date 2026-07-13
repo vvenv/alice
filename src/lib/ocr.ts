@@ -141,9 +141,11 @@ export async function ocrWordsFromImage(
                 type: "text",
                 text: [
                   "这是一张包含英文单词列表的图片。",
-                  "请识别图中所有英文单词或词组，每个单词单独占一行，只输出单词/词组本身。",
+                  "请识别图中所有英文单词或词组。",
+                  "如果单词旁边标注了词性和中文释义，请一并提取，每行格式：单词 | 词性 | 中文释义",
+                  "如果图中没有词性或释义信息，只输出单词本身。",
                   "像 actor / actress 这样的斜杠词组应作为一整行输出，不要拆开。",
-                  "不要用逗号连接、不要编号、不要解释、不要其他标点。",
+                  "不要用逗号连接、不要编号、不要输出其他标点或解释。",
                 ].join(""),
               },
             ],
@@ -181,8 +183,26 @@ export async function ocrWordsFromImage(
 const MAX_PHRASE_TOKENS = 4;
 
 /**
+ * Strip list markers, wrapping quotes, and trailing punctuation from a token.
+ */
+function cleanToken(s: string): string {
+  return s
+    .replace(/^[\d.)\-•*、]+\s*/, "")
+    .replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, "")
+    .replace(/[.。:：]+$/g, "")
+    .trim();
+}
+
+const WORD_RE = /^[a-zA-Z][a-zA-Z'/\-\s]*$/;
+
+/**
  * Vision models often ignore "one per line" and return comma- or space-separated
- * lists. Also strip list markers / trailing punctuation.
+ * lists. This function normalizes the output into a clean word list.
+ *
+ * Supports enriched entries with `|`-delimited pos/meaning:
+ *   `apple | n. | 苹果` — the word part is validated; the meta is preserved.
+ * Plain entries (no `|`) use the original comma-splitting + token-flattening
+ * logic.
  */
 export function extractWordsFromOcrText(rawText: string): string[] {
   const cleaned = rawText
@@ -191,29 +211,57 @@ export function extractWordsFromOcrText(rawText: string): string[] {
     )
     .replace(/\r\n?/g, "\n");
 
-  const candidates = cleaned
-    .split(/[\n,，;；、]+/)
-    .map((part) =>
-      part
-        .replace(/^[\d.)\-•*、]+\s*/, "")
-        .replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, "")
-        .replace(/[.。:：]+$/g, "")
-        .trim(),
-    )
-    .filter((word) => word.length > 0)
-    .flatMap((candidate) => {
-      const tokens = candidate.split(/\s+/).filter(Boolean);
-      return tokens.length <= MAX_PHRASE_TOKENS ? [candidate] : tokens;
-    });
+  // Split by newlines first to keep enriched entries intact
+  const lines = cleaned
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
 
   const seen = new Set<string>();
   const words: string[] = [];
-  for (const word of candidates) {
-    if (!/^[a-zA-Z][a-zA-Z'/\-\s]*$/.test(word)) continue;
-    const key = word.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    words.push(word);
+
+  for (const line of lines) {
+    const pipeIdx = line.indexOf("|");
+
+    if (pipeIdx !== -1) {
+      // Enriched entry: clean & validate the word part, preserve the meta
+      const rawWord = line.slice(0, pipeIdx);
+      const metaParts = line
+        .slice(pipeIdx + 1)
+        .split("|")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      const wordPart = cleanToken(rawWord);
+      if (!wordPart || !WORD_RE.test(wordPart)) continue;
+
+      const key = wordPart.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Reassemble with consistent spacing
+      words.push([wordPart, ...metaParts].join(" | "));
+    } else {
+      // Plain word: split by commas/semicolons (vision model may ignore
+      // one-per-line), then flatten overly long runs into individual tokens
+      const candidates = line
+        .split(/[,，;；、]+/)
+        .map((p) => cleanToken(p))
+        .filter(Boolean)
+        .flatMap((candidate) => {
+          const tokens = candidate.split(/\s+/).filter(Boolean);
+          return tokens.length <= MAX_PHRASE_TOKENS ? [candidate] : tokens;
+        });
+
+      for (const word of candidates) {
+        if (!WORD_RE.test(word)) continue;
+        const key = word.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        words.push(word);
+      }
+    }
   }
+
   return words;
 }

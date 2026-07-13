@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { parseWords } from "../lib/dictation";
+import { parseWords, parseWordLine } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
@@ -53,11 +53,13 @@ export function WordInputSection({
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
           >
-            {parsedWords.map((word, idx) => {
+            {parsedWords.map((line, idx) => {
               const isCursor = idx === startIndex;
+              const entry = parseWordLine(line);
+              const hasMeta = Boolean(entry.pos || entry.meaning);
               return (
                 <TouchableOpacity
-                  key={`display-${word}-${idx}`}
+                  key={`display-${line}-${idx}`}
                   style={[
                     styles.displayRow,
                     isCursor && {
@@ -77,14 +79,27 @@ export function WordInputSection({
                   >
                     {String(idx + 1).padStart(2, "0")}
                   </Text>
-                  <Text
-                    style={[
-                      styles.displayWord,
-                      { color: isCursor ? colors.primary : colors.foreground },
-                    ]}
-                  >
-                    {word}
-                  </Text>
+                  <View style={styles.displayWordCol}>
+                    <Text
+                      style={[
+                        styles.displayWord,
+                        { color: isCursor ? colors.primary : colors.foreground },
+                      ]}
+                    >
+                      {entry.word}
+                    </Text>
+                    {hasMeta && (
+                      <Text
+                        style={[
+                          styles.displayMeta,
+                          { color: colors.subtle },
+                        ]}
+                      >
+                        {entry.pos ? `${entry.pos} ` : ""}
+                        {entry.meaning ?? ""}
+                      </Text>
+                    )}
+                  </View>
                   {isCursor && (
                     <Text
                       style={[
@@ -220,7 +235,15 @@ const styles = StyleSheet.create({
   displayWord: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  displayWordCol: {
     flex: 1,
+    flexDirection: "column",
+    gap: 2,
+  },
+  displayMeta: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   cursorIndicator: {
     fontSize: 14,

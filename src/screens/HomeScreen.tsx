@@ -12,7 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   SafeAreaView,
@@ -37,8 +37,10 @@ import {
   addWordHistory,
   deleteWordHistory,
   clearWordHistory,
+  replaceHistoryText,
   WordHistoryEntry,
 } from "../lib/storage";
+import { consumeEnrichedResult } from "../lib/dictationResult";
 import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
@@ -124,6 +126,7 @@ export function HomeScreen() {
   } | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const originalTextRef = useRef("");
 
   const { toast, showToast } = useToast();
 
@@ -191,6 +194,9 @@ export function HomeScreen() {
     if (shuffle) {
       words = shuffleArray(words);
     }
+    // Remember the original text so we can replace the history entry with
+    // the enriched version (pos + meaning) after dictation completes.
+    originalTextRef.current = wordInput;
     // Save to history before navigating
     addWordHistory(wordInput).then(() => loadWordHistory().then(setHistory));
     navigation.navigate("Dictation", {
@@ -207,6 +213,24 @@ export function HomeScreen() {
     startIndex,
     wordInput,
   ]);
+
+  // Consume enriched text (with fetched pos/meaning) returned from the
+  // Dictation screen. Update the input box and replace the original history
+  // entry with the enriched version.
+  useFocusEffect(
+    useCallback(() => {
+      const enriched = consumeEnrichedResult();
+      if (!enriched) return;
+      const original = originalTextRef.current;
+      setWordInput(enriched);
+      originalTextRef.current = "";
+      if (original && original !== enriched) {
+        replaceHistoryText(original, enriched).then(() =>
+          loadWordHistory().then(setHistory),
+        );
+      }
+    }, []),
+  );
 
   const handleApplyHistory = useCallback(
     (text: string) => {

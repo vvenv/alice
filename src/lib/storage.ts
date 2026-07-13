@@ -124,6 +124,25 @@ export async function addWordHistory(text: string): Promise<void> {
   }
 }
 
+/**
+ * Replace a history entry's text (used after dictation to update the original
+ * plain-word entry with an enriched version containing pos/meaning).
+ */
+export async function replaceHistoryText(
+  oldText: string,
+  newText: string,
+): Promise<void> {
+  try {
+    const history = await loadWordHistory();
+    const updated = history.map((e) =>
+      e.text === oldText ? { ...e, text: newText } : e,
+    );
+    await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
 export async function deleteWordHistory(id: string): Promise<void> {
   // Default entries are not deletable
   if (id.startsWith("default_")) return;

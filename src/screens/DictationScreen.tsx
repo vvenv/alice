@@ -14,6 +14,13 @@ import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
+import { fetchWordMetaBatch, type WordMeta } from "../lib/dictionary";
+import {
+  entryToLine,
+  parseWordLine,
+  speakTextFromEntry,
+} from "../lib/dictation";
+import { setEnrichedResult } from "../lib/dictationResult";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
@@ -37,6 +44,8 @@ export function DictationScreen({
   const [showWord, setShowWord] = useState(false);
   const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
   const [autoNext, setAutoNext] = useState(initialAutoNext);
+  const [metaMap, setMetaMap] = useState<Map<string, WordMeta>>(new Map());
+  const metaQueriedRef = useRef<Set<string>>(new Set());
 
   const { toast, showToast } = useToast();
   const {
@@ -55,6 +64,46 @@ export function DictationScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isActive =
+    playback.playState === "playing" || playback.playState === "paused";
+
+  // ---- Fetch word meta (pos + meaning) in batch at playback start ----
+  useEffect(() => {
+    if (!isActive) return;
+    const list = playback.wordList;
+    if (list.length === 0) return;
+
+    // Collect words that still need meta (skip already-enriched lines and
+    // previously-queried words).
+    const toFetch: string[] = [];
+    for (const line of list) {
+      const entry = parseWordLine(line);
+      if (entry.pos || entry.meaning) continue; // already enriched inline
+      const speakable = speakTextFromEntry(line);
+      if (!speakable || metaQueriedRef.current.has(speakable)) continue;
+      metaQueriedRef.current.add(speakable);
+      toFetch.push(speakable);
+    }
+    if (toFetch.length === 0) return;
+
+    const controller = new AbortController();
+    // Youdao per-word (concurrent) → LLM batch for misses. Each resolved
+    // word updates metaMap progressively via onPartial.
+    fetchWordMetaBatch(
+      toFetch,
+      (word, meta) => {
+        setMetaMap((prev) => new Map(prev).set(word, meta));
+      },
+      controller.signal,
+    ).catch(() => {
+      // Best-effort: failures leave metaMap without these entries, and the
+      // word still displays without pos/meaning.
+    });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, playback.wordList]);
+
   const handlePlayToggle = useCallback(() => {
     if (playback.playState === "playing") {
       playback.pauseDictation();
@@ -64,8 +113,6 @@ export function DictationScreen({
   }, [playback]);
 
   // ---- Derived state ----
-  const isActive =
-    playback.playState === "playing" || playback.playState === "paused";
   const isFinished =
     playback.playState === "idle" && playback.wordList.length > 0;
 
@@ -76,13 +123,39 @@ export function DictationScreen({
 
   const handleMarkWrong = useCallback(() => {
     if (!isActive || playback.currentIndex >= playback.wordList.length) return;
-    markWrong(playback.wordList[playback.currentIndex]!);
+    const word = speakTextFromEntry(
+      playback.wordList[playback.currentIndex]!,
+    );
+    markWrong(word);
   }, [isActive, markWrong, playback.currentIndex, playback.wordList]);
+
+  // ---- Build enriched text (with fetched pos/meaning) for history cache ----
+  const buildEnrichedText = useCallback(() => {
+    return playback.wordList
+      .map((line) => {
+        const entry = parseWordLine(line);
+        if (entry.pos || entry.meaning) return line; // already enriched
+        const speakable = speakTextFromEntry(line);
+        const meta = metaMap.get(speakable);
+        if (!meta || (!meta.pos && !meta.meaning)) return line;
+        return entryToLine({
+          word: entry.word,
+          pos: meta.pos,
+          meaning: meta.meaning,
+        });
+      })
+      .join("\n");
+  }, [playback.wordList, metaMap]);
+
+  const handleExit = useCallback(() => {
+    setEnrichedResult(buildEnrichedText());
+    onEnd();
+  }, [buildEnrichedText, onEnd]);
 
   const handleStop = useCallback(() => {
     playback.stopDictation();
-    onEnd();
-  }, [onEnd, playback]);
+    handleExit();
+  }, [handleExit, playback]);
 
   const handleExport = useCallback(async () => {
     const msg = await exportWrong();
@@ -116,6 +189,17 @@ export function DictationScreen({
       : playback.playState === "paused"
         ? "已暂停"
         : "已结束";
+
+  // ---- Current word entry + meta for display ----
+  const currentLine =
+    playback.currentIndex < playback.wordList.length
+      ? playback.wordList[playback.currentIndex]!
+      : "";
+  const currentEntry = parseWordLine(currentLine);
+  const currentMeta: WordMeta | null =
+    currentEntry.pos || currentEntry.meaning
+      ? { pos: currentEntry.pos, meaning: currentEntry.meaning }
+      : (metaMap.get(speakTextFromEntry(currentLine)) ?? null);
 
   return (
     <SafeAreaView
@@ -164,7 +248,7 @@ export function DictationScreen({
 
             <TouchableOpacity
               style={[styles.returnBtn, { backgroundColor: colors.primary }]}
-              onPress={onEnd}
+              onPress={handleExit}
               activeOpacity={0.7}
             >
               <View style={styles.returnBtnContent}>
@@ -211,11 +295,29 @@ export function DictationScreen({
                 />
               </TouchableOpacity>
 
-              <Text style={[styles.wordText, { color: colors.foreground }]}>
-                {showWord && playback.currentIndex < playback.wordList.length
-                  ? playback.wordList[playback.currentIndex]!
-                  : "•••••"}
-              </Text>
+              {showWord && playback.currentIndex < playback.wordList.length ? (
+                <View style={styles.wordRevealContent}>
+                  <Text
+                    style={[styles.wordText, { color: colors.foreground }]}
+                  >
+                    {currentEntry.word}
+                  </Text>
+                  {currentMeta && (currentMeta.pos || currentMeta.meaning) && (
+                    <Text
+                      style={[styles.wordMeta, { color: colors.muted }]}
+                    >
+                      {currentMeta.pos ? `${currentMeta.pos} ` : ""}
+                      {currentMeta.meaning ?? ""}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <Text
+                  style={[styles.wordText, { color: colors.foreground }]}
+                >
+                  {"•••••"}
+                </Text>
+              )}
             </View>
 
             <TouchableOpacity
@@ -246,7 +348,9 @@ export function DictationScreen({
                     下一个
                   </Text>
                   <Text style={[styles.nextWordText, { color: colors.subtle }]}>
-                    {playback.wordList[playback.currentIndex + 1]}
+                    {parseWordLine(
+                      playback.wordList[playback.currentIndex + 1]!,
+                    ).word}
                   </Text>
                 </View>
               )}
@@ -497,6 +601,15 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: "700",
     letterSpacing: 1,
+    textAlign: "center",
+  },
+  wordRevealContent: {
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  wordMeta: {
+    fontSize: 16,
+    fontWeight: "400",
     textAlign: "center",
   },
 
