@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
 import {
+  Animated,
   Dimensions,
   Modal,
   Platform,
@@ -56,17 +58,38 @@ export function HistoryDrawer({
     bottomPad;
   const listMaxHeight = Math.max(160, drawerMaxHeight - chromeHeight);
 
+  // Modal slide animates the whole tree (backdrop included). Keep Modal static
+  // and slide only the drawer panel.
+  const drawerTranslateY = useRef(new Animated.Value(drawerMaxHeight)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      drawerTranslateY.setValue(drawerMaxHeight);
+      return;
+    }
+    drawerTranslateY.setValue(drawerMaxHeight);
+    Animated.timing(drawerTranslateY, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, drawerMaxHeight, drawerTranslateY]);
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent={Platform.OS === "android"}
+      presentationStyle="overFullScreen"
     >
-      <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
-        <Pressable style={styles.backdropSpacer} onPress={onClose} />
-        <View
+      <View style={styles.root}>
+        <Pressable
+          style={[styles.backdrop, { backgroundColor: colors.overlay }]}
+          onPress={onClose}
+        />
+        <Animated.View
           style={[
             styles.drawer,
             {
@@ -74,6 +97,7 @@ export function HistoryDrawer({
               borderColor: colors.borderSubtle,
               maxHeight: drawerMaxHeight,
               paddingBottom: bottomPad,
+              transform: [{ translateY: drawerTranslateY }],
             },
           ]}
         >
@@ -165,19 +189,19 @@ export function HistoryDrawer({
               ))
             )}
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  root: {
     flex: 1,
     justifyContent: "flex-end",
   },
-  backdropSpacer: {
-    flex: 1,
+  backdrop: {
+    ...StyleSheet.absoluteFill,
   },
   drawer: {
     borderTopLeftRadius: radii.shell,
