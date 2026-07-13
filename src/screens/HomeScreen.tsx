@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -90,6 +91,26 @@ export function HomeScreen() {
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const ocrRef = useRef<OcrSectionHandle>(null);
+  // Edge-to-edge Android ignores adjustResize; pad manually when keyboard opens.
+  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      setAndroidKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setAndroidKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const androidKeyboardOpen = androidKeyboardHeight > 0;
 
   // Confirm dialog state
   const [dialog, setDialog] = useState<{
@@ -302,10 +323,17 @@ export function HomeScreen() {
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
-      edges={["top", "bottom", "left", "right"]}
+      edges={
+        androidKeyboardOpen
+          ? ["top", "left", "right"]
+          : ["top", "bottom", "left", "right"]
+      }
     >
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[
+          styles.container,
+          androidKeyboardOpen && { paddingBottom: androidKeyboardHeight },
+        ]}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.header}>
@@ -408,17 +436,19 @@ export function HomeScreen() {
           />
         </View>
 
-        <View style={[styles.bottomPanel, { borderTopColor: colors.border }]}>
-          <PlaybackControls
-            intervalSec={intervalSec}
-            autoNext={autoNext}
-            onIntervalChange={setIntervalSec}
-            onAutoNextChange={setAutoNext}
-            onPlayToggle={handleStart}
-            shuffle={shuffle}
-            onShuffleChange={setShuffle}
-          />
-        </View>
+        {!androidKeyboardOpen ? (
+          <View style={[styles.bottomPanel, { borderTopColor: colors.border }]}>
+            <PlaybackControls
+              intervalSec={intervalSec}
+              autoNext={autoNext}
+              onIntervalChange={setIntervalSec}
+              onAutoNextChange={setAutoNext}
+              onPlayToggle={handleStart}
+              shuffle={shuffle}
+              onShuffleChange={setShuffle}
+            />
+          </View>
+        ) : null}
         <Toast message={toast} />
         <ConfirmDialog
           visible={dialog?.visible}
