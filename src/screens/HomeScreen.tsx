@@ -87,6 +87,8 @@ export function HomeScreen() {
   const [shuffle, setShuffle] = useState(false);
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState("");
+  const [ocrBusy, setOcrBusy] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -167,6 +169,13 @@ export function HomeScreen() {
       setStartIndex(0);
     }
   }, [wordInput, startIndex]);
+
+  // Clear OCR status shortly after completion so the edit/complete control returns
+  useEffect(() => {
+    if (ocrBusy || !ocrStatus) return;
+    const timer = setTimeout(() => setOcrStatus(""), 2500);
+    return () => clearTimeout(timer);
+  }, [ocrBusy, ocrStatus]);
 
   const handleOcrResult = useCallback((words: string[]) => {
     setWordInput(words.join("\n"));
@@ -264,6 +273,7 @@ export function HomeScreen() {
   const parsedWordCount = wordCount(wordInput);
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
+  const showHeaderCenter = Boolean(ocrStatus) || canToggleDisplayMode;
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
@@ -355,48 +365,87 @@ export function HomeScreen() {
             />
           </TouchableOpacity>
 
-          {canToggleDisplayMode ? (
+          {showHeaderCenter ? (
             <View style={styles.headerCenter} pointerEvents="box-none">
-              <TouchableOpacity
-                style={[
-                  styles.headerCenterBtn,
-                  {
-                    backgroundColor: effectiveDisplayMode
-                      ? colors.primarySoft
-                      : colors.surface,
-                    borderColor: effectiveDisplayMode
-                      ? colors.primary
-                      : colors.border,
-                  },
-                ]}
-                onPress={() => setIsDisplayMode((prev) => !prev)}
-                activeOpacity={0.7}
-                accessibilityLabel={effectiveDisplayMode ? "编辑" : "完成"}
-              >
-                <Ionicons
-                  name={
-                    effectiveDisplayMode
-                      ? "create-outline"
-                      : "checkmark-outline"
-                  }
-                  size={16}
-                  color={
-                    effectiveDisplayMode ? colors.primary : colors.foreground
-                  }
-                />
-                <Text
+              {ocrStatus ? (
+                <View
                   style={[
-                    styles.headerCenterText,
+                    styles.headerCenterBtn,
                     {
-                      color: effectiveDisplayMode
-                        ? colors.primary
-                        : colors.foreground,
+                      backgroundColor: ocrBusy
+                        ? colors.primarySoft
+                        : colors.surface,
+                      borderColor: ocrBusy ? colors.primary : colors.border,
+                      maxWidth: "62%",
                     },
                   ]}
+                  accessibilityLabel={ocrStatus}
                 >
-                  {effectiveDisplayMode ? "编辑" : "完成"}
-                </Text>
-              </TouchableOpacity>
+                  {ocrBusy ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Ionicons
+                      name="scan-outline"
+                      size={16}
+                      color={colors.muted}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.headerCenterText,
+                      {
+                        color: ocrBusy ? colors.primary : colors.muted,
+                        flexShrink: 1,
+                      },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {ocrStatus}
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.headerCenterBtn,
+                    {
+                      backgroundColor: effectiveDisplayMode
+                        ? colors.primarySoft
+                        : colors.surface,
+                      borderColor: effectiveDisplayMode
+                        ? colors.primary
+                        : colors.border,
+                    },
+                  ]}
+                  onPress={() => setIsDisplayMode((prev) => !prev)}
+                  activeOpacity={0.7}
+                  accessibilityLabel={effectiveDisplayMode ? "编辑" : "完成"}
+                >
+                  <Ionicons
+                    name={
+                      effectiveDisplayMode
+                        ? "create-outline"
+                        : "checkmark-outline"
+                    }
+                    size={16}
+                    color={
+                      effectiveDisplayMode ? colors.primary : colors.foreground
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.headerCenterText,
+                      {
+                        color: effectiveDisplayMode
+                          ? colors.primary
+                          : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {effectiveDisplayMode ? "编辑" : "完成"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : null}
 
@@ -422,6 +471,8 @@ export function HomeScreen() {
             ocrUnlocked={ocrUnlocked}
             onOcrResult={handleOcrResult}
             onUnlockOcr={handleUnlockOcr}
+            onStatusChange={setOcrStatus}
+            onBusyChange={setOcrBusy}
             hideActions
           />
 

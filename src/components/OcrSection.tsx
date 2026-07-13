@@ -36,6 +36,8 @@ interface OcrSectionProps {
   onUnlockOcr: (code: string) => boolean;
   /** When true, hide the inline 拍照/相册 buttons (actions live in header menu). */
   hideActions?: boolean;
+  onStatusChange?: (status: string) => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 export type OcrSectionHandle = {
@@ -48,16 +50,37 @@ const ALPHANUMERIC = /^[a-zA-Z0-9]*$/;
 
 export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
   function OcrSection(
-    { ocrUnlocked, onOcrResult, onUnlockOcr, hideActions = false },
+    {
+      ocrUnlocked,
+      onOcrResult,
+      onUnlockOcr,
+      hideActions = false,
+      onStatusChange,
+      onBusyChange,
+    },
     ref,
   ) {
     const colors = useThemeColors();
     const [ocrBusy, setOcrBusy] = useState(false);
-    const [ocrStatus, setOcrStatus] = useState("");
     const [unlockCode, setUnlockCode] = useState("");
     const [unlockError, setUnlockError] = useState(false);
     const [showUnlock, setShowUnlock] = useState(false);
     const [paywallCollapsed, setPaywallCollapsed] = useState(true);
+
+    const updateStatus = useCallback(
+      (status: string) => {
+        onStatusChange?.(status);
+      },
+      [onStatusChange],
+    );
+
+    const updateBusy = useCallback(
+      (busy: boolean) => {
+        setOcrBusy(busy);
+        onBusyChange?.(busy);
+      },
+      [onBusyChange],
+    );
 
     const togglePaywall = useCallback(() => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -77,19 +100,19 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           revealPaywall();
           return;
         }
-        setOcrBusy(true);
+        updateBusy(true);
         try {
           const uri = await getUri();
           if (!uri) {
-            setOcrBusy(false);
+            updateBusy(false);
             return;
           }
 
-          setOcrStatus(`${messagePrefix}，准备识别…`);
-          const { words, rawText } = await ocrWordsFromImage(uri, setOcrStatus);
+          updateStatus(`${messagePrefix}，准备识别…`);
+          const { words, rawText } = await ocrWordsFromImage(uri, updateStatus);
 
           if (words.length === 0) {
-            setOcrStatus(
+            updateStatus(
               rawText
                 ? "未能从识别结果中提取英文单词，请换一张更清晰的单词列表再试"
                 : "未识别到英文单词，请换一张更清晰的图片再试",
@@ -98,14 +121,14 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           }
 
           onOcrResult(words);
-          setOcrStatus(`已识别 ${words.length} 个单词`);
+          updateStatus(`已识别 ${words.length} 个单词`);
         } catch (error) {
-          setOcrStatus(error instanceof Error ? error.message : "识别失败");
+          updateStatus(error instanceof Error ? error.message : "识别失败");
         } finally {
-          setOcrBusy(false);
+          updateBusy(false);
         }
       },
-      [ocrBusy, ocrUnlocked, onOcrResult, revealPaywall],
+      [ocrBusy, ocrUnlocked, onOcrResult, revealPaywall, updateBusy, updateStatus],
     );
 
     const processOcr = useCallback(
@@ -297,86 +320,75 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
     }
 
     // ---- Normal OCR view (unlocked) ----
-    const showButtons = !hideActions;
-    if (!showButtons && !ocrStatus) {
+    if (hideActions) {
       return null;
     }
 
     return (
       <View style={styles.container}>
-        {showButtons ? (
-          <View style={styles.btnRow}>
-            <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                {
-                  backgroundColor: colors.primary,
-                  shadowColor: colors.primary,
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
-                },
-                ocrBusy && styles.btnDisabled,
-              ]}
-              onPress={processOcr}
-              disabled={ocrBusy}
-              activeOpacity={0.7}
-            >
-              {ocrBusy ? (
-                <ActivityIndicator size="small" color={colors.background} />
-              ) : (
-                <View style={styles.actionBtnContent}>
-                  <Ionicons name="camera" size={16} color={colors.background} />
-                  <Text
-                    style={[styles.actionBtnText, { color: colors.background }]}
-                  >
-                    拍照
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
-                ocrBusy && styles.btnDisabled,
-              ]}
-              onPress={processAlbum}
-              disabled={ocrBusy}
-              activeOpacity={0.7}
-            >
-              {ocrBusy ? (
-                <ActivityIndicator size="small" color={colors.foreground} />
-              ) : (
-                <View style={styles.actionBtnContent}>
-                  <Ionicons
-                    name="images-outline"
-                    size={16}
-                    color={colors.foreground}
-                  />
-                  <Text
-                    style={[styles.actionBtnText, { color: colors.foreground }]}
-                  >
-                    相册
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {ocrStatus ? (
-          <View style={[styles.statusBox, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.statusText, { color: colors.muted }]}>
-              {ocrStatus}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.btnRow}>
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: colors.primary,
+                shadowColor: colors.primary,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+              },
+              ocrBusy && styles.btnDisabled,
+            ]}
+            onPress={processOcr}
+            disabled={ocrBusy}
+            activeOpacity={0.7}
+          >
+            {ocrBusy ? (
+              <ActivityIndicator size="small" color={colors.background} />
+            ) : (
+              <View style={styles.actionBtnContent}>
+                <Ionicons name="camera" size={16} color={colors.background} />
+                <Text
+                  style={[styles.actionBtnText, { color: colors.background }]}
+                >
+                  拍照
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderWidth: 1,
+              },
+              ocrBusy && styles.btnDisabled,
+            ]}
+            onPress={processAlbum}
+            disabled={ocrBusy}
+            activeOpacity={0.7}
+          >
+            {ocrBusy ? (
+              <ActivityIndicator size="small" color={colors.foreground} />
+            ) : (
+              <View style={styles.actionBtnContent}>
+                <Ionicons
+                  name="images-outline"
+                  size={16}
+                  color={colors.foreground}
+                />
+                <Text
+                  style={[styles.actionBtnText, { color: colors.foreground }]}
+                >
+                  相册
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     );
   },
@@ -524,15 +536,5 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.4,
-  },
-  statusBox: {
-    borderRadius: radii.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: "center",
-  },
-  statusText: {
-    fontSize: 13,
-    textAlign: "center",
   },
 });
