@@ -208,18 +208,21 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
             onPress={togglePaywall}
             activeOpacity={0.6}
           >
-            <Text style={styles.paywallLockIcon}>🔒</Text>
+            <Ionicons name="lock-closed" size={18} color={colors.muted} />
             <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-              拍照识别
+              解锁高级功能
             </Text>
-            <Text style={[styles.chevron, { color: colors.muted }]}>
-              {paywallCollapsed ? "▸" : "▾"}
-            </Text>
+            <Ionicons
+              name={paywallCollapsed ? "chevron-forward" : "chevron-down"}
+              size={16}
+              color={colors.muted}
+              style={styles.chevron}
+            />
           </TouchableOpacity>
           {!paywallCollapsed && (
             <>
               <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-                拍照或从相册选取图片，自动识别图片中的英文单词，快速生成听写列表。
+                拍照或从相册选取图片，自动识别图片中的单词。
               </Text>
               <View style={styles.priceBadge}>
                 <Text
@@ -232,7 +235,11 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
                 </Text>
               </View>
               <View style={styles.wechatRow}>
-                <Text style={styles.wechatIcon}>💬</Text>
+                <Ionicons
+                  name="chatbubble-ellipses"
+                  size={16}
+                  color={colors.muted}
+                />
                 <Text style={[styles.wechatLabel, { color: colors.muted }]}>
                   添加微信号
                 </Text>
@@ -440,15 +447,11 @@ const styles = StyleSheet.create({
     gap: 8,
     width: "100%",
   },
-  paywallLockIcon: {
-    fontSize: 20,
-  },
   paywallTitle: {
     fontSize: 16,
     fontWeight: "600",
   },
   chevron: {
-    fontSize: 16,
     marginLeft: "auto",
   },
   paywallDesc: {
@@ -474,9 +477,6 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 12,
-  },
-  wechatIcon: {
-    fontSize: 16,
   },
   wechatLabel: {
     fontSize: 13,
