@@ -53,7 +53,6 @@ export function HistoryDrawer({
     spacing.md + // handle
     28 +
     spacing.sm + // header
-    (userEntries.length > 0 ? 28 + spacing.md : 0) + // clear button
     bottomPad;
   const listMaxHeight = Math.max(160, drawerMaxHeight - chromeHeight);
 
@@ -84,26 +83,18 @@ export function HistoryDrawer({
             <Text style={[styles.title, { color: colors.foreground }]}>
               历史记录 ({history.length})
             </Text>
-            <TouchableOpacity
-              onPress={onClose}
-              activeOpacity={0.6}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close" size={22} color={colors.muted} />
-            </TouchableOpacity>
+            {userEntries.length > 0 && (
+              <TouchableOpacity
+                style={[styles.clearBtn, { backgroundColor: colors.dangerSoft }]}
+                onPress={onClear}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.clearBtnText, { color: colors.dangerMuted }]}>
+                  清空
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-
-          {userEntries.length > 0 && (
-            <TouchableOpacity
-              style={[styles.clearBtn, { backgroundColor: colors.dangerSoft }]}
-              onPress={onClear}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.clearBtnText, { color: colors.dangerMuted }]}>
-                清空自定义记录
-              </Text>
-            </TouchableOpacity>
-          )}
 
           <ScrollView
             style={{ maxHeight: listMaxHeight }}
@@ -150,25 +141,26 @@ export function HistoryDrawer({
                         ? entry.id.replace("default_", "")
                         : entry.text.replace(/\n/g, " ")}
                     </Text>
+                  </TouchableOpacity>
+                  <View style={styles.itemTrailing}>
                     <Text style={[styles.itemMeta, { color: colors.subtle }]}>
                       {wordCount(entry.text)}
                       {isDefaultEntry(entry) ? " · 内置" : null}
                     </Text>
-                  </TouchableOpacity>
-                  {!isDefaultEntry(entry) && (
-                    <TouchableOpacity
-                      style={styles.itemDelete}
-                      onPress={() => onDelete(entry.id)}
-                      activeOpacity={0.6}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={20}
-                        color={colors.subtle}
-                      />
-                    </TouchableOpacity>
-                  )}
+                    {!isDefaultEntry(entry) && (
+                      <TouchableOpacity
+                        onPress={() => onDelete(entry.id)}
+                        activeOpacity={0.6}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={20}
+                          color={colors.subtle}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               ))
             )}
@@ -213,11 +205,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   clearBtn: {
-    alignSelf: "flex-start",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.xs,
-    marginBottom: spacing.md,
   },
   clearBtnText: {
     fontSize: 12,
@@ -242,22 +232,22 @@ const styles = StyleSheet.create({
   },
   itemContent: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    padding: spacing.sm + 2,
+    paddingVertical: spacing.sm + 2,
+    paddingLeft: spacing.sm + 2,
+    paddingRight: spacing.sm,
   },
   itemText: {
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 2,
+  },
+  itemTrailing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingRight: spacing.sm + 2,
   },
   itemMeta: {
     fontSize: 11,
-  },
-  itemDelete: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.sm + 2,
   },
 });
