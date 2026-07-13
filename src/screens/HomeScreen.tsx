@@ -485,20 +485,6 @@ export function HomeScreen() {
           </View>
         ) : null}
         <Toast message={toast} />
-        <ConfirmDialog
-          visible={dialog?.visible}
-          title={dialog?.title}
-          message={dialog?.message}
-          confirmLabel={dialog?.confirmLabel}
-          destructive
-          onConfirm={dialog?.action ?? (() => {})}
-          onCancel={() =>
-            setDialog({
-              ...dialog!,
-              visible: false,
-            })
-          }
-        />
         <HistoryDrawer
           visible={historyDrawerVisible}
           history={history}
@@ -558,6 +544,20 @@ export function HomeScreen() {
             </Pressable>
           </Pressable>
         </Modal>
+        <ConfirmDialog
+          visible={dialog?.visible}
+          title={dialog?.title}
+          message={dialog?.message}
+          confirmLabel={dialog?.confirmLabel}
+          destructive
+          onConfirm={dialog?.action ?? (() => {})}
+          onCancel={() =>
+            setDialog({
+              ...dialog!,
+              visible: false,
+            })
+          }
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
