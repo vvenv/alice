@@ -1,0 +1,63 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB1BC"/>
+      <stop offset="1" stop-color="#FA5F79"/>
+    </linearGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- sparkles -->
+  <path d="M140 220 l14 38 38 14 -38 14 -14 38 -14 -38 -38 -14 38 -14 z" fill="#FFFFFF" opacity="0.9"/>
+  <path d="M905 545 l11 30 30 11 -30 11 -11 30 -11 -30 -30 -11 30 -11 z" fill="#FDE68A" opacity="0.95"/>
+  <path d="M170 720 l10 26 26 10 -26 10 -10 26 -10 -26 -26 -10 26 -10 z" fill="#FDE68A" opacity="0.85"/>
+  <circle cx="240" cy="120" r="10" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="930" cy="330" r="12" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="90" cy="480" r="13" fill="#FFFFFF" opacity="0.45"/>
+
+  <!-- ears -->
+  <g>
+    <ellipse cx="360" cy="330" rx="70" ry="190" fill="#FFFFFF" transform="rotate(-12 360 330)"/>
+    <ellipse cx="360" cy="352" rx="35" ry="126" fill="#FFC7D0" transform="rotate(-12 360 352)"/>
+    <ellipse cx="580" cy="330" rx="70" ry="190" fill="#FFFFFF" transform="rotate(10 580 330)"/>
+    <ellipse cx="580" cy="352" rx="35" ry="126" fill="#FFC7D0" transform="rotate(10 580 352)"/>
+  </g>
+
+  <!-- head -->
+  <ellipse cx="470" cy="680" rx="300" ry="245" fill="#FFFFFF"/>
+
+  <!-- headphone band -->
+  <path d="M 262 592 A 212 212 0 0 1 678 592" fill="none" stroke="url(#band)" stroke-width="46" stroke-linecap="round"/>
+  <!-- ear cups -->
+  <circle cx="248" cy="632" r="92" fill="#4F46E5"/>
+  <circle cx="248" cy="632" r="54" fill="#818CF8"/>
+  <circle cx="692" cy="632" r="92" fill="#4F46E5"/>
+  <circle cx="692" cy="632" r="54" fill="#818CF8"/>
+
+  <!-- face -->
+  <circle cx="384" cy="670" r="34" fill="#2D2A3A"/>
+  <circle cx="396" cy="658" r="12" fill="#FFFFFF"/>
+  <circle cx="558" cy="670" r="34" fill="#2D2A3A"/>
+  <circle cx="570" cy="658" r="12" fill="#FFFFFF"/>
+  <ellipse cx="338" cy="756" rx="46" ry="28" fill="#FFA1AE" opacity="0.8"/>
+  <ellipse cx="602" cy="756" rx="46" ry="28" fill="#FFA1AE" opacity="0.8"/>
+  <path d="M 450 736 Q 470 720 490 736 Q 480 764 470 764 Q 460 764 450 736 Z" fill="#FB7185"/>
+  <path d="M 470 766 L 470 790 M 470 790 Q 448 812 428 792 M 470 790 Q 492 812 512 792" fill="none" stroke="#2D2A3A" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- speech bubble -->
+  <g>
+    <path d="M 746 260 L 706 370 L 830 260 Z" fill="#FFFFFF"/>
+    <rect x="666" y="95" width="290" height="205" rx="62" fill="#FFFFFF"/>
+    <!-- letter A -->
+    <path d="M 730 247 L 770 145 L 810 247 M 742 215 L 798 215" fill="none" stroke="#E11D48" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- letter a -->
+    <circle cx="870" cy="219" r="30" fill="none" stroke="#E11D48" stroke-width="24"/>
+    <path d="M 900 185 L 900 247" fill="none" stroke="#E11D48" stroke-width="24" stroke-linecap="round"/>
+  </g>
+</svg>
