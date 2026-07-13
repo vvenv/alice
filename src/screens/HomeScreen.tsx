@@ -28,6 +28,7 @@ import { WordInputSection } from "../components/WordInputSection";
 import { useToast } from "../hooks/useToast";
 import type { RootStackParamList } from "../navigation/types";
 import { parseWords } from "../lib/dictation";
+import { OCR_UI_IDLE, type OcrUiState } from "../lib/ocr";
 import {
   loadPersistedWrongWords,
   loadWordInput,
@@ -87,8 +88,7 @@ export function HomeScreen() {
   const [shuffle, setShuffle] = useState(false);
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState("");
-  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrUi, setOcrUi] = useState<OcrUiState>(OCR_UI_IDLE);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -169,13 +169,6 @@ export function HomeScreen() {
       setStartIndex(0);
     }
   }, [wordInput, startIndex]);
-
-  // Clear OCR status shortly after completion so the edit/complete control returns
-  useEffect(() => {
-    if (ocrBusy || !ocrStatus) return;
-    const timer = setTimeout(() => setOcrStatus(""), 2500);
-    return () => clearTimeout(timer);
-  }, [ocrBusy, ocrStatus]);
 
   const handleOcrResult = useCallback((words: string[]) => {
     setWordInput(words.join("\n"));
@@ -273,7 +266,8 @@ export function HomeScreen() {
   const parsedWordCount = wordCount(wordInput);
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
-  const showHeaderCenter = Boolean(ocrStatus) || canToggleDisplayMode;
+  const showOcrProgress = ocrUi.busy && Boolean(ocrUi.message);
+  const showHeaderCenter = showOcrProgress || canToggleDisplayMode;
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
@@ -367,41 +361,31 @@ export function HomeScreen() {
 
           {showHeaderCenter ? (
             <View style={styles.headerCenter} pointerEvents="box-none">
-              {ocrStatus ? (
+              {showOcrProgress ? (
                 <View
                   style={[
                     styles.headerCenterBtn,
                     {
-                      backgroundColor: ocrBusy
-                        ? colors.primarySoft
-                        : colors.surface,
-                      borderColor: ocrBusy ? colors.primary : colors.border,
+                      backgroundColor: colors.primarySoft,
+                      borderColor: colors.primary,
                       maxWidth: "62%",
                     },
                   ]}
-                  accessibilityLabel={ocrStatus}
+                  accessibilityLabel={ocrUi.message}
                 >
-                  {ocrBusy ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <Ionicons
-                      name="scan-outline"
-                      size={16}
-                      color={colors.muted}
-                    />
-                  )}
+                  <ActivityIndicator size="small" color={colors.primary} />
                   <Text
                     style={[
                       styles.headerCenterText,
                       {
-                        color: ocrBusy ? colors.primary : colors.muted,
+                        color: colors.primary,
                         flexShrink: 1,
                       },
                     ]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    {ocrStatus}
+                    {ocrUi.message}
                   </Text>
                 </View>
               ) : (
@@ -471,8 +455,8 @@ export function HomeScreen() {
             ocrUnlocked={ocrUnlocked}
             onOcrResult={handleOcrResult}
             onUnlockOcr={handleUnlockOcr}
-            onStatusChange={setOcrStatus}
-            onBusyChange={setOcrBusy}
+            onOcrStateChange={setOcrUi}
+            onOcrOutcome={showToast}
             hideActions
           />
 

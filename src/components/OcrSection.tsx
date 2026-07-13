@@ -26,7 +26,16 @@ if (
 }
 
 import { config } from "../lib/config";
-import { takePhoto, pickFromAlbum, ocrWordsFromImage } from "../lib/ocr";
+import {
+  takePhoto,
+  pickFromAlbum,
+  ocrWordsFromImage,
+  OCR_PROGRESS_MESSAGES,
+  OCR_OUTCOME_MESSAGES,
+  OCR_UI_IDLE,
+  type OcrProgressPhase,
+  type OcrUiState,
+} from "../lib/ocr";
 import { useThemeColors } from "../lib/theme";
 import { radii, spacing } from "../lib/designTokens";
 
@@ -36,8 +45,10 @@ interface OcrSectionProps {
   onUnlockOcr: (code: string) => boolean;
   /** When true, hide the inline 拍照/相册 buttons (actions live in header menu). */
   hideActions?: boolean;
-  onStatusChange?: (status: string) => void;
-  onBusyChange?: (busy: boolean) => void;
+  /** In-flight header state: busy + progress message. */
+  onOcrStateChange?: (state: OcrUiState) => void;
+  /** Terminal outcome for toast (success / empty / error). */
+  onOcrOutcome?: (message: string) => void;
 }
 
 export type OcrSectionHandle = {
@@ -55,8 +66,8 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
       onOcrResult,
       onUnlockOcr,
       hideActions = false,
-      onStatusChange,
-      onBusyChange,
+      onOcrStateChange,
+      onOcrOutcome,
     },
     ref,
   ) {
@@ -67,19 +78,19 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
     const [showUnlock, setShowUnlock] = useState(false);
     const [paywallCollapsed, setPaywallCollapsed] = useState(true);
 
-    const updateStatus = useCallback(
-      (status: string) => {
-        onStatusChange?.(status);
+    const setUiState = useCallback(
+      (state: OcrUiState) => {
+        setOcrBusy(state.busy);
+        onOcrStateChange?.(state);
       },
-      [onStatusChange],
+      [onOcrStateChange],
     );
 
-    const updateBusy = useCallback(
-      (busy: boolean) => {
-        setOcrBusy(busy);
-        onBusyChange?.(busy);
+    const reportProgress = useCallback(
+      (phase: OcrProgressPhase) => {
+        setUiState({ busy: true, message: OCR_PROGRESS_MESSAGES[phase] });
       },
-      [onBusyChange],
+      [setUiState],
     );
 
     const togglePaywall = useCallback(() => {
@@ -94,50 +105,68 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
     }, []);
 
     const runOcr = useCallback(
-      async (getUri: () => Promise<string | null>, messagePrefix: string) => {
+      async (
+        getUri: () => Promise<string | null>,
+        preparingPhase: "preparing_photo" | "preparing_album",
+      ) => {
         if (ocrBusy) return;
         if (!ocrUnlocked) {
           revealPaywall();
           return;
         }
-        updateBusy(true);
+        setUiState({ busy: true, message: "" });
         try {
           const uri = await getUri();
           if (!uri) {
-            updateBusy(false);
+            setUiState(OCR_UI_IDLE);
             return;
           }
 
-          updateStatus(`${messagePrefix}，准备识别…`);
-          const { words, rawText } = await ocrWordsFromImage(uri, updateStatus);
+          reportProgress(preparingPhase);
+          const { words, rawText } = await ocrWordsFromImage(
+            uri,
+            reportProgress,
+          );
 
           if (words.length === 0) {
-            updateStatus(
+            onOcrOutcome?.(
               rawText
-                ? "未能从识别结果中提取英文单词，请换一张更清晰的单词列表再试"
-                : "未识别到英文单词，请换一张更清晰的图片再试",
+                ? OCR_OUTCOME_MESSAGES.emptyUnparsed
+                : OCR_OUTCOME_MESSAGES.empty,
             );
             return;
           }
 
           onOcrResult(words);
-          updateStatus(`已识别 ${words.length} 个单词`);
+          onOcrOutcome?.(OCR_OUTCOME_MESSAGES.success(words.length));
         } catch (error) {
-          updateStatus(error instanceof Error ? error.message : "识别失败");
+          onOcrOutcome?.(
+            error instanceof Error
+              ? error.message
+              : OCR_OUTCOME_MESSAGES.failed,
+          );
         } finally {
-          updateBusy(false);
+          setUiState(OCR_UI_IDLE);
         }
       },
-      [ocrBusy, ocrUnlocked, onOcrResult, revealPaywall, updateBusy, updateStatus],
+      [
+        ocrBusy,
+        ocrUnlocked,
+        onOcrOutcome,
+        onOcrResult,
+        revealPaywall,
+        reportProgress,
+        setUiState,
+      ],
     );
 
     const processOcr = useCallback(
-      () => runOcr(takePhoto, "已拍摄"),
+      () => runOcr(takePhoto, "preparing_photo"),
       [runOcr],
     );
 
     const processAlbum = useCallback(
-      () => runOcr(pickFromAlbum, "已选图"),
+      () => runOcr(pickFromAlbum, "preparing_album"),
       [runOcr],
     );
 

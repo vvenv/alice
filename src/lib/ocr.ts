@@ -7,6 +7,35 @@ const OCR_MAX_EDGE = 1600;
 const OCR_JPEG_QUALITY = 0.82;
 const OCR_URL = `${config.zhipuBaseUrl}/chat/completions`;
 
+/** In-flight progress phases (header). Terminal copy lives in OCR_OUTCOME_MESSAGES. */
+export type OcrProgressPhase =
+  | "preparing_photo"
+  | "preparing_album"
+  | "compressing"
+  | "recognizing";
+
+export const OCR_PROGRESS_MESSAGES: Record<OcrProgressPhase, string> = {
+  preparing_photo: "已拍摄，准备识别…",
+  preparing_album: "已选图，准备识别…",
+  compressing: "处理图片中…",
+  recognizing: "识别中…",
+};
+
+export const OCR_OUTCOME_MESSAGES = {
+  success: (count: number) => `已识别 ${count} 个单词`,
+  empty: "未识别到英文单词，请换一张更清晰的图片再试",
+  emptyUnparsed:
+    "未能从识别结果中提取英文单词，请换一张更清晰的单词列表再试",
+  failed: "识别失败",
+} as const;
+
+export type OcrUiState = {
+  busy: boolean;
+  message: string;
+};
+
+export const OCR_UI_IDLE: OcrUiState = { busy: false, message: "" };
+
 function uriToBase64(uri: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -81,13 +110,13 @@ export async function pickFromAlbum(): Promise<string | null> {
 
 export async function ocrWordsFromImage(
   imageUri: string,
-  onStatus?: (status: string) => void,
+  onProgress?: (phase: OcrProgressPhase) => void,
 ): Promise<{ words: string[]; rawText: string }> {
-  onStatus?.("处理图片中…");
+  onProgress?.("compressing");
   const { base64, mimeType } = await compressImageForOcr(imageUri);
   const dataUrl = `data:${mimeType};base64,${base64}`;
 
-  onStatus?.("识别中…");
+  onProgress?.("recognizing");
 
   let response: Response;
   try {
