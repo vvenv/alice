@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -14,13 +14,7 @@ import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
-import { fetchWordMetaBatch, type WordMeta } from "../lib/dictionary";
-import {
-  entryToLine,
-  parseWordLine,
-  speakTextFromEntry,
-} from "../lib/dictation";
-import { setEnrichedResult } from "../lib/dictationResult";
+import { parseWordLine, speakTextFromEntry } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
@@ -44,9 +38,6 @@ export function DictationScreen({
   const [showWord, setShowWord] = useState(false);
   const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
   const [autoNext, setAutoNext] = useState(initialAutoNext);
-  const [metaMap, setMetaMap] = useState<Map<string, WordMeta>>(new Map());
-  /** Prevents duplicate offline lookups when React re-invokes the mount effect. */
-  const metaStartedRef = useRef(false);
 
   const { toast, showToast } = useToast();
   const {
@@ -60,27 +51,9 @@ export function DictationScreen({
 
   const playback = usePlayback({ intervalSec, autoNext });
 
-  // Start playback + offline meta lookup once on mount.
+  // Start playback once on mount.
   useEffect(() => {
     playback.startDictation(words);
-
-    if (metaStartedRef.current) return;
-    metaStartedRef.current = true;
-
-    const toFetch: string[] = [];
-    for (const line of words) {
-      const entry = parseWordLine(line);
-      if (entry.pos || entry.meaning) continue;
-      const speakable = speakTextFromEntry(line);
-      if (speakable) toFetch.push(speakable);
-    }
-    if (toFetch.length === 0) return;
-
-    fetchWordMetaBatch(toFetch, (word, meta) => {
-      setMetaMap((prev) => new Map(prev).set(word, meta));
-    }).catch(() => {
-      // Best-effort: word still displays without pos/meaning.
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -112,28 +85,9 @@ export function DictationScreen({
     markWrong(word);
   }, [isActive, markWrong, playback.currentIndex, playback.wordList]);
 
-  // ---- Build enriched text (with fetched pos/meaning) for history cache ----
-  const buildEnrichedText = useCallback(() => {
-    return playback.wordList
-      .map((line) => {
-        const entry = parseWordLine(line);
-        if (entry.pos || entry.meaning) return line; // already enriched
-        const speakable = speakTextFromEntry(line);
-        const meta = metaMap.get(speakable);
-        if (!meta || (!meta.pos && !meta.meaning)) return line;
-        return entryToLine({
-          word: entry.word,
-          pos: meta.pos,
-          meaning: meta.meaning,
-        });
-      })
-      .join("\n");
-  }, [playback.wordList, metaMap]);
-
   const handleExit = useCallback(() => {
-    setEnrichedResult(buildEnrichedText());
     onEnd();
-  }, [buildEnrichedText, onEnd]);
+  }, [onEnd]);
 
   const handleStop = useCallback(() => {
     playback.stopDictation();
@@ -173,16 +127,16 @@ export function DictationScreen({
         ? "已暂停"
         : "已结束";
 
-  // ---- Current word entry + meta for display ----
+  // ---- Current word entry + meta for display (already enriched on Home) ----
   const currentLine =
     playback.currentIndex < playback.wordList.length
       ? playback.wordList[playback.currentIndex]!
       : "";
   const currentEntry = parseWordLine(currentLine);
-  const currentMeta: WordMeta | null =
+  const currentMeta =
     currentEntry.pos || currentEntry.meaning
       ? { pos: currentEntry.pos, meaning: currentEntry.meaning }
-      : (metaMap.get(speakTextFromEntry(currentLine)) ?? null);
+      : null;
 
   return (
     <SafeAreaView

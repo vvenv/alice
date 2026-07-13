@@ -1,10 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { DEFAULT_HISTORY } from "./defaultHistory";
+import { parseWords, speakTextFromEntry } from "./dictation";
 
 const WRONG_WORDS_KEY = "dictation_wrong_words";
 const WORD_INPUT_KEY = "dictation_word_input";
 const WORD_HISTORY_KEY = "dictation_word_history";
-const MAX_HISTORY_ENTRIES = 50;
+/** Cap for user-added entries only — defaults are always kept separately. */
+const MAX_USER_HISTORY_ENTRIES = 50;
 
 export interface WordHistoryEntry {
   id: string;
@@ -13,6 +16,75 @@ export interface WordHistoryEntry {
   /** Enriched version (word | pos | meaning) — stored as expansion data so
    *  the original plain-word `text` is preserved for history display. */
   enrichedText?: string;
+}
+
+export function isDefaultHistoryId(id: string): boolean {
+  return id.startsWith("default_");
+}
+
+function defaultEntries(): WordHistoryEntry[] {
+  // Always clone from the bundled source of truth — never mutate defaults.
+  return DEFAULT_HISTORY.map((h) => ({ ...h.entry }));
+}
+
+/**
+ * Normalize a word list for comparison: strip POS/meaning and keep speakable
+ * headwords so enriched text still matches its plain default counterpart.
+ */
+export function plainWordList(text: string): string {
+  return parseWords(text)
+    .map((line) => speakTextFromEntry(line))
+    .filter(Boolean)
+    .join("\n");
+}
+
+function matchesDefaultPlainText(text: string): boolean {
+  const plain = plainWordList(text);
+  if (!plain) return false;
+  return DEFAULT_HISTORY.some((h) => plainWordList(h.entry.text) === plain);
+}
+
+/**
+ * Merge stored history with bundled defaults:
+ * - Defaults always come from DEFAULT_HISTORY (label + plain text intact)
+ * - User entries are capped; enriched copies of default lists are dropped
+ */
+function mergeWithDefaults(stored: WordHistoryEntry[]): WordHistoryEntry[] {
+  const defaults = defaultEntries();
+  const userEntries = stored
+    .filter((e) => !isDefaultHistoryId(e.id))
+    .filter((e) => !matchesDefaultPlainText(e.text))
+    .filter(
+      (e) =>
+        !(e.enrichedText && matchesDefaultPlainText(e.enrichedText)),
+    )
+    .slice(0, MAX_USER_HISTORY_ENTRIES);
+  return [...userEntries, ...defaults];
+}
+
+function sanitizeEntry(item: unknown): WordHistoryEntry | null {
+  if (typeof item !== "object" || item === null) return null;
+  const e = item as WordHistoryEntry;
+  if (
+    typeof e.id !== "string" ||
+    typeof e.text !== "string" ||
+    typeof e.timestamp !== "number"
+  ) {
+    return null;
+  }
+  return {
+    id: e.id,
+    text: e.text,
+    timestamp: e.timestamp,
+    enrichedText:
+      typeof e.enrichedText === "string" && e.enrichedText.length > 0
+        ? e.enrichedText
+        : undefined,
+  };
+}
+
+async function persistHistory(entries: WordHistoryEntry[]): Promise<void> {
+  await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(entries));
 }
 
 export function loadWrongWords(): string[] {
@@ -70,46 +142,22 @@ export async function loadWordHistory(): Promise<WordHistoryEntry[]> {
   try {
     const data = await AsyncStorage.getItem(WORD_HISTORY_KEY);
     if (!data) {
-      // First launch or history was cleared: seed with defaults
-      const defaults = DEFAULT_HISTORY.map((h) => h.entry);
-      await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
+      const defaults = defaultEntries();
+      await persistHistory(defaults);
       return defaults;
     }
     const parsed = JSON.parse(data) as unknown;
-    if (!Array.isArray(parsed)) {
-      const defaults = DEFAULT_HISTORY.map((h) => h.entry);
-      await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
-      return defaults;
-    }
-    const filtered = parsed
-      .filter(
-        (item): item is WordHistoryEntry =>
-          typeof item === "object" &&
-          item !== null &&
-          typeof (item as WordHistoryEntry).id === "string" &&
-          typeof (item as WordHistoryEntry).text === "string" &&
-          typeof (item as WordHistoryEntry).timestamp === "number",
-      )
-      .map((item) => ({
-        ...item,
-        // Sanitize optional enrichedText: drop if not a string
-        enrichedText:
-          typeof item.enrichedText === "string" && item.enrichedText.length > 0
-            ? item.enrichedText
-            : undefined,
-      }));
-    // If after filtering the array is empty, re-seed
-    if (filtered.length === 0) {
-      const defaults = DEFAULT_HISTORY.map((h) => h.entry);
-      await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
-      return defaults;
-    }
-    return filtered;
+    const stored = Array.isArray(parsed)
+      ? parsed.map(sanitizeEntry).filter((e): e is WordHistoryEntry => e !== null)
+      : [];
+    const merged = mergeWithDefaults(stored);
+    // Heal storage if defaults were truncated / mutated / duplicated as user rows
+    await persistHistory(merged);
+    return merged;
   } catch {
-    // On error, still try to seed defaults
-    const defaults = DEFAULT_HISTORY.map((h) => h.entry);
+    const defaults = defaultEntries();
     try {
-      await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
+      await persistHistory(defaults);
     } catch {
       // ignore
     }
@@ -121,61 +169,66 @@ export async function addWordHistory(text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) return;
   try {
+    // Starting from a built-in list (plain or enriched) must not create a
+    // user row or mutate the default entry — keep label + plain text intact.
+    if (matchesDefaultPlainText(trimmed)) return;
+
     const history = await loadWordHistory();
-    // Dedupe against both `text` and `enrichedText` so that re-dictating
-    // from an enriched input box (whose text matches a prior entry's
-    // enrichedText) moves the existing entry to top instead of creating a
-    // duplicate — preserving the original plain-word `text`.
-    const existing = history.find(
+    const users = history.filter((e) => !isDefaultHistoryId(e.id));
+
+    const existing = users.find(
       (e) => e.text === trimmed || e.enrichedText === trimmed,
     );
-    let updated: WordHistoryEntry[];
+    let nextUsers: WordHistoryEntry[];
     if (existing) {
-      const filtered = history.filter((e) => e.id !== existing.id);
-      updated = [
+      nextUsers = [
         { ...existing, timestamp: Date.now() },
-        ...filtered,
-      ].slice(0, MAX_HISTORY_ENTRIES);
+        ...users.filter((e) => e.id !== existing.id),
+      ].slice(0, MAX_USER_HISTORY_ENTRIES);
     } else {
       const entry: WordHistoryEntry = {
         id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         text: trimmed,
         timestamp: Date.now(),
       };
-      updated = [entry, ...history].slice(0, MAX_HISTORY_ENTRIES);
+      nextUsers = [entry, ...users].slice(0, MAX_USER_HISTORY_ENTRIES);
     }
-    await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
+
+    await persistHistory([...nextUsers, ...defaultEntries()]);
   } catch {
     // ignore
   }
 }
 
 /**
- * Attach enriched text (word | pos | meaning) to a history entry as expansion
- * data, keeping the original plain-word `text` intact for history display.
+ * Attach enriched text to a *user* history entry. Default entries are ignored.
  */
 export async function enrichHistoryEntry(
   originalText: string,
   enrichedText: string,
 ): Promise<void> {
   try {
+    if (matchesDefaultPlainText(originalText)) return;
     const history = await loadWordHistory();
-    const updated = history.map((e) =>
-      e.text === originalText ? { ...e, enrichedText } : e,
+    const updated = mergeWithDefaults(
+      history.map((e) =>
+        !isDefaultHistoryId(e.id) && e.text === originalText
+          ? { ...e, enrichedText }
+          : e,
+      ),
     );
-    await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
+    await persistHistory(updated);
   } catch {
     // ignore
   }
 }
 
 export async function deleteWordHistory(id: string): Promise<void> {
-  // Default entries are not deletable
-  if (id.startsWith("default_")) return;
+  if (isDefaultHistoryId(id)) return;
   try {
     const history = await loadWordHistory();
-    const updated = history.filter((e) => e.id !== id);
-    await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(updated));
+    const updated = mergeWithDefaults(history.filter((e) => e.id !== id));
+    await persistHistory(updated);
   } catch {
     // ignore
   }
@@ -183,10 +236,8 @@ export async function deleteWordHistory(id: string): Promise<void> {
 
 export async function clearWordHistory(): Promise<void> {
   try {
-    const history = await loadWordHistory();
-    // Keep default entries, remove only user-added ones
-    const defaults = history.filter((e) => e.id.startsWith("default_"));
-    await AsyncStorage.setItem(WORD_HISTORY_KEY, JSON.stringify(defaults));
+    // Drop all user rows; re-seed defaults from the bundled source of truth
+    await persistHistory(defaultEntries());
   } catch {
     // ignore
   }

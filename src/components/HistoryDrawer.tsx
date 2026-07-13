@@ -13,10 +13,11 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { WordHistoryEntry } from "../lib/storage";
+import { isDefaultHistoryId } from "../lib/storage";
 import { parseWords } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
-import type { WordHistoryEntry } from "../lib/storage";
 
 interface HistoryDrawerProps {
   visible: boolean;
@@ -28,7 +29,7 @@ interface HistoryDrawerProps {
 }
 
 function isDefaultEntry(entry: WordHistoryEntry): boolean {
-  return entry.id.startsWith("default_");
+  return isDefaultHistoryId(entry.id);
 }
 
 function wordCount(text: string): number {

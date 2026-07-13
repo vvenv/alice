@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,8 +14,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -26,25 +26,25 @@ import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
 import { useToast } from "../hooks/useToast";
-import type { RootStackParamList } from "../navigation/types";
+import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { parseWords } from "../lib/dictation";
+import { enrichWordListText } from "../lib/dictionary";
+import { radii, spacing } from "../lib/designTokens";
 import { OCR_UI_IDLE, type OcrUiState } from "../lib/ocr";
 import {
+  addWordHistory,
+  clearWordHistory,
+  deleteWordHistory,
+  isDefaultHistoryId,
   loadPersistedWrongWords,
+  loadWordHistory,
   loadWordInput,
   saveWordInput,
-  loadWordHistory,
-  addWordHistory,
-  deleteWordHistory,
-  clearWordHistory,
-  enrichHistoryEntry,
   WordHistoryEntry,
 } from "../lib/storage";
-import { consumeEnrichedResult } from "../lib/dictationResult";
-import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
-import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors, useThemeMode } from "../lib/theme";
 import { clearTtsCache } from "../lib/tts";
+import type { RootStackParamList } from "../navigation/types";
 
 const SAMPLE_WORDS = "apple\nbanana\ncat\ndog\nelephant\nfish\ngrape";
 const WORD_INPUT_SAVE_DEBOUNCE_MS = 500;
@@ -61,7 +61,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 function isDefaultEntry(entry: WordHistoryEntry): boolean {
-  return entry.id.startsWith("default_");
+  return isDefaultHistoryId(entry.id);
 }
 
 function wordCount(text: string): number {
@@ -126,7 +126,6 @@ export function HomeScreen() {
   } | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const originalTextRef = useRef("");
 
   const { toast, showToast } = useToast();
 
@@ -141,7 +140,7 @@ export function HomeScreen() {
           loadWordHistory(),
         ]);
       if (cancelled) return;
-      if (savedInput) setWordInput(savedInput);
+      if (savedInput) setWordInput(enrichWordListText(savedInput));
       setOcrUnlocked(persistedOcrUnlocked);
       setHistory(savedHistory);
       setReady(true);
@@ -174,7 +173,9 @@ export function HomeScreen() {
   }, [wordInput, startIndex]);
 
   const handleOcrResult = useCallback((words: string[]) => {
-    setWordInput(words.join("\n"));
+    // OCR returns bare words; enrich immediately so display mode shows meta.
+    setWordInput(enrichWordListText(words.join("\n")));
+    setIsDisplayMode(true);
   }, []);
 
   const handleUnlockOcr = useCallback((code: string): boolean => {
@@ -183,8 +184,21 @@ export function HomeScreen() {
     return ok;
   }, []);
 
+  const handleToggleDisplayMode = useCallback(() => {
+    setIsDisplayMode((prev) => {
+      const next = !prev;
+      // Leaving edit mode ("完成"): fill in offline POS + meaning.
+      if (next) setWordInput((text) => enrichWordListText(text));
+      return next;
+    });
+  }, []);
+
   const handleStart = useCallback(() => {
-    const allWords = parseWords(wordInput);
+    // Ensure enrichment even if the user starts from edit mode.
+    const enriched = enrichWordListText(wordInput);
+    if (enriched !== wordInput) setWordInput(enriched);
+
+    const allWords = parseWords(enriched);
     if (allWords.length === 0) {
       showToast("请先输入单词列表");
       return;
@@ -194,11 +208,7 @@ export function HomeScreen() {
     if (shuffle) {
       words = shuffleArray(words);
     }
-    // Remember the original text so we can replace the history entry with
-    // the enriched version (pos + meaning) after dictation completes.
-    originalTextRef.current = wordInput;
-    // Save to history before navigating
-    addWordHistory(wordInput).then(() => loadWordHistory().then(setHistory));
+    addWordHistory(enriched).then(() => loadWordHistory().then(setHistory));
     navigation.navigate("Dictation", {
       words,
       intervalSec,
@@ -214,28 +224,11 @@ export function HomeScreen() {
     wordInput,
   ]);
 
-  // Consume enriched text (with fetched pos/meaning) returned from the
-  // Dictation screen. Update the input box to the enriched version and attach
-  // it as expansion data to the original history entry (without overwriting
-  // the original plain-word text).
-  useFocusEffect(
-    useCallback(() => {
-      const enriched = consumeEnrichedResult();
-      if (!enriched) return;
-      const original = originalTextRef.current;
-      setWordInput(enriched);
-      originalTextRef.current = "";
-      if (original && original !== enriched) {
-        enrichHistoryEntry(original, enriched).then(() =>
-          loadWordHistory().then(setHistory),
-        );
-      }
-    }, []),
-  );
-
   const handleApplyHistory = useCallback(
     (entry: WordHistoryEntry) => {
-      setWordInput(entry.enrichedText ?? entry.text);
+      const text = entry.enrichedText ?? entry.text;
+      setWordInput(enrichWordListText(text));
+      setIsDisplayMode(true);
       showToast("已载入历史记录");
     },
     [showToast],
@@ -426,7 +419,7 @@ export function HomeScreen() {
                         : colors.border,
                     },
                   ]}
-                  onPress={() => setIsDisplayMode((prev) => !prev)}
+                  onPress={handleToggleDisplayMode}
                   activeOpacity={0.7}
                   accessibilityLabel={effectiveDisplayMode ? "编辑" : "完成"}
                 >
