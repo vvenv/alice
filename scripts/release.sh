@@ -50,8 +50,8 @@ echo ""
 TMP_DIR="$(mktemp -d)"
 TMP_APK="$TMP_DIR/alice.apk"
 trap 'rm -rf "$TMP_DIR"' EXIT
-echo "▶ [1/6] Building APK via EAS (local, preview)…"
-# Call eas directly (not via `pnpm build:android:local -- …`): pnpm forwards the
+echo "▶ [1/6] Building APK via EAS (local, preview)..."
+# Call eas directly (not via `pnpm build:android:local -- ...`): pnpm forwards the
 # `--` separator to eas, which then treats --output as a positional arg and
 # rejects it. `pnpm exec` resolves the eas binary without that separator.
 pnpm exec eas build \
@@ -60,7 +60,7 @@ pnpm exec eas build \
 echo "  built: $(du -h "$TMP_APK" | cut -f1) → $TMP_APK"
 
 # --- 2. stage APK on website ---
-echo "▶ [2/6] Staging APK on website…"
+echo "▶ [2/6] Staging APK on website..."
 mkdir -p "$APK_PUBLIC_DIR"
 # remove previous timestamped APK(s); keep nothing stale
 find "$APK_PUBLIC_DIR" -maxdepth 1 -name 'alice-*.apk' -delete
@@ -68,16 +68,16 @@ mv "$TMP_APK" "$APK_PUBLIC"
 echo "  staged at website/public/downloads/$APK_NAME"
 
 # --- 3. update APK_URL ---
-echo "▶ [3/6] Updating APK_URL in Download.tsx…"
+echo "▶ [3/6] Updating APK_URL in Download.tsx..."
 APK_URL="$APK_URL" perl -pi -e 's{https://alice\.edao\.plus/downloads/alice-[^"]+\.apk}{$ENV{APK_URL}}g' "$DOWNLOAD_TSX"
 echo "  → $APK_URL"
 
 # --- 4. build website ---
-echo "▶ [4/6] Building website…"
+echo "▶ [4/6] Building website..."
 pnpm --filter website build
 
 # --- 5. deploy ---
-echo "▶ [5/6] Deploying to $SERVER:$REMOTE_DIR…"
+echo "▶ [5/6] Deploying to $SERVER:$REMOTE_DIR..."
 LOCAL_APK="$WEBSITE_DIR/dist/downloads/$APK_NAME"
 LOCAL_SHA="$(shasum -a 256 "$LOCAL_APK" | cut -d' ' -f1)"
 RSYNC_EXCLUDE=""
@@ -87,11 +87,11 @@ EXISTING="$(ssh -o BatchMode=yes "$SERVER" "ls $REMOTE_DIR/downloads/*.apk 2>/de
 if [ -n "$EXISTING" ]; then
   REMOTE_SHA="$(ssh -o BatchMode=yes "$SERVER" "sha256sum '$EXISTING'" | cut -d' ' -f1)"
   if [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
-    echo "  server APK bytes identical (sha ${LOCAL_SHA:0:12}…) → rename in place, skip upload"
+    echo "  server APK bytes identical (sha ${LOCAL_SHA:0:12}...) → rename in place, skip upload"
     ssh -o BatchMode=yes "$SERVER" "mv '$EXISTING' '$REMOTE_DIR/downloads/$APK_NAME'"
     RSYNC_EXCLUDE="--exclude=downloads"
   else
-    echo "  server APK differs (local ${LOCAL_SHA:0:12}… vs remote ${REMOTE_SHA:0:12}…) → upload new APK"
+    echo "  server APK differs (local ${LOCAL_SHA:0:12}... vs remote ${REMOTE_SHA:0:12}...) → upload new APK"
   fi
 else
   echo "  no APK on server yet → upload"
@@ -100,7 +100,7 @@ fi
 rsync -avz --delete $RSYNC_EXCLUDE "$WEBSITE_DIR/dist/" "$SERVER:$REMOTE_DIR/"
 
 # --- 6. verify ---
-echo "▶ [6/6] Verifying…"
+echo "▶ [6/6] Verifying..."
 ssh -o BatchMode=yes "$SERVER" \
   "curl -s -o /dev/null -w '  /downloads/$APK_NAME → HTTP %{http_code}, %{size_download} B, %{content_type}\n' $PUBLIC_HOST/downloads/$APK_NAME"
 
