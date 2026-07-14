@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-paper: #faf6ee;
+  --color-ink: #1a2b4a;
+  --color-rose: #c44569;
+  --color-gold: #b8860b;
+  --color-parchment: #f2ebda;
+  --color-midnight: #0f1a2e;
+  --color-nightpaper: #162238;
+
+  --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+  --font-serif: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
+  --font-sans: "Noto Sans SC", system-ui, sans-serif;
+
+  --tracking-tightest: -0.04em;
+
+  --animate-spin-slow: spin 24s linear infinite;
+  --animate-spin-slower: spin 40s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.9; }
+  }
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  max-width: 1280px;
+}
+
+@layer base {
+  :root {
+    --paper: #faf6ee;
+    --ink: #1a2b4a;
+    --rose: #c44569;
+    --gold: #b8860b;
+    --parchment: #f2ebda;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans;
+    background-image:
+      radial-gradient(
+        circle at 20% 10%,
+        rgba(180, 134, 11, 0.05) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        rgba(196, 69, 105, 0.04) 0%,
+        transparent 45%
+      );
+    background-attachment: fixed;
+  }
+
+  /* 纸张噪点纹理 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0 0.15 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  ::selection {
+    @apply bg-rose/20 text-ink;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-parchment;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gold/40 rounded-full border-2 border-parchment;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold/60;
+  }
+}
+
+@layer components {
+  /* 章节标题前缀装饰 */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em] text-gold;
+  }
+
+  .eyebrow::before,
+  .eyebrow::after {
+    content: "";
+    @apply h-px w-8 bg-gold/40;
+  }
+
+  .eyebrow-left::after {
+    display: none;
+  }
+
+  /* 主按钮 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-ink px-7 py-3.5 text-sm font-medium text-paper transition-all duration-300 hover:bg-rose hover:shadow-[0_10px_30px_-8px_rgba(196,69,105,0.5)] hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink/20 bg-paper/60 px-7 py-3.5 text-sm font-medium text-ink backdrop-blur-sm transition-all duration-300 hover:border-gold hover:text-gold hover:-translate-y-0.5;
+  }
+
+  /* 卡片 */
+  .card-paper {
+    @apply rounded-2xl border border-ink/10 bg-paper/80 p-8 shadow-[0_2px_20px_-8px_rgba(26,43,74,0.15)] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-[0_18px_40px_-12px_rgba(26,43,74,0.25)];
+  }
+
+  /* 衬线大标题 */
+  .heading-serif {
+    @apply font-display font-bold leading-[1.05] tracking-tightest text-ink;
+  }
+
+  /* 滚动渐显 */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* 分隔装饰线 */
+  .ornament-divider {
+    @apply flex items-center justify-center gap-3 text-gold/50;
+  }
+  .ornament-divider::before,
+  .ornament-divider::after {
+    content: "";
+    @apply h-px w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* 怀表齿轮装饰 */
+  .gear-decoration {
+    background-image: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 30deg,
+      rgba(184, 134, 11, 0.08) 30deg,
+      rgba(184, 134, 11, 0.08) 60deg,
+      transparent 60deg,
+      transparent 90deg
+    );
+    border-radius: 50%;
+  }
+
+  /* 文字描边阴影 */
+  .text-shadow-soft {
+    text-shadow: 0 2px 20px rgba(26, 43, 74, 0.08);
+  }
+}

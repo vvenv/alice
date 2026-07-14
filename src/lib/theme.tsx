@@ -6,6 +6,14 @@ export type ThemeColors = {
   primary: string;
   primarySoft: string;
 
+  /** Wonderland gold accent — used for instrument/readout elements (timers, progress). */
+  gold: string;
+  goldSoft: string;
+
+  /** Wonderland rose accent — used for italic flourishes and danger states. */
+  rose: string;
+  roseSoft: string;
+
   danger: string;
   dangerSoft: string;
   dangerMuted: string;
@@ -30,57 +38,72 @@ export type ThemeColors = {
 };
 
 export const lightTheme: ThemeColors = {
-  primary: "#4f46e5",
-  primarySoft: "#eef2ff",
+  // Wonderland "paper" theme: ink on paper, gold highlights, rose danger.
+  primary: "#1A2B4A", // ink — primary actions (ink bg + paper text)
+  primarySoft: "#F4ECD6", // warm gold tint — active/selected highlights
 
-  danger: "#e11d48",
-  dangerSoft: "#fff1f2",
-  dangerMuted: "#fb7185",
+  gold: "#B8860B",
+  goldSoft: "#F4ECD6",
 
-  foreground: "#000000",
-  background: "#ffffff",
+  rose: "#C44569",
+  roseSoft: "#F6E4EA",
 
-  muted: "#00000066",
-  subtle: "#00000040",
-  secondary: "#000000A6",
+  danger: "#C44569", // rose
+  dangerSoft: "#F6E4EA",
+  dangerMuted: "#B8385E",
 
-  border: "#0000001A",
-  borderSubtle: "#0000000F",
-  borderMuted: "#00000013",
+  foreground: "#1A2B4A", // ink
+  background: "#FAF6EE", // paper
 
-  surface: "#00000008",
-  surfaceRaised: "#0000000B",
-  surfaceSunken: "#00000005",
-  track: "#00000012",
+  muted: "#1A2B4A99",
+  subtle: "#1A2B4A66",
+  secondary: "#1A2B4ABF",
 
-  overlay: "rgba(0,0,0,0.45)",
+  border: "#1A2B4A1A",
+  borderSubtle: "#1A2B4A0F",
+  borderMuted: "#1A2B4A13",
+
+  surface: "#F2EBDA", // parchment — flat chips/buttons
+  surfaceRaised: "#FFFEF9", // lifted cards
+  surfaceSunken: "#EFE6CF", // recessed inputs/panels
+  track: "#1A2B4A1A",
+
+  overlay: "rgba(15,26,46,0.5)",
 };
 
 export const darkTheme: ThemeColors = {
-  primary: "#818cf8",
-  primarySoft: "#1e1b4b",
+  // Wonderland "midnight" theme: paper on midnight, slate (lightened ink) primary,
+  // gold reserved for instrument readouts, rose danger. Cool & calm like the light theme.
+  primary: "#C5D0E0", // soft slate (lightened ink) — primary actions (slate bg + midnight text)
+  primarySoft: "#243352", // dark slate tint — active/selected highlights
 
-  danger: "#fb7185",
-  dangerSoft: "#2d1520",
-  dangerMuted: "#e11d48",
+  gold: "#D4A437", // accent only — progress/countdown (gold hands on a dark watch face)
+  goldSoft: "#2A2410",
 
-  foreground: "#ffffff",
-  background: "#0f0f11",
+  rose: "#E06488",
+  roseSoft: "#2E1620",
 
-  muted: "#ffffff66",
-  subtle: "#ffffff40",
-  secondary: "#ffffffA6",
+  danger: "#E06488", // rose
+  dangerSoft: "#2E1620",
+  dangerMuted: "#E06488",
 
-  border: "#ffffff1A",
-  borderSubtle: "#ffffff0F",
-  borderMuted: "#ffffff13",
+  foreground: "#FAF6EE", // paper
+  background: "#0F1A2E", // midnight
 
-  surface: "#ffffff08",
-  surfaceRaised: "#ffffff0B",
-  surfaceSunken: "#ffffff05",
-  track: "#ffffff12",
+  muted: "#FAF6EE99",
+  subtle: "#FAF6EE66",
+  secondary: "#FAF6EEBF",
 
-  overlay: "rgba(0,0,0,0.45)",
+  border: "#FAF6EE1A",
+  borderSubtle: "#FAF6EE0F",
+  borderMuted: "#FAF6EE13",
+
+  surface: "#162238", // nightpaper — flat chips/buttons
+  surfaceRaised: "#1B2A42", // lifted cards
+  surfaceSunken: "#0C1626", // recessed inputs/panels
+  track: "#FAF6EE1A",
+
+  overlay: "rgba(0,0,0,0.6)",
 };
 
 type ThemeMode = "light" | "dark";

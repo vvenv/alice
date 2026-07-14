@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { WordHistoryEntry } from "../lib/storage";
 import { isDefaultHistoryId } from "../lib/storage";
 import { parseWords } from "../lib/dictation";
-import { radii, spacing } from "../lib/designTokens";
+import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 interface HistoryDrawerProps {
@@ -226,6 +226,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "700",
   },

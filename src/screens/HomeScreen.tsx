@@ -600,6 +600,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.full,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
   },

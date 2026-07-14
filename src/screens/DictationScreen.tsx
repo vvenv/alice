@@ -15,7 +15,7 @@ import { usePlayback } from "../hooks/usePlayback";
 import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { parseWordLine, speakTextFromEntry } from "../lib/dictation";
-import { radii, spacing } from "../lib/designTokens";
+import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 const STATUS_PLAYING = "#27ae60";
@@ -146,9 +146,9 @@ export function DictationScreen({
       <View style={[styles.progressBar, { backgroundColor: colors.track }]}>
         <View
           style={[
-            styles.progressFill,
-            { width: `${progress * 100}%`, backgroundColor: colors.primary },
-          ]}
+              styles.progressFill,
+              { width: `${progress * 100}%`, backgroundColor: colors.gold },
+            ]}
         />
       </View>
 
@@ -320,12 +320,12 @@ export function DictationScreen({
                   styles.countdownFill,
                   {
                     width: `${countdownScale * 100}%`,
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.gold,
                   },
                 ]}
               />
             </View>
-            <Text style={[styles.countdownText, { color: colors.primary }]}>
+            <Text style={[styles.countdownText, { color: colors.gold }]}>
               {countdownLabel}
             </Text>
           </View>
@@ -535,6 +535,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   wordText: {
+    fontFamily: fonts.display,
     fontSize: 40,
     fontWeight: "700",
     letterSpacing: 1,
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.md,
   },
-  finishedTitle: { fontSize: 22, fontWeight: "700" },
+  finishedTitle: { fontFamily: fonts.display, fontSize: 22, fontWeight: "700" },
   finishedSub: { fontSize: 14 },
   returnBtn: {
     width: "100%",

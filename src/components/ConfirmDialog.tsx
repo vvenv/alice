@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View, Modal, Pressable } from "react-native";
-import { radii, spacing } from "../lib/designTokens";
+import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
 interface ConfirmDialogProps {
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "700",
     textAlign: "center",

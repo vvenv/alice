@@ -5,18 +5,18 @@ import { StatusBar } from "expo-status-bar";
 import type { RootStackParamList } from "./src/navigation/types";
 import { DictationScreen } from "./src/screens/DictationScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
-import { ThemeProvider, useThemeColors } from "./src/lib/theme";
+import { ThemeProvider, useThemeMode } from "./src/lib/theme";
 
 export type { RootStackParamList };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppContent() {
-  const colors = useThemeColors();
+  const { mode } = useThemeMode();
 
   return (
     <>
-      <StatusBar style={colors.foreground === "#ffffff" ? "light" : "dark"} />
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{
