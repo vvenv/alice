@@ -51,7 +51,12 @@ TMP_DIR="$(mktemp -d)"
 TMP_APK="$TMP_DIR/alice.apk"
 trap 'rm -rf "$TMP_DIR"' EXIT
 echo "▶ [1/6] Building APK via EAS (local, preview)…"
-pnpm build:android:local -- --output "$TMP_APK"
+# Call eas directly (not via `pnpm build:android:local -- …`): pnpm forwards the
+# `--` separator to eas, which then treats --output as a positional arg and
+# rejects it. `pnpm exec` resolves the eas binary without that separator.
+pnpm exec eas build \
+  --platform android --non-interactive --local --profile preview \
+  --output "$TMP_APK"
 echo "  built: $(du -h "$TMP_APK" | cut -f1) → $TMP_APK"
 
 # --- 2. stage APK on website ---
