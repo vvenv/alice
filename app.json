@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FB7185"
+        "backgroundColor": "#1A2B4A"
       },
       "package": "com.vvenv.alice",
       "permissions": [

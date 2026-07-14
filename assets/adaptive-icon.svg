@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Android adaptive-icon foreground. Transparent background (ink comes from
+       app.json android.adaptiveIcon.backgroundColor). Design scaled to 0.62 and
+       centered so it sits within the ~66% safe zone that Android masks to. -->
+  <g transform="translate(512 512) scale(0.62) translate(-512 -512)">
+    <circle cx="512" cy="512" r="320" stroke="#B8860B" stroke-width="40" fill="none"/>
+    <circle cx="512" cy="512" r="56" fill="#C44569"/>
+    <line x1="512" y1="512" x2="512" y2="288" stroke="#FAF6EE" stroke-width="40" stroke-linecap="round"/>
+    <line x1="512" y1="512" x2="704" y2="512" stroke="#FAF6EE" stroke-width="40" stroke-linecap="round"/>
+    <circle cx="512" cy="160" r="48" fill="#B8860B"/>
+    <line x1="512" y1="208" x2="512" y2="256" stroke="#B8860B" stroke-width="32"/>
+    <text x="512" y="832" font-family="Georgia, serif" font-size="176" fill="#B8860B" text-anchor="middle" font-style="italic">A</text>
+  </g>
+</svg>
