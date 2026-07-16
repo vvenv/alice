@@ -1,6 +1,7 @@
 lab
 labor
 laboratory
+labour
 lack
 ladder
 lady
@@ -11,6 +12,8 @@ lamb
 lame
 lamp
 land
+landscape
+lane
 language
 lantern
 lap
@@ -22,13 +25,16 @@ later
 latter
 laugh
 laughter
+launch
 laundry
 law
 lawyer
 lay
+layer
 lazy
 lead
 leader
+leadership
 leaf
 league
 leak
@@ -53,6 +59,7 @@ lesson
 let
 letter
 level
+liberal
 liberate
 liberation
 liberty
@@ -70,6 +77,7 @@ like
 likely
 lily
 limit
+limited
 line
 link
 lion
@@ -78,8 +86,10 @@ liquid
 list
 listen
 liter
+literally
 literary
 literature
+litre
 litter
 little
 live
@@ -91,7 +101,9 @@ living-room
 lizard
 load
 loaf
+loan
 local
+location
 lock
 logical
 lonely
@@ -112,4 +124,6 @@ loyal
 luck
 lucky
 luggage
+lump
 lunch
+lung

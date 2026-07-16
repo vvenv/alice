@@ -16,9 +16,9 @@ handsome
 handwriting
 handy
 hang
-hang(hung
 hanged
 happen
+happily
 happiness
 happy
 harbor
@@ -31,6 +31,7 @@ hardworking
 harm
 harmful
 harmless
+harmonious
 harmony
 harvest
 has
@@ -38,7 +39,6 @@ hat
 hatch
 hate
 have
-have(has
 he
 head
 headache
@@ -48,17 +48,19 @@ headmistress
 health
 healthy
 hear
-hear(heard
 heard
 hearing
 heart
 heat
+heating
 heaven
+heavily
 heavy
 heel
 height
 held
 helicopter
+hell
 hello
 helmet
 help
@@ -68,6 +70,7 @@ her
 herb
 here
 hero
+heroine
 hers
 herself
 hesitate
@@ -75,20 +78,20 @@ hi
 hid
 hidden
 hide
-hide(hid
 high
 highway
 hill
+hillside
+hilly
 him
 himself
 hire
 his
+historical
 history
 hit
-hit(hit
 hobby
 hold
-hold(held
 hole
 holiday
 holy
@@ -114,6 +117,7 @@ hotdog
 hotel
 hour
 house
+household
 housewife
 housework
 how
@@ -135,6 +139,5 @@ hunter
 hurricane
 hurry
 hurt
-hurt (hurt
 husband
 hydrogen

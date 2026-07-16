@@ -1,5 +1,5 @@
+a
 a.m
-a.m./am
 abandon
 ability
 able
@@ -24,12 +24,14 @@ academy
 accelerate
 accent
 accept
+acceptable
 access
 accessible
 accident
 accommodation
 accompany
 accomplish
+according
 accordingly
 account
 accountant
@@ -57,6 +59,7 @@ actor
 actress
 actual
 acute
+AD
 adapt
 adaptation
 adaption
@@ -102,6 +105,7 @@ age
 agency
 agenda
 agent
+aggression
 aggressive
 ago
 agree
@@ -143,8 +147,8 @@ also
 alternative
 although
 altitude
-altitude，altogether
 altogether
+aluminium
 aluminum
 always
 am
@@ -166,7 +170,6 @@ amuse
 amusement
 an
 analyse
-analyse (Am
 analysis
 analyze
 ancestor
@@ -235,7 +238,6 @@ area
 argue
 argument
 arise
-arise(arose
 arisen
 arithmetic
 arm
@@ -249,6 +251,7 @@ arrest
 arrival
 arrive
 arrow
+art
 article
 artificial
 artist
@@ -264,6 +267,7 @@ asleep
 aspect
 assess
 assessment
+assignment
 assist
 assistance
 assistant
@@ -309,13 +313,11 @@ avenue
 average
 avoid
 awake
-awake(awoke
 award
 aware
 away
 awesome
 awful
 awkward
-awkward bbaby
 awoke
 awoken

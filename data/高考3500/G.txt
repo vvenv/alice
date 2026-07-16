@@ -6,6 +6,7 @@ game
 garage
 garbage
 garden
+gardening
 garlic
 garment
 gas
@@ -26,13 +27,12 @@ German
 Germany
 gesture
 get
-get(got
+get-together
 gift
 gifted
 giraffe
 girl
 give
-give (gave
 given
 glad
 glance
@@ -44,23 +44,24 @@ glory
 glove
 glue
 go
-go(went
 goal
 goat
 god
 gold
 golden
+goldfish
 golf
 gone
 good
-good(better
 good-bye
+goodness
 goods
 goose
 got
 gotten
 govern
 government
+gown
 grade
 gradual
 gradually
@@ -85,11 +86,11 @@ graph
 grasp
 grass
 grateful
-grateful gravity
 gravity
 gray
 great
 greatly
+Greece
 greedy
 Greek
 green
@@ -104,7 +105,6 @@ grocery
 ground
 group
 grow
-grow(grew
 grown
 growth
 guarantee
@@ -116,7 +116,7 @@ guide
 guilty
 guitar
 gun
+guy
 gym
 gymnasium
 gymnastics
-gymnastics hhabit

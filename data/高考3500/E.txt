@@ -12,9 +12,9 @@ Easter
 eastern
 easy
 eat
-eat(ate
 eaten
 ecology
+economic
 ed
 edge
 edit
@@ -25,6 +25,7 @@ education
 educational
 educator
 effect
+effective
 effort
 egg
 eggplant
@@ -36,12 +37,14 @@ eighth
 eighty
 either
 elder
+elderly
 elect
 electric
 electrical
 electricity
 electronic
 elegant
+element
 elephant
 eleven
 else
@@ -50,9 +53,12 @@ embarrass
 embassy
 emergency
 emotion
+emotional
 emperor
 empire
 employ
+employer
+employment
 empty
 encourage
 encouragement
@@ -64,6 +70,7 @@ energetic
 energy
 engine
 engineer
+engineering
 England
 English
 Englishman
@@ -72,16 +79,19 @@ enjoyable
 enlarge
 enough
 enquiry
+ensure
 enter
 enterprise
 entertainment
 enthusiasm
 enthusiastic
 entire
+entitle
 entrance
 entry
 envelope
 environment
+environmental
 envy
 equal
 equality
@@ -94,6 +104,8 @@ erupt
 escape
 especially
 essay
+essential
+establish
 Europe
 European
 evaluate
@@ -111,6 +123,7 @@ everything
 everywhere
 evidence
 evident
+evil
 evolution
 exact
 exactly
@@ -120,6 +133,7 @@ examine
 example
 excellent
 except
+exception
 exchange
 excite
 excitement
@@ -144,6 +158,7 @@ explicit
 explode
 exploit
 explore
+explorer
 export
 expose
 express
@@ -155,4 +170,4 @@ extreme
 extremely
 eye
 eyesight
-eyesightfface
+eyewitness
