@@ -1,11 +1,14 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
-import { config } from "./config";
+import {
+  buildChatCompletionsUrl,
+  loadOcrProviderConfig,
+  resolveOcrConfig,
+} from "./ocrConfig";
 
 const OCR_MAX_EDGE = 1600;
 const OCR_JPEG_QUALITY = 0.82;
-const OCR_URL = `${config.zhipuBaseUrl}/chat/completions`;
 
 /** In-flight progress phases (header). Terminal copy lives in OCR_OUTCOME_MESSAGES. */
 export type OcrProgressPhase =
@@ -118,16 +121,20 @@ export async function ocrWordsFromImage(
 
   onProgress?.("recognizing");
 
+  const custom = await loadOcrProviderConfig();
+  const { baseUrl, apiKey, model } = resolveOcrConfig(custom);
+  const endpoint = buildChatCompletionsUrl(baseUrl);
+
   let response: Response;
   try {
-    response = await fetch(OCR_URL, {
+    response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${config.zhipuApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: config.visionModel,
+        model,
         temperature: 0.1,
         messages: [
           {
@@ -173,6 +180,60 @@ export async function ocrWordsFromImage(
   const words = extractWordsFromOcrText(rawText);
 
   return { words, rawText };
+}
+
+/**
+ * Verify a candidate OCR provider config by sending a minimal text-only
+ * chat/completions request. Throws with a descriptive message on failure.
+ * Used by the OCR settings panel before saving.
+ */
+export async function testOcrConfig(cfg: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}): Promise<void> {
+  const endpoint = buildChatCompletionsUrl(cfg.baseUrl);
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        temperature: 0,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    });
+  } catch {
+    throw new Error("网络请求失败，请检查 URL 与网络");
+  }
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const text = await response.text();
+      try {
+        const j = JSON.parse(text) as { error?: { message?: string } };
+        detail = j.error?.message ?? text;
+      } catch {
+        detail = text;
+      }
+    } catch {
+      // ignore
+    }
+    const hint = detail ? `: ${detail.slice(0, 160)}` : "";
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`认证失败（${response.status}）${hint}`);
+    }
+    if (response.status === 404) {
+      throw new Error(`未找到接口（404），请检查 URL${hint}`);
+    }
+    throw new Error(`请求失败（${response.status}）${hint}`);
+  }
 }
 
 /**

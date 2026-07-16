@@ -22,6 +22,7 @@ import {
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryDrawer } from "../components/HistoryDrawer";
 import { OcrSection, type OcrSectionHandle } from "../components/OcrSection";
+import { OcrSettingsModal } from "../components/OcrSettingsModal";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
@@ -30,6 +31,12 @@ import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { parseWords } from "../lib/dictation";
 import { enrichWordListText } from "../lib/dictionary";
 import { radii, spacing } from "../lib/designTokens";
+import {
+  isCustomOcrConfigSet,
+  loadOcrProviderConfig,
+  saveOcrProviderConfig,
+  type OcrProviderConfig,
+} from "../lib/ocrConfig";
 import { OCR_UI_IDLE, type OcrUiState } from "../lib/ocr";
 import {
   addWordHistory,
@@ -91,6 +98,8 @@ export function HomeScreen() {
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [ocrUi, setOcrUi] = useState<OcrUiState>(OCR_UI_IDLE);
+  const [customOcrConfig, setCustomOcrConfig] = useState<OcrProviderConfig | null>(null);
+  const [ocrSettingsVisible, setOcrSettingsVisible] = useState(false);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -132,16 +141,23 @@ export function HomeScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [savedInput, , persistedOcrUnlocked, savedHistory] =
-        await Promise.all([
-          loadWordInput(),
-          loadPersistedWrongWords(),
-          loadOcrUnlockState(),
-          loadWordHistory(),
-        ]);
+      const [
+        savedInput,
+        ,
+        persistedOcrUnlocked,
+        savedHistory,
+        savedOcrConfig,
+      ] = await Promise.all([
+        loadWordInput(),
+        loadPersistedWrongWords(),
+        loadOcrUnlockState(),
+        loadWordHistory(),
+        loadOcrProviderConfig(),
+      ]);
       if (cancelled) return;
       if (savedInput) setWordInput(enrichWordListText(savedInput));
       setOcrUnlocked(persistedOcrUnlocked);
+      setCustomOcrConfig(savedOcrConfig);
       setHistory(savedHistory);
       setReady(true);
     })();
@@ -183,6 +199,20 @@ export function HomeScreen() {
     if (ok) setOcrUnlocked(true);
     return ok;
   }, []);
+
+  const handleSaveOcrConfig = useCallback(
+    (cfg: OcrProviderConfig | null) => {
+      setCustomOcrConfig(cfg);
+      saveOcrProviderConfig(cfg).catch(() => {});
+      setOcrSettingsVisible(false);
+      showToast(
+        cfg
+          ? "已保存自定义 OCR 服务配置"
+          : "已恢复默认 OCR 服务配置",
+      );
+    },
+    [showToast],
+  );
 
   const handleToggleDisplayMode = useCallback(() => {
     setIsDisplayMode((prev) => {
@@ -286,6 +316,10 @@ export function HomeScreen() {
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
   const showOcrProgress = ocrUi.busy && Boolean(ocrUi.message);
   const showHeaderCenter = showOcrProgress || canToggleDisplayMode;
+  // A user who brings their own OCR key+URL is effectively unlocked — the
+  // paywall only gates the bundled built-in key.
+  const ocrEffectiveUnlocked =
+    ocrUnlocked || isCustomOcrConfigSet(customOcrConfig);
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
@@ -329,6 +363,12 @@ export function HomeScreen() {
       icon: "trash-outline",
       label: "清缓",
       onPress: () => runMenuAction(handleClearTtsCache),
+    },
+    {
+      key: "ocr-settings",
+      icon: "server-outline",
+      label: "OCR 服务设置",
+      onPress: () => runMenuAction(() => setOcrSettingsVisible(true)),
     },
   ];
 
@@ -470,7 +510,7 @@ export function HomeScreen() {
         <View style={styles.main}>
           <OcrSection
             ref={ocrRef}
-            ocrUnlocked={ocrUnlocked}
+            ocrUnlocked={ocrEffectiveUnlocked}
             onOcrResult={handleOcrResult}
             onUnlockOcr={handleUnlockOcr}
             onOcrStateChange={setOcrUi}
@@ -575,6 +615,12 @@ export function HomeScreen() {
               visible: false,
             })
           }
+        />
+        <OcrSettingsModal
+          visible={ocrSettingsVisible}
+          value={customOcrConfig}
+          onClose={() => setOcrSettingsVisible(false)}
+          onSave={handleSaveOcrConfig}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
