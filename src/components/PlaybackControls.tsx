@@ -1,9 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Switch, Text, View } from "react-native";
 
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 import { Button } from "./Button";
 import { Slider } from "./Slider";
+
+// Ink on gold reads well on both themes' gold accents.
+const MEDALLION_INK = "#1A2B4A";
 
 interface PlaybackControlsProps {
   intervalSec: number;
@@ -81,7 +85,11 @@ export function PlaybackControls({
       {showPlayButton && onPlayToggle ? (
         <Button
           label="开始听写"
-          icon="play"
+          leading={
+            <View style={[styles.playMedallion, { backgroundColor: colors.gold }]}>
+              <Ionicons name="play" size={14} color={MEDALLION_INK} />
+            </View>
+          }
           variant="primary"
           size="lg"
           onPress={onPlayToggle}
@@ -146,6 +154,14 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: 13,
+  },
+  playMedallion: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingLeft: 2,
   },
   mainBtnBadge: {
     paddingHorizontal: spacing.sm,

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { parseWords, parseWordLine } from "../lib/dictation";
-import { radii, spacing } from "../lib/designTokens";
+import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 import { Button } from "./Button";
 
@@ -44,8 +44,8 @@ export function WordInputSection({
           style={[
             styles.displayContainer,
             {
-              borderColor: colors.border,
-              backgroundColor: colors.surfaceSunken,
+              borderColor: colors.borderSubtle,
+              backgroundColor: colors.surfaceRaised,
             },
           ]}
         >
@@ -180,6 +180,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.card,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   displayScroll: {
     flex: 1,
@@ -197,7 +202,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   displayIndex: {
-    fontSize: 12,
+    fontFamily: fonts.serif,
+    fontSize: 13,
     fontWeight: "600",
     fontVariant: ["tabular-nums"],
     minWidth: 24,

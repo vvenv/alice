@@ -28,6 +28,8 @@ interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: keyof typeof Ionicons.glyphMap;
+  /** Custom node rendered before the label (replaces icon when set). */
+  leading?: ReactNode;
   /** Selected/toggled-on look (outline variant only). */
   active?: boolean;
   /** Blocks presses and dims the button. */
@@ -98,6 +100,7 @@ export function Button({
   variant = "outline",
   size = "md",
   icon,
+  leading,
   active = false,
   disabled = false,
   dimmed = false,
@@ -166,9 +169,10 @@ export function Button({
           inactiveLook && styles.inactive,
         ]}
       >
-        {icon ? (
-          <Ionicons name={icon} size={spec.iconSize} color={palette.text} />
-        ) : null}
+        {leading ??
+          (icon ? (
+            <Ionicons name={icon} size={spec.iconSize} color={palette.text} />
+          ) : null)}
         <Text
           style={[
             styles.label,
@@ -184,26 +188,50 @@ export function Button({
   );
 }
 
+type IconButtonVariant = "surface" | "primary" | "danger";
+
 interface IconButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
   accessibilityLabel: string;
   onPress?: () => void;
   size?: number;
+  variant?: IconButtonVariant;
+  disabled?: boolean;
   haptic?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-/** Circular icon-only button (headers, card corners). */
+/** Circular icon-only button (headers, card corners, player controls). */
 export function IconButton({
   icon,
   accessibilityLabel,
   onPress,
   size = 36,
+  variant = "surface",
+  disabled = false,
   haptic = true,
   style,
 }: IconButtonProps) {
   const colors = useThemeColors();
   const { scale, pressIn, pressOut } = usePressScale();
+
+  const palette = {
+    surface: {
+      bg: colors.surface,
+      border: colors.border,
+      icon: colors.foreground,
+    },
+    primary: {
+      bg: colors.primary,
+      border: "transparent",
+      icon: colors.background,
+    },
+    danger: {
+      bg: colors.background,
+      border: colors.dangerMuted,
+      icon: colors.danger,
+    },
+  }[variant];
 
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
@@ -214,21 +242,32 @@ export function IconButton({
           pressIn();
         }}
         onPressOut={pressOut}
+        disabled={disabled}
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
+        accessibilityState={disabled ? { disabled: true } : undefined}
         style={[
           styles.iconBtn,
           {
             width: size,
             height: size,
             borderRadius: radii.full,
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
+            backgroundColor: palette.bg,
+            borderColor: palette.border,
+            borderWidth: variant === "primary" ? 0 : 1,
           },
+          variant === "primary" && {
+            shadowColor: colors.primary,
+            shadowOpacity: 0.35,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          },
+          disabled && styles.inactive,
         ]}
       >
-        <Ionicons name={icon} size={size / 2} color={colors.foreground} />
+        <Ionicons name={icon} size={size / 2} color={palette.icon} />
       </Pressable>
     </Animated.View>
   );

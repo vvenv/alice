@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -366,6 +367,11 @@ export function HomeScreen() {
           : ["top", "bottom", "left", "right"]
       }
     >
+      <LinearGradient
+        colors={[colors.goldSoft, "transparent"]}
+        style={styles.heroGlow}
+        pointerEvents="none"
+      />
       <KeyboardAvoidingView
         style={[
           styles.container,
@@ -375,7 +381,7 @@ export function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerBrand}>
-            <Ionicons name="time-outline" size={24} color={colors.gold} />
+            <Ionicons name="time-outline" size={26} color={colors.gold} />
             <Text style={[styles.brandAlice, { color: colors.foreground }]}>
               Alice
             </Text>
@@ -576,13 +582,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  heroGlow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 180,
+    opacity: 0.55,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   headerBrand: {
     flex: 1,
@@ -593,13 +607,13 @@ const styles = StyleSheet.create({
   brandAlice: {
     fontFamily: fonts.display,
     fontStyle: "italic",
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
   brandDictation: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "700",
     letterSpacing: 0.3,
   },

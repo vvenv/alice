@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, IconButton } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { CountdownRing } from "../components/CountdownRing";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
@@ -362,63 +363,74 @@ export function DictationScreen({
           </Animated.View>
         ) : (
           <>
-            <View
-              style={[
-                styles.wordCard,
-                {
-                  backgroundColor: colors.surfaceRaised,
-                  borderColor: colors.borderSubtle,
-                },
-                markedFlash && {
-                  backgroundColor: colors.dangerSoft,
-                  borderColor: colors.danger,
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.toggleWordBtn,
-                  {
-                    borderColor: showWord ? colors.primary : colors.borderMuted,
-                    backgroundColor: showWord
-                      ? colors.primarySoft
-                      : colors.surface,
-                  },
-                ]}
-                onPress={() => setShowWord((v) => !v)}
-                activeOpacity={0.7}
-                accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
+            <View style={styles.watchWrap}>
+              <CountdownRing
+                size={288}
+                strokeWidth={7}
+                progress={countdownAnim}
+                color={colors.gold}
+                trackColor={colors.track}
+                ticks={12}
+                tickColor={colors.borderMuted}
               >
-                <Ionicons
-                  name={showWord ? "eye" : "eye-off"}
-                  size={18}
-                  color={showWord ? colors.primary : colors.muted}
-                />
-              </TouchableOpacity>
-
-              {showWord && playback.currentIndex < playback.wordList.length ? (
-                <View style={styles.wordRevealContent}>
-                  <Text
-                    style={[styles.wordText, { color: colors.foreground }]}
-                  >
-                    {currentEntry.word}
-                  </Text>
-                  {currentMeta && (currentMeta.pos || currentMeta.meaning) && (
-                    <Text
-                      style={[styles.wordMeta, { color: colors.muted }]}
-                    >
-                      {currentMeta.pos ? `${currentMeta.pos} ` : ""}
-                      {currentMeta.meaning ?? ""}
+                <View
+                  style={[
+                    styles.dial,
+                    {
+                      backgroundColor: markedFlash
+                        ? colors.dangerSoft
+                        : colors.surfaceRaised,
+                      borderColor: markedFlash
+                        ? colors.danger
+                        : colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  {showWord &&
+                  playback.currentIndex < playback.wordList.length ? (
+                    <View style={styles.wordRevealContent}>
+                      <Text
+                        style={[styles.wordText, { color: colors.foreground }]}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit
+                      >
+                        {currentEntry.word}
+                      </Text>
+                      {currentMeta &&
+                        (currentMeta.pos || currentMeta.meaning) && (
+                          <Text
+                            style={[styles.wordMeta, { color: colors.muted }]}
+                            numberOfLines={2}
+                          >
+                            {currentMeta.pos ? `${currentMeta.pos} ` : ""}
+                            {currentMeta.meaning ?? ""}
+                          </Text>
+                        )}
+                    </View>
+                  ) : (
+                    <Text style={[styles.wordText, { color: colors.foreground }]}>
+                      {"•••••"}
                     </Text>
                   )}
+                  <Text
+                    style={[
+                      styles.dialCountdown,
+                      { color: colors.gold },
+                      (!isActive || !autoNext || playback.remainingMs === null) &&
+                        styles.dialCountdownHidden,
+                    ]}
+                  >
+                    {countdownLabel}
+                  </Text>
                 </View>
-              ) : (
-                <Text
-                  style={[styles.wordText, { color: colors.foreground }]}
-                >
-                  {"•••••"}
-                </Text>
-              )}
+              </CountdownRing>
+
+              <IconButton
+                icon={showWord ? "eye" : "eye-off"}
+                onPress={() => setShowWord((v) => !v)}
+                accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
+                style={styles.eyeBtn}
+              />
             </View>
 
             <Button
@@ -466,56 +478,46 @@ export function DictationScreen({
           showPlayButton={false}
         />
 
-        {isActive && autoNext ? (
-          <View style={styles.countdownSection}>
-            <View style={[styles.countdownBar, { backgroundColor: colors.track }]}>
-              <Animated.View
-                style={[
-                  styles.countdownFill,
-                  {
-                    backgroundColor: colors.gold,
-                    width: countdownAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={[styles.countdownText, { color: colors.gold }]}>
-              {countdownLabel}
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={styles.actionSection}>
-          <View style={styles.controlRow}>
-            <Button
-              label={playback.playState === "playing" ? "暂停" : "继续"}
-              icon={playback.playState === "playing" ? "pause" : "play"}
-              variant="primary"
-              size="md"
-              onPress={handlePlayToggle}
-              style={styles.controlFlex}
-            />
-            <Button
-              label="跳过"
-              icon="play-skip-forward"
-              variant="outline"
-              size="md"
-              onPress={playback.skipToNextWord}
-              disabled={!skipEnabled}
-              style={styles.controlFlex}
-            />
-            <Button
-              label="结束"
+        <View style={styles.controlRow}>
+          <View style={[styles.controlItem, styles.controlItemSide]}>
+            <IconButton
               icon="stop"
+              size={48}
               variant="danger"
-              size="md"
               onPress={requestStop}
               disabled={!isActive}
-              style={styles.controlFlex}
+              accessibilityLabel="结束"
             />
+            <Text style={[styles.controlLabel, { color: colors.muted }]}>
+              结束
+            </Text>
+          </View>
+          <View style={styles.controlItem}>
+            <IconButton
+              icon={playback.playState === "playing" ? "pause" : "play"}
+              size={64}
+              variant="primary"
+              onPress={handlePlayToggle}
+              accessibilityLabel={
+                playback.playState === "playing" ? "暂停" : "继续"
+              }
+            />
+            <Text style={[styles.controlLabel, { color: colors.muted }]}>
+              {playback.playState === "playing" ? "暂停" : "继续"}
+            </Text>
+          </View>
+          <View style={[styles.controlItem, styles.controlItemSide]}>
+            <IconButton
+              icon="play-skip-forward"
+              size={48}
+              variant="surface"
+              onPress={playback.skipToNextWord}
+              disabled={!skipEnabled}
+              accessibilityLabel="跳过"
+            />
+            <Text style={[styles.controlLabel, { color: colors.muted }]}>
+              跳过
+            </Text>
           </View>
         </View>
 
@@ -644,19 +646,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
-  toggleWordBtn: {
-    position: "absolute",
-    top: spacing.md,
-    right: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-  },
-
   wordStage: {
     flex: 1,
     justifyContent: "center",
@@ -666,18 +655,37 @@ const styles = StyleSheet.create({
     minHeight: 120,
     gap: spacing.lg,
   },
-  wordCard: {
-    width: "100%",
-    maxWidth: 360,
-    minHeight: 160,
-    borderRadius: radii.card,
+  watchWrap: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  dial: {
+    width: 288 - 7 * 2 - 24,
+    height: 288 - 7 * 2 - 24,
+    borderRadius: radii.full,
     borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
+  },
+  dialCountdown: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  dialCountdownHidden: {
+    opacity: 0,
+  },
+  eyeBtn: {
+    position: "absolute",
+    top: 0,
+    right: 12,
   },
   wordText: {
     fontFamily: fonts.display,
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: "700",
     letterSpacing: 1,
     textAlign: "center",
@@ -687,7 +695,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   wordMeta: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "400",
     textAlign: "center",
   },
@@ -700,28 +708,27 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
 
-  countdownSection: {
+  controlRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: spacing["2xl"] + spacing.lg,
+  },
+  controlItem: {
     alignItems: "center",
-    gap: spacing.sm,
-    marginTop: -spacing.sm,
+    gap: spacing.xs + 2,
+    minWidth: 64,
   },
-  countdownBar: { flex: 1, height: 6, borderRadius: radii.xs, overflow: "hidden" },
-  countdownFill: { height: "100%", borderRadius: radii.xs },
-  countdownText: {
-    fontSize: 13,
-    fontWeight: "700",
-    minWidth: 32,
-    textAlign: "right",
-    fontVariant: ["tabular-nums"],
+  controlItemSide: {
+    paddingTop: 8,
   },
-
-  actionSection: { gap: spacing.md },
-  controlRow: { flexDirection: "row", gap: spacing.sm },
-  controlFlex: { flex: 1 },
+  controlLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   markBtn: {
     width: "100%",
-    maxWidth: 360,
+    maxWidth: 288,
   },
   nextWordRow: {
     flexDirection: "row",
