@@ -1,0 +1,12 @@
+father
+dad
+man
+woman
+mother
+sister
+brother
+grandmother
+grandma
+grandfather
+grandpa
+family

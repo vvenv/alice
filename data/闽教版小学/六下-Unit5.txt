@@ -1,0 +1,9 @@
+farmer
+cook
+worker
+grow
+police officer
+nurse
+job
+dancer
+singer

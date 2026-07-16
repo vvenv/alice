@@ -5,4 +5,5 @@ export type RootStackParamList = {
     intervalSec: number;
     autoNext: boolean;
   };
+  Settings: undefined;
 };

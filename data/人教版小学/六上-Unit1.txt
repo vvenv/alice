@@ -1,0 +1,25 @@
+science
+museum
+post office
+bookstore
+cinema
+hospital
+crossing
+turn
+left
+straight
+right
+ask
+sir
+interesting
+Italian
+restaurant
+pizza
+street
+get
+GPS
+gave
+feature
+follow
+far
+tell

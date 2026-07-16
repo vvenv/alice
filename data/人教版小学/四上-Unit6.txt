@@ -1,0 +1,17 @@
+parents
+cousin
+uncle
+aunt
+baby brother
+doctor
+cook
+driver
+farmer
+nurse
+people
+but
+little
+puppy
+football player
+job
+basketball

@@ -1,0 +1,43 @@
+train
+bus
+subway
+take the subway
+ride
+bike
+ride a bike
+sixty
+seventy
+eighty
+ninety
+hundred
+minute
+far
+kilometer
+new
+every
+every day
+by
+by bike
+drive
+car
+live
+stop
+think of
+cross
+river
+many
+village
+between
+between...and...
+bridge
+boat
+ropeway
+year
+afraid
+like
+villager
+leave
+dream
+true
+come true
+Dave

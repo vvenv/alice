@@ -1,14 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import {
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Switch, Text, View } from "react-native";
 
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
+import { Button } from "./Button";
 import { Slider } from "./Slider";
 
 interface PlaybackControlsProps {
@@ -20,6 +14,8 @@ interface PlaybackControlsProps {
   showPlayButton?: boolean;
   shuffle?: boolean;
   onShuffleChange?: (shuffle: boolean) => void;
+  /** When provided, shows a count badge in the play button and dims it at 0. */
+  wordCount?: number;
 }
 
 export function PlaybackControls({
@@ -31,8 +27,11 @@ export function PlaybackControls({
   showPlayButton = true,
   shuffle,
   onShuffleChange,
+  wordCount,
 }: PlaybackControlsProps) {
   const colors = useThemeColors();
+  // Keep the button pressable at 0 so the toast can explain why nothing starts.
+  const playLooksDisabled = wordCount === 0;
 
   return (
     <View style={styles.container}>
@@ -80,28 +79,29 @@ export function PlaybackControls({
       </View>
 
       {showPlayButton && onPlayToggle ? (
-        <TouchableOpacity
-          style={[
-            styles.mainBtn,
-            {
-              backgroundColor: colors.primary,
-              shadowColor: colors.primary,
-              shadowOpacity: 0.35,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            },
-          ]}
+        <Button
+          label="开始听写"
+          icon="play"
+          variant="primary"
+          size="lg"
           onPress={onPlayToggle}
-          activeOpacity={0.7}
+          dimmed={playLooksDisabled}
         >
-          <View style={styles.mainBtnContent}>
-            <Ionicons name="play" size={20} color={colors.background} />
-            <Text style={[styles.mainBtnTextBase, { color: colors.background }]}>
-              开始
-            </Text>
-          </View>
-        </TouchableOpacity>
+          {wordCount ? (
+            <View
+              style={[
+                styles.mainBtnBadge,
+                { backgroundColor: `${colors.background}2E` },
+              ]}
+            >
+              <Text
+                style={[styles.mainBtnBadgeText, { color: colors.background }]}
+              >
+                {wordCount} 词
+              </Text>
+            </View>
+          ) : null}
+        </Button>
       ) : null}
     </View>
   );
@@ -147,20 +147,14 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 13,
   },
-  mainBtn: {
-    minHeight: 52,
-    borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
+  mainBtnBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
   },
-  mainBtnTextBase: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  mainBtnContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
+  mainBtnBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
   },
 });

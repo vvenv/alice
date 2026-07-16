@@ -1,0 +1,21 @@
+factory
+worker
+postman
+businessman
+police officer
+fisherman
+scientist
+pilot
+coach
+country
+head teacher
+sea
+stay
+university
+gym
+if
+reporter
+use
+type
+quickly
+secretary

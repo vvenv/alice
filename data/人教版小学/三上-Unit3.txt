@@ -1,0 +1,12 @@
+face
+ear
+eye
+nose
+mouth
+arm
+hand
+head
+body
+leg
+foot
+school

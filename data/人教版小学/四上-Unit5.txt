@@ -1,0 +1,15 @@
+beef
+chicken
+noodles
+soup
+vegetable
+chopsticks
+bowl
+fork
+knife
+spoon
+dinner
+ready
+help yourself
+pass
+try

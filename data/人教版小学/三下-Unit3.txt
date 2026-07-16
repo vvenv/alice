@@ -1,0 +1,11 @@
+thin
+fat
+tall
+short
+long
+small
+big
+giraffe
+so
+children
+tail

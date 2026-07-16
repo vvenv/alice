@@ -1,0 +1,10 @@
+red
+green
+yellow
+blue
+black
+brown
+white
+orange
+OK
+mum

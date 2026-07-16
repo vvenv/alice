@@ -1,0 +1,8 @@
+stand
+door
+bright
+close
+fan
+Well done!
+turn off
+all right

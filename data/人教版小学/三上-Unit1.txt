@@ -1,0 +1,10 @@
+ruler
+pencil
+eraser
+crayon
+bag
+pen
+pencil box
+book
+no
+your

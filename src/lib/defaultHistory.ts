@@ -5,14 +5,10769 @@ import type { WordHistoryEntry } from "./storage";
 
 export interface DefaultHistoryItem {
   entry: WordHistoryEntry;
+  category: string;
   label: string;
 }
 
 export const DEFAULT_HISTORY: DefaultHistoryItem[] = [
   {
+    category: "高考3500",
     label: "A",
     entry: {
-      id: "default_A",
+      id: "default_高考3500_A",
+      text: `a.m
+a.m./am
+abandon
+ability
+able
+abnormal
+aboard
+abolish
+abortion
+about
+above
+abroad
+abrupt
+absence
+absent
+absolute
+absorb
+abstract
+absurd
+abundant
+abuse
+academic
+academy
+accelerate
+accent
+accept
+access
+accessible
+accident
+accommodation
+accompany
+accomplish
+accordingly
+account
+accountant
+accumulate
+accuracy
+accurate
+accuse
+accustom
+accustomed
+ache
+achieve
+achievement
+acid
+acknowledge
+acquaintance
+acquire
+acquisition
+acre
+across
+act
+action
+active
+activity
+actor
+actress
+actual
+acute
+adapt
+adaptation
+adaption
+add
+addicted
+addition
+address
+adequate
+adjust
+adjustment
+administration
+admirable
+admire
+admission
+admit
+adolescence
+adolescent
+adopt
+adore
+adult
+advance
+advantage
+adventure
+advertise
+advertisement
+advice
+advise
+advocate
+affair
+affect
+affection
+afford
+afraid
+Africa
+African
+after
+afternoon
+afterward
+afterwards
+again
+against
+age
+agency
+agenda
+agent
+aggressive
+ago
+agree
+agreement
+agricultural
+agriculture
+ahead
+aid
+AIDS
+aim
+air
+aircraft
+airline
+airmail
+airplane
+airport
+airspace
+alarm
+album
+alcohol
+alcoholic
+algebra
+alike
+alive
+all
+allergic
+alley
+allocate
+allow
+allowance
+almost
+alone
+along
+alongside
+aloud
+alphabet
+already
+also
+alternative
+although
+altitude
+altitude，altogether
+altogether
+aluminum
+always
+am
+amateur
+amaze
+amazing
+ambassador
+ambassadress
+ambiguous
+ambition
+ambitious
+ambulance
+America
+American
+among
+amount
+ample
+amuse
+amusement
+an
+analyse
+analyse (Am
+analysis
+analyze
+ancestor
+anchor
+ancient
+and
+anecdote
+anger
+angle
+angry
+animal
+ankle
+anniversary
+announce
+announcement
+annoy
+annual
+another
+answer
+answer sheet
+ant
+Antarctic
+antique
+anxiety
+anxious
+any
+anybody
+anyhow
+anyone
+anything
+anyway
+anywhere
+apart
+apartment
+apologize
+apology
+apparent
+appeal
+appear
+appearance
+appendix
+appetite
+applaud
+apple
+applicant
+application
+apply
+appoint
+appointment
+appreciate
+appreciation
+approach
+appropriate
+approval
+approve
+approximately
+April
+apron
+arbitrary
+arch
+architect
+architecture
+arctic
+are
+area
+argue
+argument
+arise
+arise(arose
+arisen
+arithmetic
+arm
+armchair
+army
+arose
+around
+arrange
+arrangement
+arrest
+arrival
+arrive
+arrow
+article
+artificial
+artist
+artwork
+as
+ash
+ashamed
+Asia
+Asian
+aside
+ask
+asleep
+aspect
+assess
+assessment
+assist
+assistance
+assistant
+associate
+association
+assume
+assumption
+astonish
+astonished
+astronaut
+astronomer
+astronomy
+at
+ate
+athlete
+athletic
+Atlantic
+atmosphere
+atom
+attach
+attack
+attain
+attempt
+attend
+attention
+attitude
+attract
+attraction
+attractive
+audience
+August
+aunt
+Australia
+Australian
+authentic
+author
+authority
+automatic
+autonomous
+autumn
+available
+avenue
+average
+avoid
+awake
+awake(awoke
+award
+aware
+away
+awesome
+awful
+awkward
+awkward bbaby
+awoke
+awoken`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "B",
+    entry: {
+      id: "default_高考3500_B",
+      text: `baby
+bachelor
+back
+background
+backward
+backwards
+bacon
+bacterium
+bad
+bad(worse
+badly
+badminton
+bag
+baggage
+bake
+bakery
+balance
+balcony
+ball
+ballet
+balloon
+bamboo
+ban
+banana
+band
+bandage
+bank
+bar
+barbecue
+barber
+barbershop
+bare
+bargain
+bark
+barrier
+base
+baseball
+basement
+basic
+basin
+basis
+basket
+basketball
+bat
+bath
+bathe
+bathroom
+bathtub
+battery
+battle
+bay
+BC
+be
+be(am
+beach
+bean
+bean curd
+beancurd
+bear
+beard
+beast
+beat
+beat(beat
+beaten
+beautiful
+beauty
+became
+because
+become
+become(became
+bed
+bedclothes
+beddings
+bedroom
+bee
+beef
+been
+beer
+before
+beg
+began
+begin
+begin(began
+beginning
+begun
+behalf
+behave
+behavior
+behaviour
+behind
+being
+belief
+believe
+bell
+belly
+belong
+below
+belt
+bench
+bend
+bend(bent
+beneath
+beneficial
+benefit
+bent
+beside
+besides
+best
+betray
+better
+between
+beyond
+bicycle
+bid
+big
+bike
+bill
+billion
+bingo
+biochemistry
+biography
+biology
+bird
+birth
+birthday
+birthplace
+biscuit
+bishop
+bit
+bite
+bite(bit
+bitten
+bitter
+black
+blackboard
+blame
+blank
+blanket
+bleed
+bless
+blew
+blind
+block
+blood
+blossom
+blouse
+blow
+blow(blew
+blown
+blue
+board
+boat
+body
+boil
+bomb
+bond
+bone
+bonus
+book
+boom
+boot
+booth
+border
+bored
+boring
+born
+borrow
+boss
+botanical
+botany
+both
+bother
+bottle
+bottom
+bought
+bounce
+bound
+boundary
+bow
+bowl
+bowling
+box
+boxing
+boy
+boycott
+brain
+brake
+branch
+brand
+brave
+bravery
+bread
+break
+break(broke
+breakfast
+breakthrough
+breast
+breath
+breathe
+breathless
+breeze
+brewery
+brick
+bride
+bridegroom
+bridge
+brief
+bright
+brilliant
+bring
+bring(brought
+Britain
+British
+broad
+broadcast
+broadcast(broadcast
+brochure
+broke
+broken
+broom
+brother
+brought
+brown
+brunch
+brush
+bucket
+Buddhism
+budget
+buffet
+build
+build(built
+building
+built
+bunch
+bungalow
+burden
+bureaucratic
+burglar
+burn
+burn(burnt
+burned
+burnt
+burst
+bury
+bus
+bush
+business
+businessman
+businessman/woman
+businesswoman
+busy
+but
+butcher
+butter
+butterfly
+button
+buy
+buy (bought
+by
+bye-bye
+byeccab`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "C",
+    entry: {
+      id: "default_高考3500_C",
+      text: `cab
+cabbage
+cafe
+cafeteria
+café
+cage
+cake
+calculate
+call
+calm
+came
+camel
+camera
+camp
+campaign
+camping
+can
+Canada
+Canadian
+canal
+cancel
+cancer
+candidate
+candle
+candy
+canteen
+can’t
+cap
+capital
+capsule
+captain
+caption
+capture
+car
+carbon
+card
+care
+careful
+careless
+carpenter
+carpet
+carriage
+carrier
+carrot
+carry
+cart
+cartoon
+carve
+case
+cash
+cassette
+cast
+cast(cast
+castle
+casual
+cat
+catalog
+catalogue
+catastrophe
+catch
+catch(caught
+category
+cater
+cathedral
+catholic
+cattle
+caught
+cause
+caution
+cautious
+cave
+CD
+ceiling
+celebrate
+celebration
+cell
+cellar
+cellphone
+cent
+center
+centigrade
+centimeter
+centimetre
+central
+centre
+century
+ceremony
+certain
+certainly
+certificate
+chain
+chair
+chairman
+chairman/woman
+chairwoman
+chalk
+challenge
+challenging
+champion
+chance
+change
+changeable
+channel
+chant
+chaos
+chapter
+character
+characteristic
+charge
+chart
+chat
+cheap
+cheat
+check
+cheek
+cheer
+cheerful
+cheers
+cheese
+chef
+chemical
+chemist
+chemistry
+cheque
+chess
+chest
+chew
+chicken
+chief
+child
+childhood
+children
+chimney
+China
+Chinese
+chocolate
+choice
+choir
+choke
+choose
+choose(chose
+chopsticks
+chorus
+chose
+chosen
+Christian
+Christmas
+church
+cigar
+cigarette
+cinema
+circle
+circuit
+circulate
+circumstance
+circus
+citizen
+city
+civil
+civilian
+civilization
+clap
+clarify
+class
+classic
+classical
+classify
+classmate
+classroom
+claw
+clay
+clean
+cleaner
+clear
+clerk
+clever
+click
+climate
+climb
+clinic
+clock
+clone
+close
+cloth
+clothes
+clothing
+cloud
+cloudy
+club
+clumsy
+coach
+coal
+coast
+coat
+cock
+cocoa
+coffee
+coin
+coincidence
+Coke
+cold
+collar
+colleague
+collect
+collection
+college
+college collision
+collision
+color
+colour
+comb
+combine
+come
+come (came
+comedy
+comfort
+comfortable
+command
+comment
+commercial
+commit
+commitment
+committee
+common
+communicate
+communication
+communism
+communist
+community
+companion
+company
+compare
+compass
+compensate
+compete
+competence
+competition
+complete
+complex
+component
+composition
+comprehension
+compromise
+compulsory
+computer
+comrade
+concentrate
+concept
+concern
+concert
+conclude
+conclusion
+concrete
+condemn
+condition
+conduct
+conductor
+conference
+confident
+confidential
+confirm
+conflict
+confuse
+congratulate
+congratulation
+connect
+connection
+conscience
+consensus
+consequence
+conservation
+conservative
+consider
+considerate
+consideration
+consist
+consistent
+constant
+constitution
+construct
+construction
+consult
+consultant
+consume
+contain
+container
+contemporary
+content
+content1
+continent
+continue
+contradict
+contradictory
+contrary
+contribute
+contribution
+control
+controversial
+convenience
+convenient
+conventional
+conversation
+convey
+convince
+cook
+cooker
+cookie
+cool
+cooperate
+copy
+coral
+corn
+corner
+corporation
+correct
+correction
+correspond
+corrupt
+cost
+cosy
+cottage
+cotton
+cough
+could
+count
+counter
+country
+countryside
+couple
+courage
+course
+court
+courtyard
+cousin
+cover
+cow
+crash
+crayon
+crazy
+cream
+create
+creative
+creature
+credit
+credit card
+crew
+crime
+criminal
+criterion
+crocodile
+crop
+cross
+crossing
+crossroads
+crowd
+cruel
+cry
+cube
+cubic
+cuisine
+culture
+cup
+cupboard
+cure
+curious
+currency
+curriculum
+curtain
+cushion
+custom
+customer
+customs
+cut
+cut (cut
+cute
+cycle
+cyclist
+cyclistddad`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "D",
+    entry: {
+      id: "default_高考3500_D",
+      text: `dad
+daddy
+daily
+dam
+damage
+damp
+dance
+danger
+dangerous
+Danish
+dare
+dark
+darkness
+dash
+data
+database
+date
+daughter
+dawn
+day
+dead
+deadline
+deaf
+deal
+deal(dealt
+dealt
+dear
+death
+debate
+debt
+decade
+December
+decide
+decision
+declare
+decline
+decorate
+decoration
+decrease
+dedicate
+deed
+deep
+deer
+defeat
+defence
+defend
+defense
+degree
+deion
+delay
+delete
+deliberately
+delicate
+delicious
+delight
+delighted
+deliver
+demand
+Denmark
+dentist
+department
+departure
+depend
+deposit
+depressed
+Dept
+depth
+describe
+description
+desert
+deserve
+design
+desire
+desk
+desperate
+dessert
+destination
+destroy
+detect
+detective
+determine
+develop
+development
+devote
+devotion
+diagram
+dial
+dialogue
+diamond
+diary
+dictation
+dictionary
+did
+die
+diet
+differ
+difference
+different
+difficult
+difficulty
+dig
+dig(dug
+digest
+digital
+dignity
+dilemma
+diligent
+dimension
+dining
+dining-room
+dinner
+dinosaur
+dioxide
+dip
+diploma
+direct
+direction
+director
+directory
+dirt
+dirty
+disability
+disabled
+disadvantage
+disagree
+disagreement
+disappear
+disappoint
+disappointed
+disappointment
+disaster
+disc
+discount
+discourage
+discover
+discovery
+discriminate
+discrimination
+discuss
+discussion
+disease
+disgusting
+dish
+disk
+dislike
+dismiss
+distance
+distant
+distinction
+distinguish
+distribute
+district
+disturb
+disturbing
+dive
+diverse
+divide
+division
+divorce
+dizzy
+do
+do(did
+doctor
+document
+does
+dog
+doll
+dollar
+dolphin
+donate
+done
+don’t
+door
+dormitory
+dot
+double
+doubt
+down
+download
+downside
+downstairs
+downtown
+dozen
+Dr
+draft
+drag
+drama
+drank
+draw
+draw(drew
+drawback
+drawer
+drawing
+drawn
+dream
+dream(dreamt
+dreamed
+dreamt
+dress
+drew
+drill
+drink
+drink(drank
+drive
+drive(drove
+driven
+driver
+drop
+drove
+drown
+drug
+drum
+drunk
+dry
+duck
+due
+dug
+dull
+dumpling
+during
+dusk
+dust
+dustbin
+dusty
+duty
+DVD
+dynamic
+dynasty
+dynastyeeach`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "E",
+    entry: {
+      id: "default_高考3500_E",
+      text: `e-mail
+each
+eager
+eagle
+ear
+early
+earn
+earth
+earthquake
+east
+Easter
+eastern
+easy
+eat
+eat(ate
+eaten
+ecology
+ed
+edge
+edit
+edition
+editor
+educate
+education
+educational
+educator
+effect
+effort
+egg
+eggplant
+Egypt
+Egyptian
+eight
+eighteen
+eighth
+eighty
+either
+elder
+elect
+electric
+electrical
+electricity
+electronic
+elegant
+elephant
+eleven
+else
+email
+embarrass
+embassy
+emergency
+emotion
+emperor
+empire
+employ
+empty
+encourage
+encouragement
+end
+ending
+endless
+enemy
+energetic
+energy
+engine
+engineer
+England
+English
+Englishman
+enjoy
+enjoyable
+enlarge
+enough
+enquiry
+enter
+enterprise
+entertainment
+enthusiasm
+enthusiastic
+entire
+entrance
+entry
+envelope
+environment
+envy
+equal
+equality
+equip
+equipment
+erase
+eraser
+error
+erupt
+escape
+especially
+essay
+Europe
+European
+evaluate
+eve
+even
+evening
+event
+eventually
+ever
+every
+everybody
+everyday
+everyone
+everything
+everywhere
+evidence
+evident
+evolution
+exact
+exactly
+exam
+examination
+examine
+example
+excellent
+except
+exchange
+excite
+excitement
+exciting
+excuse
+exercise
+exhibition
+exist
+existence
+exit
+expand
+expect
+expectation
+expense
+expensive
+experience
+experiment
+expert
+explain
+explanation
+explicit
+explode
+exploit
+explore
+export
+expose
+express
+expression
+extension
+extra
+extraordinary
+extreme
+extremely
+eye
+eyesight
+eyesightfface`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "F",
+    entry: {
+      id: "default_高考3500_F",
+      text: `face
+facial
+fact
+factory
+fade
+fail
+failure
+fair
+fairly
+fairness
+faith
+fall
+fall(fell
+fallen
+false
+familiar
+family
+famous
+fan
+fancy
+fantastic
+fantasy
+far
+far(farther
+fare
+farm
+farmer
+farther
+farthest
+fast
+fasten
+fat
+father
+fault
+favor
+favorite
+favour
+favourite
+fax
+fear
+feast
+feather
+February
+fed
+federal
+fee
+feed
+feed(fed
+feel
+feel(felt
+feeling
+feet
+fell
+fellow
+felt
+female
+fence
+ferry
+festival
+fetch
+fever
+few
+fibre
+fiction
+field
+fierce
+fifteen
+fifth
+fifty
+fight
+fight(fought
+figure
+file
+fill
+film
+final
+finance
+find
+find(found
+fine
+finger
+fingernail
+finish
+fire
+firefighter
+fireworks
+firm
+first
+fish
+fisherman
+fishing
+fist
+fit
+five
+fix
+flag
+flame
+flash
+flashlight
+flat
+fled
+flee
+flee(fled
+flesh
+flew
+flexible
+flight
+float
+flood
+floor
+flour
+flow
+flower
+flown
+flu
+fluency
+fluent
+fly
+fly(flew
+focus
+fog
+foggy
+fold
+folk
+follow
+fond
+food
+fool
+foolish
+foot
+football
+for
+forbade
+forbid
+forbid(forbade
+forbidden
+force
+forecast
+forehead
+foreign
+foreigner
+foresaw
+foresee
+foresee(foresaw
+foreseen
+forest
+forever
+forgave
+forget
+forget(forgot
+forgetful
+forgive
+forgive(forgave
+forgiven
+forgot
+forgot/forgotten
+forgotten
+fork
+form
+format
+former
+fortnight
+fortunate
+fortunately
+fortune
+forty
+forward
+foster
+fought
+found
+fountain
+four
+fourth
+fox
+fragile
+fragrant
+framework
+franc
+france
+free
+freedom
+freeway
+freeze
+freeze(frozen
+freezing
+French
+Frenchman
+frequent
+frequently
+fresh
+friction
+Friday
+fridge
+friend
+friendly
+friendship
+fright
+frighten
+frog
+from
+front
+frontier
+frost
+froze
+frozen
+fruit
+fry
+fuel
+full
+fun
+function
+fundamental
+funeral
+funny
+fur
+furnished
+furniture
+further
+furthest
+future
+futureggain`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "G",
+    entry: {
+      id: "default_高考3500_G",
+      text: `gain
+gale
+gallery
+gallon
+game
+garage
+garbage
+garden
+garlic
+garment
+gas
+gate
+gather
+gave
+gay
+geese
+general
+generally
+generation
+generous
+gentle
+gentleman
+geography
+geometry
+German
+Germany
+gesture
+get
+get(got
+gift
+gifted
+giraffe
+girl
+give
+give (gave
+given
+glad
+glance
+glare
+glarer
+glass
+globe
+glory
+glove
+glue
+go
+go(went
+goal
+goat
+god
+gold
+golden
+golf
+gone
+good
+good(better
+good-bye
+goods
+goose
+got
+gotten
+govern
+government
+grade
+gradual
+gradually
+graduate
+graduation
+grain
+gram
+grammar
+grand
+grandchild
+granddaughter
+grandfather
+grandma
+grandmother
+grandpa
+grandparent
+grandparents
+grandson
+granny
+grape
+graph
+grasp
+grass
+grateful
+grateful gravity
+gravity
+gray
+great
+greatly
+greedy
+Greek
+green
+greengrocer
+greet
+greeting
+grew
+grey
+grill
+grocer
+grocery
+ground
+group
+grow
+grow(grew
+grown
+growth
+guarantee
+guard
+guess
+guest
+guidance
+guide
+guilty
+guitar
+gun
+gym
+gymnasium
+gymnastics
+gymnastics hhabit`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "H",
+    entry: {
+      id: "default_高考3500_H",
+      text: `habit
+had
+hair
+haircut
+half
+hall
+ham
+hamburger
+hammer
+hand
+handbag
+handful
+handkerchief
+handle
+handsome
+handwriting
+handy
+hang
+hang(hung
+hanged
+happen
+happiness
+happy
+harbor
+harbour
+hard
+hard-working
+hardly
+hardship
+hardworking
+harm
+harmful
+harmless
+harmony
+harvest
+has
+hat
+hatch
+hate
+have
+have(has
+he
+head
+headache
+headline
+headmaster
+headmistress
+health
+healthy
+hear
+hear(heard
+heard
+hearing
+heart
+heat
+heaven
+heavy
+heel
+height
+held
+helicopter
+hello
+helmet
+help
+helpful
+hen
+her
+herb
+here
+hero
+hers
+herself
+hesitate
+hi
+hid
+hidden
+hide
+hide(hid
+high
+highway
+hill
+him
+himself
+hire
+his
+history
+hit
+hit(hit
+hobby
+hold
+hold(held
+hole
+holiday
+holy
+home
+homeland
+hometown
+homework
+honest
+honey
+honor
+honour
+hook
+hope
+hopeful
+hopeless
+horrible
+horse
+hospital
+host
+hostess
+hot
+hotdog
+hotel
+hour
+house
+housewife
+housework
+how
+however
+howl
+hug
+huge
+human
+human being
+humor
+humorist
+humorous
+humour
+hundred
+hunger
+hungry
+hunt
+hunter
+hurricane
+hurry
+hurt
+hurt (hurt
+husband
+hydrogen`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "I",
+    entry: {
+      id: "default_高考3500_I",
+      text: `I
+ice
+ice-cream
+idea
+identity
+idiom
+if
+ignore
+ill
+illegal
+illness
+imagine
+immediate
+immediately
+immigrate
+immigration
+import
+importance
+important
+impossible
+impress
+impression
+improve
+in
+inch
+incident
+include
+income
+increase
+indeed
+independence
+independent
+India
+Indian
+indicate
+industry
+infer
+influence
+inform
+information
+initial
+injection
+injure
+ink
+inn
+innocent
+insect
+insert
+inside
+insist
+inspect
+inspire
+instant
+instead
+institute
+institution
+instruct
+instruction
+instrument
+insurance
+insure
+intelligence
+intelligent
+intend
+intention
+interest
+interesting
+international
+Internet
+interpreter
+interrupt
+interval
+interview
+into
+introduce
+introduction
+introverted
+invent
+invention
+invitation
+invite
+iron
+irrigate
+irrigation
+is
+island
+it
+Italian
+Italy
+its
+itself`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "J",
+    entry: {
+      id: "default_高考3500_J",
+      text: `jacket
+jam
+January
+Japan
+Japanese
+jar
+jaw
+jazz
+jealous
+jeans
+jeep
+jet
+jewelry
+job
+jog
+join
+joke
+journalist
+journey
+joy
+judge
+judgement
+juice
+July
+jump
+June
+jungle
+junior
+just
+justice`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "K",
+    entry: {
+      id: "default_高考3500_K",
+      text: `kangaroo
+keep
+kept
+kettle
+key
+keyboard
+kick
+kid
+kill
+kilo
+kilogram
+kilometer
+kilometre
+kind
+kindergarten
+kindness
+king
+kingdom
+kiss
+kitchen
+kite
+knee
+knew
+knife
+knives
+knock
+know
+knowledge
+known`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "L",
+    entry: {
+      id: "default_高考3500_L",
+      text: `lab
+labor
+laboratory
+lack
+ladder
+lady
+laid
+lain
+lake
+lamb
+lame
+lamp
+land
+language
+lantern
+lap
+large
+last
+late
+lately
+later
+latter
+laugh
+laughter
+laundry
+law
+lawyer
+lay
+lazy
+lead
+leader
+leaf
+league
+leak
+learn
+learned
+learnt
+least
+leather
+leave
+leaves
+lecture
+left
+leg
+legal
+lemon
+lemonade
+lend
+length
+lent
+less
+lesson
+let
+letter
+level
+liberate
+liberation
+liberty
+librarian
+library
+license
+lid
+lie
+life
+lifetime
+lift
+light
+lightning
+like
+likely
+lily
+limit
+line
+link
+lion
+lip
+liquid
+list
+listen
+liter
+literary
+literature
+litter
+little
+live
+lively
+lives
+living
+living room
+living-room
+lizard
+load
+loaf
+local
+lock
+logical
+lonely
+long
+look
+loose
+lorry
+lose
+loss
+lost
+lot
+loud
+lounge
+love
+lovely
+low
+loyal
+luck
+lucky
+luggage
+lunch`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "M",
+    entry: {
+      id: "default_高考3500_M",
+      text: `machine
+mad
+madam
+madame
+made
+magazine
+magic
+maid
+mail
+mailbox
+main
+mainland
+major
+majority
+make
+male
+mall
+man
+manage
+manager
+mankind
+manner
+many
+map
+maple
+marathon
+marble
+March
+mark
+market
+marriage
+marry
+Marxism
+mask
+mass
+master
+mat
+match
+material
+math
+mathematics
+matter
+mature
+maximum
+may
+maybe
+me
+meal
+mean
+meaning
+meaningful
+means
+meant
+meat
+media
+medical
+medicine
+melody
+member
+memorial
+memorize
+men
+mental
+message
+metal
+microwave
+Mid-Autumn
+middle
+might
+mile
+milk
+million
+mine
+minority
+minute
+mirror
+mistake
+misunderstand
+mix
+mixture
+modest
+mommy
+money
+monitor
+monkey
+month
+monument
+more
+morning
+most
+mother
+mountain
+mouse
+mouth
+movie
+much
+mud
+mum
+muscle
+museum
+music
+musician
+must
+my`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "N",
+    entry: {
+      id: "default_高考3500_N",
+      text: `nationality
+nearly
+neck
+necklace
+need
+neighbor
+neither
+never
+new
+news
+newspaper
+night
+nine
+noise
+noisy
+none
+noodle
+nor
+north
+northern
+nose
+notebook
+nothing
+notice
+novelist
+now
+nowadays
+number
+nurse
+nutrition`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "O",
+    entry: {
+      id: "default_高考3500_O",
+      text: `observe
+ocean
+of
+off
+offense
+office
+officer
+official
+often
+oh
+oil
+oilfield
+OK
+old
+on
+once
+one
+onion
+online
+only
+open
+opening
+opera
+operate
+optimistic
+or
+orange
+orbit
+otherwise
+our
+ours
+ourselves
+outdoors
+outgoing
+output
+outside
+outstanding
+over
+overlook
+owe
+ox
+oxygen`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "P",
+    entry: {
+      id: "default_高考3500_P",
+      text: `pain
+paint
+painting
+pancake
+panda
+paper
+parent
+parents
+park
+parrot
+partner
+party
+pass
+passenger
+passer-by
+passive
+path
+patient
+pay
+pea
+peace
+pear
+pen
+pence
+pencil
+peony
+people
+percentage
+perfect
+perform
+performance
+perfume
+person
+personnel
+pessimistic
+photo
+photographer
+phrase
+physics
+piano
+pick
+picnic
+pig
+pill
+pillow
+pine
+pineapple
+pint
+pipe
+pity
+pl
+plain
+plane
+plant
+plastic
+plateau
+platform
+play
+playground
+pleasant
+please
+pleased
+pleasure
+plug
+point
+police station
+policeman
+polite
+political
+politics
+pollute
+pollution
+poor
+pop
+pork
+port
+post
+post office
+postman
+potato
+power
+practice
+prefer
+prepare
+pretty
+preview
+price
+pride
+prison
+privilege
+prize
+problem
+profession
+professor
+pronounce
+pronunciation
+properly
+protect
+protection
+pump
+punish
+purple
+put on
+puzzle`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "Q",
+    entry: {
+      id: "default_高考3500_Q",
+      text: `qualification
+quarrel
+quarter
+question
+questionnaire
+quiet
+quilt
+quit
+quite
+quiz`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "R",
+    entry: {
+      id: "default_高考3500_R",
+      text: `rabbit
+race
+racial
+radioactive
+rail
+rain
+rainbow
+rainy
+rat
+rather
+razor
+read
+realise
+reasonable
+receiver
+reception
+recite
+recorder
+recover
+recreation
+recycle
+red
+refer
+reference
+reflect
+refrigerator
+refuse
+regard
+regret
+relative
+relief
+religious
+rely
+rent
+repair
+repeat
+replace
+reply
+report
+reporter
+representative
+rescue
+reservation
+resource
+respect
+rest
+restaurant
+result
+review
+revise
+revision
+revolution
+reward
+rice
+rich
+ride
+right
+ring
+rise
+river
+road
+robot
+rock
+roof
+room
+root
+rose
+rough
+rubbish
+rude
+ruler
+run
+Russia
+Russian`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "S",
+    entry: {
+      id: "default_高考3500_S",
+      text: `sacred
+sad
+sadness
+safety
+salad
+salt
+same
+sand
+sandwich
+satisfy
+saucer
+save
+say
+saying
+scar
+scarf
+scene
+scholar
+school
+science
+scientist
+score
+screen
+sculpture
+sea
+search
+seaside
+season
+seaweed
+second
+secretary
+section
+see
+seed
+seldom
+selfish
+seminar
+senior
+sense
+separate
+servant
+service
+seven
+sew
+shade
+shame
+shark
+she
+sheep
+shelf
+ship
+shirt
+shoe
+shoot
+shop
+shop/store
+short
+shorts
+should
+shoulder
+shout
+shy
+sigh
+sightseeing
+signature
+significance
+silent
+silly
+silver
+simple
+since
+sing
+single
+sister
+sit
+six
+skate
+ski
+skill
+skin
+skirt
+sky
+slave
+sleep
+slide
+slow
+small
+smoke
+snake
+sniff
+snow
+snowy
+so
+socialist
+sock
+sofa
+software
+soil
+some
+somebody
+someone
+something
+sometimes
+son
+song
+sorry
+soup
+south
+southern
+sow
+spade
+spare
+sparrow
+speak
+speech
+speech contest
+speed
+spend
+spit
+splendid
+spoon
+sports meeting
+spread
+spring
+Spring Festival
+spy
+square
+squirrel
+stable
+stadium
+staff
+stand
+star
+station
+stewardess
+stick
+stomach
+storage
+store
+story
+stout
+stranger
+straw
+stream
+street
+string
+stubborn
+student
+studio
+study
+stupid
+subject
+subjective
+submit
+subway
+success
+such
+suck
+sugar
+suitcase
+summer
+sun
+sunflower
+sunlight
+sunny
+sunshine
+super
+supermarket
+support
+suppose
+surface
+surgeon
+surplus
+surprise
+survival
+swim
+swing
+switch
+sword
+symphony`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "T",
+    entry: {
+      id: "default_高考3500_T",
+      text: `table
+table tennis
+tablet
+tailor
+take
+take off
+talk
+tall
+task
+taste
+tax
+tea
+teach
+teacher
+teamwork
+technical
+technology
+tell
+temperature
+temporary
+ten
+tendency
+tennis
+tent
+tentative
+term
+terrible
+terror
+test
+textbook
+Thanksgiving
+that
+the
+theatre
+theft
+their
+theirs
+them
+themselves
+then
+therefore
+these
+they
+thin
+thirsty
+this
+those
+though
+thoughtful
+thousand
+three
+thriller
+through
+thunder
+thunderstorm
+thus
+ticket
+tidy
+tiger
+time
+tired
+to
+today
+together
+tomato
+tomorrow
+tongue
+tonight
+too
+tooth
+toothache
+top
+total
+touch
+town
+toy
+tradition
+train
+translate
+trap
+travel
+treat
+tree
+tremble
+trip
+trouble
+trousers
+trust
+turkey
+turn
+TV
+twice
+two`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "U",
+    entry: {
+      id: "default_高考3500_U",
+      text: `ugly
+unbelievable
+uncle
+uncomfortable
+unconditional
+unconscious
+under
+underground
+undertake
+unemployment
+unfit
+union
+unite
+universal
+universe
+unless
+until
+up
+upload
+upstairs
+urban
+urgent
+us
+useful
+user
+usual
+usually`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "V",
+    entry: {
+      id: "default_高考3500_V",
+      text: `vacation
+vain
+valid
+valley
+valuable
+value
+vast
+vegetable
+version
+vertical
+very
+vest
+video
+videophone
+village
+violence
+violent
+violin
+violinist
+vip
+visual
+volcano
+volleyball
+volunteer
+volunteer work
+voyage`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "W",
+    entry: {
+      id: "default_高考3500_W",
+      text: `wage
+waiting-room
+waitress
+wake
+walk
+wall
+wander
+war
+warm
+was
+wash
+waste
+watch
+water
+waterfall
+we
+wealth
+wear
+weather
+website
+week
+weekly
+welfare
+went
+were
+west
+western
+whale
+what
+wheat
+wheel
+when
+which
+while
+whisper
+who
+whom
+whose
+widespread
+wife
+wild
+wildlife
+will
+willow
+wind
+window
+windy
+wine
+winter
+wisdom
+with
+within
+witness
+wolf
+wood
+wool
+worker
+worry
+worst
+worth
+would
+wound
+writer
+wrong`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "Y",
+    entry: {
+      id: "default_高考3500_Y",
+      text: `year
+yesterday
+yet
+you
+your
+yours
+yourself
+youth`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "高考3500",
+    label: "Z",
+    entry: {
+      id: "default_高考3500_Z",
+      text: `zero
+zip
+zone
+zoo
+zoom`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit1",
+    entry: {
+      id: "default_闽教版小学_六上-Unit1",
+      text: `game
+Olympic Games
+take place
+Summer Olympics
+Winter Olympics
+ring
+answer
+hold
+something
+began
+slogan
+world
+dream
+strong
+together`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit2",
+    entry: {
+      id: "default_闽教版小学_六上-Unit2",
+      text: `between
+woman
+women
+healthy
+exercise
+always
+often
+sometimes
+pass
+ball
+catch
+cry
+cheer
+their
+team`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit3",
+    entry: {
+      id: "default_闽教版小学_六上-Unit3",
+      text: `bring
+basket
+glass
+candy
+bad
+teeth
+keep
+body
+food
+menu
+delicious
+any
+problem
+salad`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit4",
+    entry: {
+      id: "default_闽教版小学_六上-Unit4",
+      text: `daughter
+son
+dress
+pair
+shorts
+cap
+try it on
+trousers
+clothes
+boring
+go shopping`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit5",
+    entry: {
+      id: "default_闽教版小学_六上-Unit5",
+      text: `housework
+those
+dirty
+sock
+think
+washing machine
+box
+bedroom
+floor
+water
+plant
+a piece of cake
+toilet`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit6",
+    entry: {
+      id: "default_闽教版小学_六上-Unit6",
+      text: `usually
+half
+past
+hour
+walk
+get to school
+seat
+last
+last night
+little
+fan`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit7",
+    entry: {
+      id: "default_闽教版小学_六上-Unit7",
+      text: `Thanksgiving
+American
+invite
+join
+yourselves
+help yourselves
+corn
+soup
+hope
+better
+luck`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六上-Unit8",
+    entry: {
+      id: "default_闽教版小学_六上-Unit8",
+      text: `moon
+shine
+its
+sun
+real
+because
+earth
+go around
+Mid-Autumn Festival
+evening`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit1",
+    entry: {
+      id: "default_闽教版小学_六下-Unit1",
+      text: `anywhere
+famous
+travel
+along
+the Yangtze River
+go back
+made
+show
+fat
+thin
+Ice and Snow Festival`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit2",
+    entry: {
+      id: "default_闽教版小学_六下-Unit2",
+      text: `break
+hear
+lesson
+heavy
+carry
+light
+feel
+hope
+soon`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit3",
+    entry: {
+      id: "default_闽教版小学_六下-Unit3",
+      text: `ill
+wrong
+headache
+have a cold
+toothache
+fever
+open
+must
+mustn't
+a lot of
+medicine
+doctor
+cross
+street`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit4",
+    entry: {
+      id: "default_闽教版小学_六下-Unit4",
+      text: `kiss
+love
+surprise
+kind
+dining room
+restaurant`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit5",
+    entry: {
+      id: "default_闽教版小学_六下-Unit5",
+      text: `farmer
+cook
+worker
+grow
+police officer
+nurse
+job
+dancer
+singer`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit6",
+    entry: {
+      id: "default_闽教版小学_六下-Unit6",
+      text: `true
+driver
+scientist
+learn`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit7",
+    entry: {
+      id: "default_闽教版小学_六下-Unit7",
+      text: `middle school
+teachers' office
+study
+physics
+lab
+chemistry
+bottle
+Edison
+inventor
+subject
+history
+geography`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "六下-Unit8",
+    entry: {
+      id: "default_闽教版小学_六下-Unit8",
+      text: `miss
+year book
+address
+information
+gave
+leave`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit1",
+    entry: {
+      id: "default_闽教版小学_三上-Unit1",
+      text: `hello
+I'm
+I am
+Miss
+hi
+nice
+meet
+you
+too
+a
+an
+apple
+banana
+what
+is
+your
+name
+my
+cat
+dog`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit2",
+    entry: {
+      id: "default_闽教版小学_三上-Unit2",
+      text: `good
+morning
+How are you?
+fine
+thank
+goodbye
+egg
+fish
+afternoon
+boy
+girl
+Mr.
+hen`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit3",
+    entry: {
+      id: "default_闽教版小学_三上-Unit3",
+      text: `come
+and
+play
+OK
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+great
+ice cream
+jacket
+look
+baby
+duck
+how many
+no
+right
+kite
+lion`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit4",
+    entry: {
+      id: "default_闽教版小学_三上-Unit4",
+      text: `how old
+monkey
+noodle
+phone
+number
+it
+orange
+pig`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit5",
+    entry: {
+      id: "default_闽教版小学_三上-Unit5",
+      text: `who
+he
+brother
+she
+sister
+queen
+rabbit
+this
+are
+they
+mother
+father
+grandma
+grandpa
+star
+teacher`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit6",
+    entry: {
+      id: "default_闽教版小学_三上-Unit6",
+      text: `stop
+light
+red
+now
+green
+let's
+let us
+go
+yellow
+blue
+umbrella
+violin
+white
+color
+orange
+pink
+black
+window
+X-ray`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit7",
+    entry: {
+      id: "default_闽教版小学_三上-Unit7",
+      text: `please
+give me
+ruler
+which
+the
+Here you are
+You're welcome
+pen
+pencil
+zoo
+pencil-box
+may
+use
+sure
+book
+bag
+crayon`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三上-Unit8",
+    entry: {
+      id: "default_闽教版小学_三上-Unit8",
+      text: `new
+year
+party
+have a party
+idea
+sing
+dance
+happy
+all`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit1",
+    entry: {
+      id: "default_闽教版小学_三下-Unit1",
+      text: `birthday
+buy
+present
+for you
+card
+what about
+football
+cake
+here
+bird`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit2",
+    entry: {
+      id: "default_闽教版小学_三下-Unit2",
+      text: `can
+swim
+draw
+run
+ride
+bike
+skate
+yes
+can't
+cannot`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit3",
+    entry: {
+      id: "default_闽教版小学_三下-Unit3",
+      text: `like
+rice
+hamburger
+grape
+sweet
+jump
+don't
+do not`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit4",
+    entry: {
+      id: "default_闽教版小学_三下-Unit4",
+      text: `early
+late
+eleven
+sorry
+twelve
+so
+o'clock
+many
+home
+so many
+story
+clock
+time
+London
+mom`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit5",
+    entry: {
+      id: "default_闽教版小学_三下-Unit5",
+      text: `face
+honey
+eye
+hand
+then
+arm
+nose
+head
+mouth
+leg
+ear
+foot
+feet
+touch
+pupil`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit6",
+    entry: {
+      id: "default_闽教版小学_三下-Unit6",
+      text: `put on
+big
+T-shirt
+small
+wear
+want
+too
+sports
+size
+shoe
+sports shoes`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit7",
+    entry: {
+      id: "default_闽教版小学_三下-Unit7",
+      text: `whose
+beautiful
+shirt
+skirt
+sweater
+hat`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "三下-Unit8",
+    entry: {
+      id: "default_闽教版小学_三下-Unit8",
+      text: `kid
+play football
+child
+ready
+day
+boat
+Children's Day
+fun
+park
+fly`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit1",
+    entry: {
+      id: "default_闽教版小学_四上-Unit1",
+      text: `see
+again
+grade
+our
+classroom
+class
+chair
+desk
+look
+look at
+blackboard
+read
+after
+tiger
+isn't`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit2",
+    entry: {
+      id: "default_闽教版小学_四上-Unit2",
+      text: `that
+cousin
+from
+school
+playground
+big
+computer
+room
+library`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit3",
+    entry: {
+      id: "default_闽教版小学_四上-Unit3",
+      text: `have
+farm
+dear
+thirteen
+cow
+fourteen
+horse
+fifteen
+sheep
+sixteen
+how much
+seventeen
+twenty
+eighteen
+very
+nineteen
+clever`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit4",
+    entry: {
+      id: "default_闽教版小学_四上-Unit4",
+      text: `thirty
+slow
+sleep
+have a sleep
+fifty
+winner
+forty
+begin`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit5",
+    entry: {
+      id: "default_闽教版小学_四上-Unit5",
+      text: `bus
+full
+get into
+car
+when
+get up
+at
+breakfast
+to
+go to school
+lunch
+bed
+go to bed`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit6",
+    entry: {
+      id: "default_闽教版小学_四上-Unit6",
+      text: `milk
+bread
+tomato
+them
+welcome
+dinner
+beef
+potato
+vegetable
+some`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit7",
+    entry: {
+      id: "default_闽教版小学_四上-Unit7",
+      text: `Christmas
+robot
+tree
+email
+merry`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四上-Unit8",
+    entry: {
+      id: "default_闽教版小学_四上-Unit8",
+      text: `spring
+festival
+the Spring Festival
+Chinese
+spend
+we
+make
+dumpling
+family
+watch
+TV
+get
+money
+fair
+friend
+say`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit1",
+    entry: {
+      id: "default_闽教版小学_四下-Unit1",
+      text: `often
+every
+week
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+raise
+national
+flag
+national flag
+meeting
+clean`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit2",
+    entry: {
+      id: "default_闽教版小学_四下-Unit2",
+      text: `stand
+door
+bright
+close
+fan
+Well done!
+turn off
+all right`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit3",
+    entry: {
+      id: "default_闽教版小学_四下-Unit3",
+      text: `math
+English
+worry
+music
+art
+PE
+help
+science
+Chinese
+interesting
+Ms.`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit4",
+    entry: {
+      id: "default_闽教版小学_四下-Unit4",
+      text: `by car
+work
+plane
+ship
+on foot
+place
+aunt
+train`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit5",
+    entry: {
+      id: "default_闽教版小学_四下-Unit5",
+      text: `kitchen
+supermarket
+shopping list
+with
+need
+toy
+chicken
+these
+fruit
+Teddy Bear
+tea
+seventy
+juice
+hundred
+sixty
+ninety
+eighty`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit6",
+    entry: {
+      id: "default_闽教版小学_四下-Unit6",
+      text: `weather
+snow
+cold
+coat
+rain
+but
+warm
+today
+sunny
+take
+windy
+cloudy`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit7",
+    entry: {
+      id: "default_闽教版小学_四下-Unit7",
+      text: `favorite
+vacation
+season
+autumn
+why
+cool
+summer
+winter
+hot
+wonderful
+long`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "四下-Unit8",
+    entry: {
+      id: "default_闽教版小学_四下-Unit8",
+      text: `will
+Big Ben
+live
+the Great Wall
+the UK
+homework
+visit
+basketball`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit1",
+    entry: {
+      id: "default_闽教版小学_五上-Unit1",
+      text: `tall
+beside
+pupil
+Australia
+behind
+short
+long
+hair`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit2",
+    entry: {
+      id: "default_闽教版小学_五上-Unit2",
+      text: `where
+sitting room
+lovely
+panda
+September
+tomorrow
+Teachers' Day
+kind
+near
+flower
+paper
+picture
+photo
+smile`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit3",
+    entry: {
+      id: "default_闽教版小学_五上-Unit3",
+      text: `National Day
+holiday
+uncle
+won't
+will not
+tell
+about
+July
+August
+October
+there
+turn on
+find
+thing
+Internet`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit4",
+    entry: {
+      id: "default_闽教版小学_五上-Unit4",
+      text: `cinema
+sit down
+put on
+glasses
+film
+afraid
+welcome
+museum
+cook
+player
+chess
+play chess
+come on`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit5",
+    entry: {
+      id: "default_闽教版小学_五上-Unit5",
+      text: `April
+March
+June
+May
+month
+December
+January
+easy
+remember
+November
+February`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit6",
+    entry: {
+      id: "default_闽教版小学_五上-Unit6",
+      text: `Excuse me
+get to
+station
+far away
+or
+taxi
+young
+man
+You're welcome
+hospital
+nearby
+go straight
+turn
+right
+left
+bus stop`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit7",
+    entry: {
+      id: "default_闽教版小学_五上-Unit7",
+      text: `speak
+wait
+minute
+page
+write
+word
+sorry
+time
+call
+mobile
+way
+on my way
+city`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五上-Unit8",
+    entry: {
+      id: "default_闽教版小学_五上-Unit8",
+      text: `the US
+classmate
+understand
+know
+see`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit1",
+    entry: {
+      id: "default_闽教版小学_五下-Unit1",
+      text: `was
+were
+China
+went
+parent
+hometown
+took
+tour
+Sun Moon Lake
+lake
+did
+swam`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit2",
+    entry: {
+      id: "default_闽教版小学_五下-Unit2",
+      text: `elephant
+map
+hill
+under
+animal
+saw
+hungry
+ate
+any
+over there
+next to`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit3",
+    entry: {
+      id: "default_闽教版小学_五下-Unit3",
+      text: `Easter
+color
+brown
+hide
+garden
+look for
+pick up
+got
+Easter Bunny`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit4",
+    entry: {
+      id: "default_闽教版小学_五下-Unit4",
+      text: `spring outing
+camera
+climb
+sky
+mountain
+cloud
+water
+get on
+thirsty
+shout
+top`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit5",
+    entry: {
+      id: "default_闽教版小学_五下-Unit5",
+      text: `something
+try
+bottle
+high jump
+Sports Day
+proud
+meter
+fall down
+fast
+well
+long jump
+busy
+grass
+ran`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit6",
+    entry: {
+      id: "default_闽教版小学_五下-Unit6",
+      text: `race
+sad
+first
+cheer up
+second
+only
+third
+fourth
+drink
+angry
+tired
+program`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit7",
+    entry: {
+      id: "default_闽教版小学_五下-Unit7",
+      text: `building
+floor
+twelfth
+would
+living room
+bridge
+also
+really
+fifteenth
+neighbor
+river
+grandmother
+grandfather`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "闽教版小学",
+    label: "五下-Unit8",
+    entry: {
+      id: "default_闽教版小学_五下-Unit8",
+      text: `date
+lucky
+guess
+difficult
+calendar
+before
+people
+Mrs.`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit1",
+    entry: {
+      id: "default_人教版初中_八上-Unit1",
+      text: `anyone
+anywhere
+wonderful
+few
+most
+something
+nothing
+myself
+everyone
+yourself
+hen
+bored
+pig
+diary
+seem
+someone
+quite a few
+of course
+activity
+decide
+try
+bird
+paragliding
+bicycle
+building
+trader
+wonder
+difference
+top
+wait
+umbrella
+wet
+below
+as
+enough
+duck
+hungry
+feel like
+dislike
+because of
+have a good time`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit10",
+    entry: {
+      id: "default_人教版初中_八上-Unit10",
+      text: `video
+organize
+chocolate
+upset
+advice
+travel
+agent
+expert
+teenager
+normal
+unless
+certainly
+wallet
+worried
+angry
+careless
+understanding
+trust
+mistake
+careful
+advise
+solve
+experience
+halfway
+else`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit2",
+    entry: {
+      id: "default_人教版初中_八上-Unit2",
+      text: `housework
+hardly
+ever
+once
+twice
+Internet
+program
+full
+swing
+maybe
+swing dance
+least
+at least
+hardly ever
+junk
+coffee
+health
+result
+percent
+online
+television
+although
+through
+body
+mind
+such
+together
+die
+writer
+dentist
+magazine
+however
+than
+almost
+none
+less
+point
+such as
+junk food
+more than
+less than`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit3",
+    entry: {
+      id: "default_人教版初中_八上-Unit3",
+      text: `outgoing
+better
+loudly
+quietly
+hard-working
+competition
+fantastic
+which
+clearly
+win
+though
+care about
+talented
+truly
+care
+serious
+mirror
+necessary
+both
+should
+touch
+reach
+heart
+fact
+break
+laugh
+similar
+share
+loud
+primary
+be different from
+information
+as long as
+bring out
+the same as
+in fact
+be similar to`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit4",
+    entry: {
+      id: "default_人教版初中_八上-Unit4",
+      text: `theater
+comfortable
+seat
+screen
+close
+worst
+cheaply
+song
+choose
+carefully
+reporter
+fresh
+comfortably
+worse
+service
+pretty
+menu
+act
+meal
+so far
+no problem
+creative
+performer
+talent
+common
+magician
+beautifully
+role
+winner
+prize
+everybody
+example
+poor
+seriously
+give
+crowded
+have...in common
+all kinds of
+be up to
+play a role
+make up
+for example
+take...seriously`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit5",
+    entry: {
+      id: "default_人教版初中_八上-Unit5",
+      text: `sitcom
+news
+soap
+educational
+plan
+hope
+discussion
+stand
+happen
+may
+expect
+joke
+comedy
+find out
+meaningless
+action
+cartoon
+culture
+famous
+appear
+become
+rich
+successful
+might
+main
+reason
+film
+unlucky
+lose
+ready
+character
+simple
+army
+action movie
+be ready to
+dress up
+take sb.'s place
+do a good job`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit6",
+    entry: {
+      id: "default_人教版初中_八上-Unit6",
+      text: `doctor
+engineer
+violinist
+pilot
+pianist
+scientist
+college
+education
+medicine
+university
+article
+send
+grow up
+computer programmer
+be sure about
+make sure
+resolution
+foreign
+able
+discuss
+promise
+beginning
+improve
+physical
+self-improvement
+hobby
+own
+personal
+relationship
+write down
+have to do with
+take up
+agree with
+be able to`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit7",
+    entry: {
+      id: "default_人教版初中_八上-Unit7",
+      text: `paper
+pollution
+prediction
+future
+pollute
+environment
+planet
+earth
+plant
+part
+peace
+sky
+play a part
+astronaut
+apartment
+rocket
+space
+even
+human
+servant
+dangerous
+already
+factory
+believe
+disagree
+shape
+fall
+possible
+probably
+holiday
+word
+space station
+over and over again
+hundreds of
+fall down
+look for`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit8",
+    entry: {
+      id: "default_人教版初中_八上-Unit8",
+      text: `blender
+peel
+pour
+yogurt
+honey
+watermelon
+spoon
+add
+finally
+salt
+sugar
+cheese
+popcorn
+corn
+machine
+sandwich
+butter
+turkey
+lettuce
+piece
+traditional
+traveler
+England
+celebrate
+pepper
+oven
+cover
+gravy
+serve
+temperature`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八上-Unit9",
+    entry: {
+      id: "default_人教版初中_八上-Unit9",
+      text: `prepare
+exam
+available
+hang
+until
+catch
+invite
+accept
+refuse
+invitation
+reply
+forward
+delete
+preparation
+opening
+guest
+concert
+headmaster
+event
+calendar`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit1",
+    entry: {
+      id: "default_人教版初中_八下-Unit1",
+      text: `matter
+What's the matter
+sore
+have a cold
+stomachache
+have a stomachache
+foot
+neck
+stomach
+throat
+fever
+lie
+lie down
+rest
+cough
+X-ray
+toothache
+take one's temperature
+headache
+have a fever
+break
+take breaks
+hurt
+passenger
+off
+get off
+to one's surprise
+onto
+trouble
+hit
+right away
+get into
+herself
+bandage
+sick
+knee
+nosebleed
+breathe
+sunburned
+ourselves
+climber
+be used to
+risk
+take risks
+accident
+situation
+kilo
+rock
+run out of
+knife
+cut off
+blood
+mean
+get out of
+importance
+decision
+control
+be in control of
+spirit
+death
+give up
+nurse`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit10",
+    entry: {
+      id: "default_人教版初中_八下-Unit10",
+      text: `yard
+yard sale
+sweet
+memory
+cent
+toy
+bear
+maker
+bread maker
+scarf
+soft
+soft toy
+check
+check out
+board
+board game
+junior
+junior high school
+clear
+clear out
+bedroom
+no longer
+own
+railway
+part
+part with
+certain
+as for
+honest
+to be honest
+while
+truthful
+hometown
+nowadays
+search
+among
+crayon
+shame
+regard
+count
+century
+according
+opposite
+especially
+childhood
+consider
+close to
+hold`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit2",
+    entry: {
+      id: "default_人教版初中_八下-Unit2",
+      text: `clean up
+cheer
+cheer up
+give out
+volunteer
+notice
+used to
+lonely
+several
+feeling
+satisfaction
+joy
+owner
+journey
+sign
+madam
+raise
+alone
+repair
+fix
+give away
+wheel
+letter
+Miss
+set up
+make a difference
+blind
+deaf
+imagine
+difficulty
+open
+door
+carry
+train
+excited
+training
+kindness
+clever
+understand
+change
+disabled
+strong
+sir
+come up with
+put off
+hand out
+call up
+care for
+try out
+fix up
+take after`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit3",
+    entry: {
+      id: "default_人教版初中_八下-Unit3",
+      text: `rubbish
+take out the rubbish
+fold
+sweep
+floor
+mess
+throw
+all the time
+neither
+shirt
+as soon as
+pass
+borrow
+lend
+finger
+hate
+while
+snack
+chore
+stress
+waste
+in order to
+provide
+anyway
+depend on
+develop
+fairness
+since
+neighbor
+result
+ill
+drop
+independence
+independent
+take care of
+fair
+unfair`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit4",
+    entry: {
+      id: "default_人教版初中_八下-Unit4",
+      text: `allow
+wrong
+guess
+deal
+work out
+get on with
+relation
+communication
+argue
+cloud
+elder
+instead
+whatever
+nervous
+offer
+proper
+secondly
+communicate
+explain
+clear
+copy
+return
+member
+pressure
+compete
+opinion
+skill
+typical
+football
+cut out
+continue
+compare
+compare...with...
+crazy
+push
+development
+cause
+usual
+perhaps
+quick
+in one's opinion
+What's wrong
+look through
+big deal
+anymore`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit5",
+    entry: {
+      id: "default_人教版初中_八下-Unit5",
+      text: `suddenly
+alarm
+go off
+pick up
+wind
+light
+wood
+window
+beat
+rise
+apart
+pupil
+bright
+completely
+recently
+terrorist
+date
+tower
+at first
+truth
+begin
+heavily
+fallen
+have a look
+icy
+kid
+make one's way
+shocked
+take down`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit6",
+    entry: {
+      id: "default_人教版初中_八下-Unit6",
+      text: `shoot
+stone
+weak
+begin
+god
+remind
+bit
+a little bit
+silly
+turn...into
+object
+hide
+tail
+magic
+stick
+excite
+Western
+once upon a time
+fit
+couple
+smile
+marry
+get married
+gold
+emperor
+silk
+underwear
+nobody
+stupid
+cheat
+stepmother
+wife
+husband
+whole
+scene
+moonlight
+shine
+bright
+ground
+lead
+voice
+brave`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit7",
+    entry: {
+      id: "default_人教版初中_八下-Unit7",
+      text: `square
+meter
+deep
+desert
+population
+Asia
+feel free
+tour
+tourist
+wall
+amazing
+ancient
+protect
+wide
+as far as I know
+man-made
+achievement
+southwestern
+thick
+include
+freezing
+condition
+take in
+succeed
+challenge
+in the face of
+achieve
+force
+nature
+ocean
+the Pacific Ocean
+cm
+weigh
+birth
+at birth
+up to
+adult
+bamboo
+research
+awake
+excitement
+walk into
+fall over
+or so
+illness
+wild
+government
+whale
+oil
+protection
+huge`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit8",
+    entry: {
+      id: "default_人教版初中_八下-Unit8",
+      text: `treasure
+island
+full of
+classic
+page
+hurry
+hurry up
+due
+ship
+tool
+gun
+mark
+sand
+cannibal
+towards
+land
+fiction
+technology
+French
+pop
+rock
+band
+forever
+abroad
+fan
+southern
+modern
+success
+belong
+laughter
+beauty
+introduce
+record
+line
+million
+actually
+country music`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "八下-Unit9",
+    entry: {
+      id: "default_人教版初中_八下-Unit9",
+      text: `amusement
+amusement park
+somewhere
+camera
+invention
+invent
+unbelievable
+progress
+rapid
+unusual
+toilet
+encourage
+social
+peaceful
+tea art
+performance
+perfect
+tea set
+itself
+collect
+a couple of
+German
+theme
+ride
+province
+thousand
+thousands of
+safe
+simply
+fear
+whether
+Indian
+Japanese
+fox
+all year round
+equator
+whenever
+spring
+mostly
+location`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit1",
+    entry: {
+      id: "default_人教版初中_九全-Unit1",
+      text: `textbook
+conversation
+aloud
+pronunciation
+sentence
+patient
+expression
+discover
+secret
+fall in love with
+look up
+grammar
+repeat
+note
+pal
+physics
+chemistry
+memorize
+pattern
+pronounce
+increase
+speed
+partner
+born
+be born with
+ability
+create
+brain
+active
+attention
+pay attention to
+connect
+connect...with
+overnight
+review
+knowledge
+lifelong
+wisely`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit10",
+    entry: {
+      id: "default_人教版初中_九全-Unit10",
+      text: `custom
+bow
+kiss
+greet
+relaxed
+value
+drop by
+capital
+after all
+noon
+mad
+get mad
+effort
+make an effort
+passport
+clean off
+chalk
+blackboard
+northern
+coast
+season
+knock
+eastern
+take off
+worth
+manner
+empty
+basic
+exchange
+teenage
+granddaughter
+behave
+except
+elbow
+gradually
+get used to
+suggestion`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit11",
+    entry: {
+      id: "default_人教版初中_九全-Unit11",
+      text: `rather
+would rather
+drive
+lately
+leave out
+friendship
+king
+power
+prime
+minister
+prime minister
+banker
+fame
+pale
+queen
+call in
+examine
+nor
+neither...nor
+palace
+wealth
+to start with
+grey
+lemon
+uncomfortable
+weight
+shoulder
+goal
+let down
+coach
+kick
+besides
+teammate
+courage
+rather than
+guy
+pull
+pull together
+relief
+nod
+agreement
+fault
+disappoint
+be friends with
+be hard on`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit12",
+    entry: {
+      id: "default_人教版初中_九全-Unit12",
+      text: `unexpected
+by the time
+backpack
+oversleep
+ring
+block
+in line with
+worker
+stare
+disbelief
+above
+burn
+burning
+alive
+airport
+till
+west
+cream
+workday
+pie
+show up
+bean
+market
+by the end of
+fool
+costume
+embarrassed
+announce
+spaghetti
+hoax
+sell out
+discovery
+lady
+cancel
+officer
+believable
+disappear
+embarrassing`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit13",
+    entry: {
+      id: "default_人教版初中_九全-Unit13",
+      text: `litter
+bottom
+fisherman
+coal
+ugly
+advantage
+cost
+wooden
+plastic
+takeaway
+bin
+shark
+fin
+cruel
+harmful
+be harmful to
+at the top of
+chain
+food chain
+ecosystem
+industry
+law
+scientific
+take part in
+afford
+turn off
+reusable
+pay for
+take action
+transportation
+recycle
+napkin
+throw away
+put to good use
+pull down
+upside
+gate
+bottle
+president
+inspiration
+iron
+work
+metal
+bring back
+creativity`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit14",
+    entry: {
+      id: "default_人教版初中_九全-Unit14",
+      text: `survey
+standard
+row
+in a row
+keyboard
+method
+instruction
+double
+shall
+look back at
+overcome
+make a mess
+graduate
+keep one's cool
+caring
+ours
+senior
+senior high school
+text
+go by
+level
+degree
+manager
+believe in
+gentleman
+graduation
+ceremony
+first of all
+congratulate
+thirsty
+be thirsty for
+thankful
+lastly
+task
+ahead
+ahead of
+along with
+responsible
+be responsible for
+separate
+set out
+separate from
+wing`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit2",
+    entry: {
+      id: "default_人教版初中_九全-Unit2",
+      text: `mooncake
+lantern
+stranger
+relative
+put on
+pound
+folk
+goddess
+whoever
+steal
+lay
+lay out
+dessert
+garden
+tradition
+admire
+tie
+haunted
+ghost
+trick
+treat
+spider
+Christmas
+lie
+novel
+eve
+dead
+business
+punish
+warn
+end up
+present
+warmth
+spread
+Mid-Autumn
+Halloween`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit3",
+    entry: {
+      id: "default_人教版初中_九全-Unit3",
+      text: `restroom
+stamp
+bookstore
+beside
+postcard
+pardon
+washroom
+bathroom
+normally
+rush
+suggest
+pass by
+staff
+grape
+central
+nearby
+pardon me
+mail
+east
+fascinating
+inexpensive
+uncrowded
+convenient
+mall
+clerk
+corner
+politely
+request
+direction
+correct
+polite
+direct
+speaker
+whom
+impolite
+address
+underground
+parking lot
+course
+Italian`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit4",
+    entry: {
+      id: "default_人教版初中_九全-Unit4",
+      text: `humorous
+silent
+helpful
+from time to time
+score
+background
+interview
+Asian
+deal
+deal with
+shyness
+dare
+crowd
+ton
+private
+guard
+require
+European
+African
+British
+speech
+public
+in public
+ant
+insect
+seldom
+influence
+absent
+fail
+examination
+boarding
+in person
+exactly
+pride
+take pride in
+proud
+be proud of
+general
+introduction`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit5",
+    entry: {
+      id: "default_人教版初中_九全-Unit5",
+      text: `chopstick
+coin
+fork
+blouse
+silver
+glass
+cotton
+steel
+fair
+environmental
+grass
+leaf
+produce
+widely
+be known for
+process
+pack
+product
+no matter
+local
+brand
+avoid
+handbag
+mobile
+everyday
+boss
+surface
+traffic
+postman
+cap
+glove
+international
+competitor
+its
+form
+clay
+celebration
+balloon
+paper cutting
+scissors
+lively
+fairy
+historical
+heat
+polish
+complete`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit6",
+    entry: {
+      id: "default_人教版初中_九全-Unit6",
+      text: `heel
+scoop
+electricity
+style
+project
+pleasure
+zipper
+daily
+website
+pioneer
+list
+mention
+accidental
+by accident
+nearly
+ruler
+boil
+remain
+smell
+saint
+national
+trade
+take place
+doubt
+without doubt
+fridge
+low
+somebody
+translate
+lock
+earthquake
+sudden
+all of a sudden
+bell
+biscuit
+cookie
+musical
+instrument
+crispy
+salty
+sour
+by mistake
+customer
+the Olympics
+Canadian
+divide
+divide...into
+basket
+popularity
+look up to
+hero
+professional`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit7",
+    entry: {
+      id: "default_人教版初中_九全-Unit7",
+      text: `license
+safety
+smoke
+part-time
+pierce
+earring
+flash
+tiny
+cry
+field
+hug
+lift
+badly
+talk back
+awful
+teen
+regret
+poem
+community
+keep away from
+chance
+educate
+manage
+society
+support
+enter
+choice`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit8",
+    entry: {
+      id: "default_人教版初中_九全-Unit8",
+      text: `whose
+truck
+picnic
+rabbit
+attend
+valuable
+pink
+anybody
+happening
+noise
+policeman
+wolf
+uneasy
+laboratory
+outdoors
+coat
+sleepy
+land
+alien
+run after
+suit
+express
+at the same time
+circle
+mystery
+receive
+historian
+leader
+midsummer
+medical
+purpose
+prevent
+energy
+position
+burial
+honor
+ancestor
+victory
+enemy
+period
+hard-working`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "九全-Unit9",
+    entry: {
+      id: "default_人教版初中_九全-Unit9",
+      text: `prefer
+lyrics
+Australian
+electronic
+suppose
+smooth
+spare
+director
+case
+in that case
+war
+stick
+stick to
+down
+dialog
+ending
+documentary
+drama
+plenty
+plenty of
+shut
+shut off
+superhero
+once in a while
+intelligent
+sense
+sadness
+pain
+reflect
+moving
+perform
+lifetime
+pity
+total
+in total
+master
+praise
+recall
+wound
+painful`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-StarterUnit1",
+    entry: {
+      id: "default_人教版初中_七上-StarterUnit1",
+      text: `good
+morning
+Good morning
+hi
+hello
+afternoon
+Good afternoon
+evening
+Good evening
+how
+are
+you
+How are you
+I
+am
+fine
+thanks
+OK
+HB
+CD
+BBC
+Alice
+Bob
+Cindy
+Dale
+Eric
+Frank
+Grace
+Helen`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-StarterUnit2",
+    entry: {
+      id: "default_人教版初中_七上-StarterUnit2",
+      text: `what
+is
+this
+in
+English
+in English
+map
+cup
+ruler
+pen
+orange
+jacket
+key
+quilt
+it
+a
+that
+spell
+please
+NBA
+P
+kg`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-StarterUnit3",
+    entry: {
+      id: "default_人教版初中_七上-StarterUnit3",
+      text: `color
+red
+yellow
+green
+blue
+black
+white
+purple
+brown
+the
+now
+see
+can
+say
+my
+S
+M
+L
+UFO
+CCTV`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit1",
+    entry: {
+      id: "default_人教版初中_七上-Unit1",
+      text: `name
+nice
+to
+meet
+too
+your
+Ms.
+his
+and
+her
+yes
+she
+he
+no
+not
+zero
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+telephone
+number
+phone
+telephone/phone number
+first
+first name
+last
+last name
+friend
+China
+middle
+school
+middle school
+Gina
+Jenny
+Brown
+Alan
+Tom
+Mike
+Jack
+Mary
+Miller
+Linda
+Jane
+Green
+Smith`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit2",
+    entry: {
+      id: "default_人教版初中_七上-Unit2",
+      text: `sister
+mother
+father
+parent
+brother
+grandmother
+grandfather
+grandparent
+family
+those
+who
+oh
+these
+they
+well
+have
+day
+Have a good day
+bye
+son
+cousin
+grandpa
+mom
+aunt
+grandma
+dad
+uncle
+daughter
+here
+photo
+of
+next
+picture
+girl
+dog
+Sally
+Kate
+Paul`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit3",
+    entry: {
+      id: "default_人教版初中_七上-Unit3",
+      text: `pencil
+book
+eraser
+box
+pencil box
+schoolbag
+dictionary
+his
+mine
+hers
+excuse
+me
+excuse me
+thank
+teacher
+about
+What about
+yours
+for
+thank you for
+help
+welcome
+You're welcome
+baseball
+watch
+computer
+game
+card
+ID card
+notebook
+ring
+bag
+in
+library
+ask
+ask for
+find
+some
+classroom
+e-mail
+at
+call
+lost
+must
+set
+a set of
+Anna
+John
+David`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit4",
+    entry: {
+      id: "default_人教版初中_七上-Unit4",
+      text: `where
+table
+bed
+bookcase
+sofa
+chair
+on
+under
+come
+come on
+desk
+think
+room
+their
+hat
+head
+yeah
+know
+radio
+clock
+tape
+player
+tape player
+model
+plane
+model plane
+tidy
+but
+our
+everywhere
+always`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit5",
+    entry: {
+      id: "default_人教版初中_七上-Unit5",
+      text: `do
+have
+tennis
+ball
+ping-pong
+bat
+soccer
+soccer ball
+volleyball
+basketball
+hey
+let
+us
+let's
+go
+we
+late
+has
+get
+great
+play
+sound
+interesting
+boring
+fun
+difficult
+relaxing
+watch
+TV
+watch TV
+same
+love
+with
+sport
+them
+only
+like
+easy
+after
+class
+classmate
+Bill`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit6",
+    entry: {
+      id: "default_人教版初中_七上-Unit6",
+      text: `banana
+hamburger
+tomato
+ice-cream
+salad
+strawberry
+pear
+milk
+bread
+birthday
+dinner
+week
+think about
+food
+sure
+How about
+burger
+vegetable
+fruit
+right
+apple
+then
+egg
+carrot
+rice
+chicken
+so
+breakfast
+lunch
+star
+eat
+well
+habit
+healthy
+really
+question
+want
+be
+fat`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit7",
+    entry: {
+      id: "default_人教版初中_七上-Unit7",
+      text: `much
+How much
+sock
+T-shirt
+shorts
+sweater
+trousers
+shoe
+skirt
+dollar
+big
+small
+short
+long
+woman
+Can I help you
+need
+look
+pair
+take
+Here you are
+ten
+eleven
+twelve
+thirteen
+fifteen
+eighteen
+twenty
+thirty
+Mr.
+clothes
+store
+buy
+sale
+sell
+all
+very
+price
+boy
+a pair of`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit8",
+    entry: {
+      id: "default_人教版初中_七上-Unit8",
+      text: `when
+month
+January
+February
+March
+April
+May
+June
+July
+August
+September
+October
+November
+December
+happy
+Happy birthday
+old
+How old
+party
+See you
+first
+second
+third
+fifth
+eighth
+ninth
+twelfth
+twentieth
+test
+trip
+art
+festival
+dear
+student
+thing
+term
+busy
+time
+Have a good time
+there`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七上-Unit9",
+    entry: {
+      id: "default_人教版初中_七上-Unit9",
+      text: `favorite
+subject
+science
+P.E.
+music
+math
+Chinese
+geography
+history
+why
+because
+Monday
+Friday
+Saturday
+for sure
+free
+cool
+Tuesday
+Wednesday
+Thursday
+Sunday
+A.M.
+P.M.
+from
+from to
+Mrs.
+finish
+lesson
+hour`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit1",
+    entry: {
+      id: "default_人教版初中_七下-Unit1",
+      text: `guitar
+sing
+swim
+dance
+draw
+chess
+play chess
+speak
+speak English
+join
+club
+be good at
+tell
+story
+write
+show
+or
+talk
+talk to
+kung fu
+drum
+play the drums
+piano
+play the piano
+violin
+play the violin
+also
+people
+home
+be good with
+make
+make friends
+today
+help (sb) with sth
+center
+weekend
+on the weekend
+teach
+musician
+Lisa
+Jill
+Peter`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit10",
+    entry: {
+      id: "default_人教版初中_七下-Unit10",
+      text: `noodle
+mutton
+beef
+cabbage
+potato
+special
+would
+would like
+yet
+large
+order
+size
+bowl
+tofu
+meat
+dumpling
+porridge
+onion
+fish
+pancake
+world
+around the world
+answer
+different
+cake
+candle
+age
+blow
+blow out
+if
+will
+the UK
+candy
+lucky
+popular`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit11",
+    entry: {
+      id: "default_人教版初中_七下-Unit11",
+      text: `milk
+cow
+horse
+feed
+farmer
+quite
+quite a lot
+anything
+grow
+farm
+pick
+excellent
+countryside
+yesterday
+flower
+worry
+luckily
+sun
+museum
+fire
+fire station
+painting
+exciting
+lovely
+expensive
+cheap
+slow
+fast
+robot
+guide
+gift
+all in all
+everything
+interested
+be interested in
+dark
+hear`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit12",
+    entry: {
+      id: "default_人教版初中_七下-Unit12",
+      text: `camp
+lake
+beach
+badminton
+sheep
+as
+natural
+butterfly
+visitor
+tired
+stay
+stay up late
+away
+run away
+mouse
+baby
+shout
+shout at
+woof
+language
+fly
+kite
+fly a kite
+high
+high school
+ago
+India
+tent
+put up
+moon
+surprise
+snake
+scared
+move
+start
+jump
+up and down
+wake
+wake up
+into
+forest
+ear`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit2",
+    entry: {
+      id: "default_人教版初中_七下-Unit2",
+      text: `up
+get up
+dress
+get dressed
+brush
+tooth
+shower
+take a shower
+usually
+forty
+Wow
+never
+early
+fifty
+job
+work
+station
+radio station
+o'clock
+night
+funny
+exercise
+on weekends
+best
+group
+half
+past
+quarter
+homework
+do (one's) homework
+run
+clean
+walk
+take a walk
+quickly
+either
+either...or...
+lot
+lots of
+sometimes
+taste
+life
+Rick
+Jim
+Scott
+Tony`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit3",
+    entry: {
+      id: "default_人教版初中_七下-Unit3",
+      text: `train
+bus
+subway
+take the subway
+ride
+bike
+ride a bike
+sixty
+seventy
+eighty
+ninety
+hundred
+minute
+far
+kilometer
+new
+every
+every day
+by
+by bike
+drive
+car
+live
+stop
+think of
+cross
+river
+many
+village
+between
+between...and...
+bridge
+boat
+ropeway
+year
+afraid
+like
+villager
+leave
+dream
+true
+come true
+Dave`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit4",
+    entry: {
+      id: "default_人教版初中_七下-Unit4",
+      text: `rule
+arrive
+(be) on time
+hallway
+hall
+dining hall
+listen
+listen to
+fight
+sorry
+outside
+wear
+important
+bring
+uniform
+quiet
+out
+go out
+practice
+dish
+do the dishes
+before
+make (one's) bed
+dirty
+kitchen
+more
+noisy
+relax
+read
+terrible
+feel
+strict
+be strict (with sb)
+remember
+follow
+follow the rules
+luck
+keep
+hair
+learn
+Clark
+Amy
+Molly
+New York`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit5",
+    entry: {
+      id: "default_人教版初中_七下-Unit5",
+      text: `panda
+zoo
+tiger
+elephant
+koala
+lion
+giraffe
+animal
+cute
+lazy
+smart
+beautiful
+scary
+kind
+kind of
+Australia
+south
+Africa
+South Africa
+pet
+leg
+cat
+sleep
+friendly
+shy
+save
+symbol
+flag
+forget
+get lost
+place
+water
+danger
+be in (great) danger
+cut
+down
+cut down
+tree
+kill
+ivory
+over
+(be) made of
+Julie
+Becky
+Thailand
+Thai`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit6",
+    entry: {
+      id: "default_人教版初中_七下-Unit6",
+      text: `newspaper
+read a newspaper
+use
+soup
+make soup
+wash
+movie
+go to the movies
+just
+eat out
+house
+drink
+tea
+drink tea
+tomorrow
+pool
+shop
+supermarket
+man
+race
+host
+study
+state
+the United States
+American
+dragon
+Dragon Boat Festival
+any
+other
+young
+child
+miss
+wish
+delicious
+still
+living room
+Steve
+Laura`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit7",
+    entry: {
+      id: "default_人教版初中_七下-Unit7",
+      text: `rain
+windy
+cloudy
+sunny
+snow
+weather
+cook
+bad
+park
+message
+take a message
+him
+could
+back
+call (sb.) back
+problem
+right now
+again
+dry
+cold
+hot
+warm
+visit
+Canada
+summer
+sit
+juice
+soon
+vacation
+on (a) vacation
+hard
+Europe
+mountain
+country
+skate
+snowy
+winter
+Russian
+snowman
+rainy
+Joe
+Jeff
+Moscow
+Toronto
+Boston`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit8",
+    entry: {
+      id: "default_人教版初中_七下-Unit8",
+      text: `post
+office
+post office
+police
+police station
+hotel
+restaurant
+bank
+hospital
+street
+pay
+pay phone
+near
+across
+across from
+front
+in front of
+behind
+town
+around
+north
+along
+go along (the street)
+turn
+right
+left
+turn right/left
+crossing
+neighborhood
+spend
+spend time
+monkey
+climb
+road
+often
+air
+sunshine
+free
+enjoy
+enjoy reading
+easily
+money`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版初中",
+    label: "七下-Unit9",
+    entry: {
+      id: "default_人教版初中_七下-Unit9",
+      text: `curly
+straight
+tall
+medium
+height
+(be) of medium height
+thin
+heavy
+tonight
+little
+a little
+cinema
+glasses
+later
+handsome
+actor
+actress
+person
+nose
+blonde
+mouth
+round
+face
+eye
+singer
+artist
+crime
+criminal
+put
+each
+way
+describe
+differently
+another
+end
+in the end
+real
+jeans
+Johnny
+Dean
+Tina
+Jackson`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit1",
+    entry: {
+      id: "default_人教版小学_六上-Unit1",
+      text: `science
+museum
+post office
+bookstore
+cinema
+hospital
+crossing
+turn
+left
+straight
+right
+ask
+sir
+interesting
+Italian
+restaurant
+pizza
+street
+get
+GPS
+gave
+feature
+follow
+far
+tell`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit2",
+    entry: {
+      id: "default_人教版小学_六上-Unit2",
+      text: `on foot
+by
+bus
+plane
+taxi
+ship
+subway
+train
+slow
+down
+slow down
+stop
+Mrs
+early
+helmet
+must
+wear
+attention
+pay attention to
+traffic
+traffic lights
+Munich
+Germany
+Alaska
+sled
+fast
+ferry
+Papa Westray
+Scotland`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit3",
+    entry: {
+      id: "default_人教版小学_六上-Unit3",
+      text: `visit
+film
+see a film
+trip
+take a trip
+supermarket
+evening
+tonight
+tomorrow
+next week
+dictionary
+comic
+comic book
+word
+word book
+postcard
+lesson
+space
+travel
+half
+price
+Mid-Autumn Festival
+together
+get together
+mooncake
+poem
+moon`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit4",
+    entry: {
+      id: "default_人教版小学_六上-Unit4",
+      text: `studies
+puzzle
+hiking
+pen pal
+hobby
+jasmine
+idea
+Canberra
+amazing
+shall
+goal
+join
+club
+share`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit5",
+    entry: {
+      id: "default_人教版小学_六上-Unit5",
+      text: `factory
+worker
+postman
+businessman
+police officer
+fisherman
+scientist
+pilot
+coach
+country
+head teacher
+sea
+stay
+university
+gym
+if
+reporter
+use
+type
+quickly
+secretary`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六上-Unit6",
+    entry: {
+      id: "default_人教版小学_六上-Unit6",
+      text: `angry
+afraid
+sad
+worried
+happy
+see a doctor
+wear
+more
+deep
+breath
+take a deep breath
+count
+count to ten
+chase
+mice
+bad
+hurt
+ill
+wrong
+should
+feel
+well
+sit
+grass
+hear
+ant
+worry
+stuck
+mud
+pull
+everyone`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六下-Unit1",
+    entry: {
+      id: "default_人教版小学_六下-Unit1",
+      text: `younger
+older
+taller
+shorter
+longer
+thinner
+heavier
+bigger
+smaller
+stronger
+dinosaur
+hall
+metre
+than
+both
+kilogram
+countryside
+lower
+shadow
+smarter
+become`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六下-Unit2",
+    entry: {
+      id: "default_人教版小学_六下-Unit2",
+      text: `cleaned
+stayed
+washed
+watched
+had
+had a cold
+slept
+read
+saw
+last
+yesterday
+before
+drank
+show
+magazine
+better
+faster
+hotel
+fixed
+broken
+lamp
+loud
+enjoy
+stay`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六下-Unit3",
+    entry: {
+      id: "default_人教版小学_六下-Unit3",
+      text: `went
+camp
+went camping
+fish
+went fishing
+rode
+hurt
+ate
+took
+took pictures
+bought
+gift
+fell
+off
+Labour Day
+mule
+Turpan
+could
+till
+beach
+basket
+part
+licked
+laughed`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "六下-Unit4",
+    entry: {
+      id: "default_人教版小学_六下-Unit4",
+      text: `dining hall
+grass
+gym
+ago
+cycling
+go cycling
+ice-skate
+badminton
+star
+easy
+look up
+Internet
+different
+active
+race
+nothing
+thought
+felt
+cheetah
+trip
+woke
+dream`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit1",
+    entry: {
+      id: "default_人教版小学_三上-Unit1",
+      text: `ruler
+pencil
+eraser
+crayon
+bag
+pen
+pencil box
+book
+no
+your`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit2",
+    entry: {
+      id: "default_人教版小学_三上-Unit2",
+      text: `red
+green
+yellow
+blue
+black
+brown
+white
+orange
+OK
+mum`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit3",
+    entry: {
+      id: "default_人教版小学_三上-Unit3",
+      text: `face
+ear
+eye
+nose
+mouth
+arm
+hand
+head
+body
+leg
+foot
+school`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit4",
+    entry: {
+      id: "default_人教版小学_三上-Unit4",
+      text: `duck
+pig
+cat
+bear
+dog
+elephant
+monkey
+bird
+tiger
+panda
+zoo
+funny`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit5",
+    entry: {
+      id: "default_人教版小学_三上-Unit5",
+      text: `bread
+juice
+egg
+milk
+water
+cake
+fish
+rice`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三上-Unit6",
+    entry: {
+      id: "default_人教版小学_三上-Unit6",
+      text: `one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+brother
+plate`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit1",
+    entry: {
+      id: "default_人教版小学_三下-Unit1",
+      text: `UK
+Canada
+USA
+China
+she
+student
+pupil
+he
+teacher
+boy
+and
+girl
+new
+friend
+today`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit2",
+    entry: {
+      id: "default_人教版小学_三下-Unit2",
+      text: `father
+dad
+man
+woman
+mother
+sister
+brother
+grandmother
+grandma
+grandfather
+grandpa
+family`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit3",
+    entry: {
+      id: "default_人教版小学_三下-Unit3",
+      text: `thin
+fat
+tall
+short
+long
+small
+big
+giraffe
+so
+children
+tail`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit4",
+    entry: {
+      id: "default_人教版小学_三下-Unit4",
+      text: `on
+in
+under
+chair
+desk
+cap
+ball
+car
+boat
+map
+toy
+box`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit5",
+    entry: {
+      id: "default_人教版小学_三下-Unit5",
+      text: `pear
+apple
+orange
+banana
+watermelon
+strawberry
+grape
+buy
+fruit`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "三下-Unit6",
+    entry: {
+      id: "default_人教版小学_三下-Unit6",
+      text: `eleven
+twelve
+thirteen
+fourteen
+fifteen
+sixteen
+seventeen
+eighteen
+nineteen
+twenty
+kite
+beautiful`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit1",
+    entry: {
+      id: "default_人教版小学_四上-Unit1",
+      text: `classroom
+window
+blackboard
+light
+picture
+door
+teacher's desk
+computer
+fan
+wall
+floor
+really
+near
+TV
+clean
+help`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit2",
+    entry: {
+      id: "default_人教版小学_四上-Unit2",
+      text: `schoolbag
+maths book
+English book
+Chinese book
+storybook
+candy
+notebook
+toy
+key
+wow
+lost
+so much
+cute`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit3",
+    entry: {
+      id: "default_人教版小学_四上-Unit3",
+      text: `strong
+friendly
+quiet
+hair
+shoe
+glasses
+his
+or
+right
+hat
+her`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit4",
+    entry: {
+      id: "default_人教版小学_四上-Unit4",
+      text: `bedroom
+living room
+study
+kitchen
+bathroom
+bed
+phone
+table
+sofa
+fridge
+find
+them`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit5",
+    entry: {
+      id: "default_人教版小学_四上-Unit5",
+      text: `beef
+chicken
+noodles
+soup
+vegetable
+chopsticks
+bowl
+fork
+knife
+spoon
+dinner
+ready
+help yourself
+pass
+try`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四上-Unit6",
+    entry: {
+      id: "default_人教版小学_四上-Unit6",
+      text: `parents
+cousin
+uncle
+aunt
+baby brother
+doctor
+cook
+driver
+farmer
+nurse
+people
+but
+little
+puppy
+football player
+job
+basketball`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit1",
+    entry: {
+      id: "default_人教版小学_四下-Unit1",
+      text: `first floor
+second floor
+teacher's office
+library
+playground
+computer room
+art room
+music room
+next to
+homework
+class
+forty
+way`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit2",
+    entry: {
+      id: "default_人教版小学_四下-Unit2",
+      text: `breakfast
+English class
+lunch
+music class
+PE class
+dinner
+get up
+go to school
+go home
+go to bed
+over
+now
+o'clock
+kid
+thirty
+hurry up
+come on
+just a minute`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit3",
+    entry: {
+      id: "default_人教版小学_四下-Unit3",
+      text: `cold
+cool
+warm
+hot
+sunny
+windy
+cloudy
+snowy
+rainy
+outside
+be careful
+weather
+New York
+how about
+degree
+world
+London
+Moscow
+Singapore
+Sydney
+fly
+love`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit4",
+    entry: {
+      id: "default_人教版小学_四下-Unit4",
+      text: `tomato
+potato
+green beans
+carrot
+horse
+cow
+sheep
+hen
+these
+yum
+animal
+those
+garden
+farm
+goat
+eat`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit5",
+    entry: {
+      id: "default_人教版小学_四下-Unit5",
+      text: `clothes
+pants
+hat
+dress
+skirt
+coat
+sweater
+sock
+shorts
+jacket
+shirt
+yours
+whose
+mine
+pack
+wait`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "四下-Unit6",
+    entry: {
+      id: "default_人教版小学_四下-Unit6",
+      text: `glove
+scarf
+umbrella
+sunglasses
+pretty
+expensive
+cheap
+nice
+try on
+size
+of course
+too
+just
+how much
+eighty
+dollar
+sale
+more
+us`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit1",
+    entry: {
+      id: "default_人教版小学_五上-Unit1",
+      text: `old
+young
+funny
+kind
+strict
+polite
+hard-working
+helpful
+clever
+shy
+know
+our
+Ms
+will
+sometimes
+robot
+him
+speak
+finish`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit2",
+    entry: {
+      id: "default_人教版小学_五上-Unit2",
+      text: `Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+weekend
+wash
+wash my clothes
+watch
+watch TV
+do
+do homework
+read
+read books
+play
+play football
+cooking
+often
+park
+tired
+sport
+play sports
+should
+every
+day
+schedule`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit3",
+    entry: {
+      id: "default_人教版小学_五上-Unit3",
+      text: `sandwich
+salad
+hamburger
+ice cream
+tea
+fresh
+healthy
+delicious
+hot
+sweet
+drink
+thirsty
+favourite
+food
+Dear
+onion`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit4",
+    entry: {
+      id: "default_人教版小学_五上-Unit4",
+      text: `sing
+song
+sing English songs
+play the pipa
+kung fu
+do kung fu
+dance
+draw
+cartoon
+draw cartoons
+cook
+swim
+play basketball
+ping-pong
+play ping-pong
+speak English
+we'll
+party
+next
+wonderful
+learn
+any
+problem
+no problem
+want
+send
+email
+at`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit5",
+    entry: {
+      id: "default_人教版小学_五上-Unit5",
+      text: `clock
+plant
+bottle
+water bottle
+bike
+photo
+front
+in front of
+between
+above
+beside
+behind
+there
+grandparent
+their
+house
+lot
+lots of
+flower
+move
+dirty
+everywhere
+mouse
+live
+nature`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五上-Unit6",
+    entry: {
+      id: "default_人教版小学_五上-Unit6",
+      text: `forest
+river
+lake
+mountain
+hill
+tree
+bridge
+building
+village
+house
+boating
+go boating
+aren't
+rabbit
+high`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit1",
+    entry: {
+      id: "default_人教版小学_五下-Unit1",
+      text: `eat breakfast
+have ... class
+play sports
+exercise
+do morning exercises
+eat dinner
+clean my room
+go for a walk
+go shopping
+take
+dancing
+take a dancing class
+when
+after
+start
+usually
+Spain
+late
+a.m.
+p.m.
+why
+shop
+work
+last
+sound
+also
+busy
+need
+play
+letter
+live
+island
+always
+cave
+go swimming
+win`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit2",
+    entry: {
+      id: "default_人教版小学_五下-Unit2",
+      text: `spring
+summer
+autumn
+winter
+season
+picnic
+go on a picnic
+pick
+pick apples
+snowman
+make a snowman
+go swimming
+which
+best
+snow
+good job
+because
+vacation
+all
+pink
+lovely
+leaf
+fall
+paint`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit3",
+    entry: {
+      id: "default_人教版小学_五下-Unit3",
+      text: `January
+February
+March
+April
+May
+June
+July
+August
+September
+October
+November
+December
+few
+a few
+thing
+meet
+sports meet
+Easter
+trip
+year
+plant
+contest
+the Great Wall
+national
+National Day
+American
+Thanksgiving
+Christmas`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit4",
+    entry: {
+      id: "default_人教版小学_五下-Unit4",
+      text: `first
+second
+third
+fourth
+fifth
+twelfth
+twentieth
+twenty-first
+twenty-third
+thirtieth
+special
+fool
+kitten
+diary
+still
+noise
+fur
+open`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit5",
+    entry: {
+      id: "default_人教版小学_五下-Unit5",
+      text: `mine
+yours
+his
+hers
+theirs
+ours
+climbing
+eating
+playing
+jumping
+sleeping
+drinking
+each
+other
+each other
+excited
+like`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "人教版小学",
+    label: "五下-Unit6",
+    entry: {
+      id: "default_人教版小学_五下-Unit6",
+      text: `doing morning exercises
+having ... class
+eating lunch
+reading a book
+listening to music
+keep
+keep to the right
+keep your desk clean
+talk quietly
+turn
+take turns
+bamboo
+its
+show
+anything
+else
+exhibition
+say
+have a look
+sushi
+teach
+Canadian
+Spanish`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module1",
+    entry: {
+      id: "default_外研版初中_八上-Module1",
+      text: `pair
+correct
+spelling
+word
+practise
+match
+meaning
+complete
+sentence
+dictionary
+grammar
+letter
+look up
+mistake
+make a mistake
+understand
+advice
+should
+possible
+write down
+notebook
+forget
+pronounce
+aloud
+radio
+pronunciation
+key
+main
+excellent
+agree
+agree with sb
+vocabulary
+ask for
+improve
+basic
+time
+advise
+shy
+conversation
+quickly
+natural
+suggest
+place`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module10",
+    entry: {
+      id: "default_外研版初中_八上-Module10",
+      text: `cloud
+shower
+snow
+storm
+cloudy
+rainy
+snowy
+sunny
+windy
+skate
+thick
+ice
+joke
+might
+temperature
+minus
+degree
+although
+wet
+neither
+terrible
+wish
+probably
+come on
+mile
+round
+northwest
+southeast
+from time to time`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module11",
+    entry: {
+      id: "default_外研版初中_八上-Module11",
+      text: `cap
+chess
+set
+a chess set
+chopsticks
+toy
+video
+video game
+gift
+surprise
+immediately
+difference
+accept
+tradition
+example
+for example
+must
+month
+serious
+taste
+experience
+stay
+someone
+for the first time
+sandwich
+chip
+fish and chips
+onto
+gentleman
+shoulder`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module12",
+    entry: {
+      id: "default_外研版初中_八上-Module12",
+      text: `broken
+glass
+stairs
+aid
+first aid
+medical
+imagine
+bottom
+at the bottom of
+wrong
+What's wrong with
+trouble
+lift
+lift up
+harmful
+drop
+training
+make sure
+cover
+earthquake
+warn
+inside
+under
+window
+keep
+clear
+keep clear of
+calm
+brave
+helpful
+power`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module2",
+    entry: {
+      id: "default_外研版初中_八上-Module2",
+      text: `hill
+population
+wide
+million
+pretty
+pretty good
+than
+get
+north
+south
+west
+hometown
+especially
+be famous for
+university
+island
+area
+low
+mountain
+countryside
+umbrella`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module3",
+    entry: {
+      id: "default_外研版初中_八上-Module3",
+      text: `baseball
+volleyball
+boring
+exciting
+relaxing
+score
+already
+matter
+What's the matter
+hurt
+enjoyable
+Olympics
+stadium
+miss
+mind
+plenty
+plenty of
+beat
+careless
+cheer on
+coach
+fan club
+against
+train
+practice
+warm
+warm up
+usual
+better
+after-school
+pleased
+pass
+pity
+chance
+loudly
+confident`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module4",
+    entry: {
+      id: "default_外研版初中_八上-Module4",
+      text: `road
+accident
+except
+choice
+classmate
+far
+far from
+close
+crowded
+all the time
+journey
+book
+park
+outside
+however
+cost`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module5",
+    entry: {
+      id: "default_外研版初中_八上-Module5",
+      text: `actress
+teahouse
+offer
+end
+in the end
+no idea
+act
+show
+common
+twentieth
+describe
+society
+head teacher
+college
+novel
+name
+if
+magic`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module6",
+    entry: {
+      id: "default_外研版初中_八上-Module6",
+      text: `snake
+neck
+thin
+danger
+in danger
+at last
+interested
+allow
+think of
+protect
+wild
+grow
+take away
+enough
+peace
+in peace
+notice
+look after
+raise
+research
+baby
+situation
+scientist
+produce
+southwest
+in order to
+government
+set
+set up
+nature
+nature park
+develop
+feed
+symbol`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module7",
+    entry: {
+      id: "default_外研版初中_八上-Module7",
+      text: `fall
+follow
+hole
+rabbit
+shh
+ground
+tea party
+twice
+once or twice
+suddenly
+pink
+pocket
+field
+think about
+deep
+while
+land
+dry`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module8",
+    entry: {
+      id: "default_外研版初中_八上-Module8",
+      text: `pale
+appear
+round
+corner
+hit
+glad
+in time
+fall off
+risk
+attention
+pay attention
+side
+side by side
+bite
+climb
+hide
+throw
+fridge
+pain
+worse
+medicine`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八上-Module9",
+    entry: {
+      id: "default_外研版初中_八上-Module9",
+      text: `noise
+prepare
+notes
+report
+grow
+huge
+cause
+problem
+increase
+birth
+billion
+fifth
+hand on
+flat
+rubbish
+quiet
+local
+pupil
+pollution
+public
+service
+solve`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module1",
+    entry: {
+      id: "default_外研版初中_八下-Module1",
+      text: `smell
+soft
+sour
+cookie
+mm
+pizza
+lovely
+done
+try
+have a try
+pie
+sound
+sweet tooth
+salt
+jam
+for
+favourite
+ear
+glasses
+jeans
+nervous
+fair
+pretty
+proud
+be proud of
+stranger
+message
+sb. can't wait
+hobby
+at school
+in
+mark
+love`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module10",
+    entry: {
+      id: "default_外研版初中_八下-Module10",
+      text: `director
+show around
+show sb. around
+on air
+avoid
+background
+national
+international
+presenter
+interview
+seem
+listener
+in person
+part-time
+article
+studio
+purpose`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module2",
+    entry: {
+      id: "default_外研版初中_八下-Module2",
+      text: `ever
+enter
+competition
+prize
+first prize
+dream
+afford
+write about
+make up
+invite
+move
+send
+Germany
+France
+tower
+ancient
+king
+queen
+Arabic
+way
+mix
+miss
+count
+count down`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module3",
+    entry: {
+      id: "default_外研版初中_八下-Module3",
+      text: `earth
+moon
+news
+reach
+planet
+yet
+just
+model
+spaceship
+project
+no problem
+latest
+on
+discover
+astronaut
+space travel
+none
+environment
+that
+solar
+system
+solar system
+group
+galaxy
+universe
+light
+impossible
+out
+communicate`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module4",
+    entry: {
+      id: "default_外研版初中_八下-Module4",
+      text: `cough
+fever
+headache
+stomach
+ache
+stomach ache
+ill
+this
+since
+cold
+catch a cold
+take sb's temperature
+fast food
+health
+well
+heart
+active
+pet
+member
+take part in
+condition
+in excellent condition
+sleepy
+then
+daily
+weak
+illness
+exercise
+awful
+feel awful
+all over
+perhaps`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module5",
+    entry: {
+      id: "default_外研版初中_八下-Module5",
+      text: `cartoon
+handsome
+smart
+sky
+fight
+cool
+hero
+humorous
+can't help doing sth
+laugh
+lesson
+orange-and-white
+ugly
+win the heart of sb
+schoolbag
+lead
+clever
+as
+mess
+heaven
+expect
+artist
+invent
+copy
+black-and-white
+own
+private
+create`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module6",
+    entry: {
+      id: "default_外研版初中_八下-Module6",
+      text: `fan
+stamp
+tidy
+tidy up
+shelf
+have a look
+as
+coin
+note
+pound
+dollar
+must
+valuable
+with
+value
+just
+person
+interest
+skill
+activity
+sailing
+come out
+result
+as a result
+pleasure
+success
+satisfy`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module7",
+    entry: {
+      id: "default_外研版初中_八下-Module7",
+      text: `list
+make a list
+crazy
+at the end of
+shorts
+trousers
+sunglasses
+homestay
+weigh
+total
+weight
+passport
+culture
+at the same time
+last
+depend
+depend on
+provide
+test
+progress
+guest
+daily life
+form
+friendship
+stay in touch with sb
+prefer
+certain
+fill
+fill out`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module8",
+    entry: {
+      id: "default_外研版初中_八下-Module8",
+      text: `hardly
+take up
+point out
+sights
+thirsty
+at the top of
+waste
+square
+kilometre
+shape
+human
+wake
+wake sb. up
+somebody
+about
+path
+pull
+freshwater`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "八下-Module9",
+    entry: {
+      id: "default_外研版初中_八下-Module9",
+      text: `helpline
+separate
+explain
+mention
+refuse
+treat
+herself
+whether
+lonely
+regret
+patient
+introduce
+encourage
+join in
+no problem
+silence
+in silence
+pass
+bright
+treasure
+day by day
+trust
+include
+circle
+stick
+glue
+suggestion`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module1",
+    entry: {
+      id: "default_外研版初中_九上-Module1",
+      text: `man-made
+natural
+wonder
+discussion
+eastern
+though
+loud
+wow
+opinion
+in one's opinion
+more than
+electricity
+millions of
+below
+shine
+sign
+silent
+silver
+sky
+grey
+go through
+beside
+reply
+clear
+fall away
+stream
+nearly
+on top of
+canyon
+remain
+by`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module10",
+    entry: {
+      id: "default_外研版初中_九上-Module10",
+      text: `here we go
+central
+according to
+magical
+height
+sailing boat
+northeast
+sheep
+hat
+keep
+keep sb/sth away
+fly
+scissors
+cut sth off sth
+wool
+diary
+keep a diary
+hate
+ant
+brush
+brush sth off sth
+at the time
+be surprised at
+period
+spirit
+relationship
+relative
+ham
+salad
+grape
+surf
+kangaroo
+riding
+lazy
+ride`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module11",
+    entry: {
+      id: "default_外研版初中_九上-Module11",
+      text: `bet
+you bet
+the thing is
+general
+standard
+feeling
+difficulty
+subject
+add
+recently
+menu
+be in with a chance
+tonight
+read out
+winner
+compared with
+even though
+rush
+blouse
+skirt
+protect sth against sth
+singer
+congratulations
+headmaster
+present`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module12",
+    entry: {
+      id: "default_外研版初中_九上-Module12",
+      text: `factory
+pollute
+recycle
+waste
+enemy
+crop
+kill
+oil
+less
+hopeless
+China
+divide
+plastic
+policy
+reuse
+bottle
+throw away
+repeat
+reduce
+cloth
+ton
+tons of
+rubber
+recycling
+rapid
+step
+grandson
+granddaughter`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module2",
+    entry: {
+      id: "default_外研版初中_九上-Module2",
+      text: `found
+since then
+flag
+until
+off
+all kinds of
+vacation
+take a vacation
+season
+kid
+have fun
+band
+UK
+as soon as
+fourth
+sixth
+seventh
+eighth
+ninth
+tenth
+twelfth
+twentieth
+among
+speech
+pioneer
+grow
+corn
+following
+lay
+lay the table
+over
+dish
+parade
+ourselves`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module3",
+    entry: {
+      id: "default_外研版初中_九上-Module3",
+      text: `including
+medal
+attend
+abroad
+once again
+doctor
+degree
+whatever
+give up
+amazing
+will
+victory
+simply
+Canadian
+sick
+soldier
+treat
+war
+wound
+die for
+wounded
+realise
+dying
+care
+take care of
+tool
+invention
+at that time
+on one's own
+useful
+rest
+himself
+manage
+operation
+continue
+die of
+Canada`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module4",
+    entry: {
+      id: "default_外研版初中_九上-Module4",
+      text: `platform
+meeting
+miss
+shut
+lock
+simple
+anybody
+clock
+ring
+passenger
+address
+text
+text message
+couple
+a couple of
+actually
+unhappy
+turn off
+order
+be worried about
+business
+on business
+sofa
+snack
+midnight
+wake up
+hand in
+empty
+unable
+all day long
+burn
+cup
+task`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module5",
+    entry: {
+      id: "default_外研版初中_九上-Module5",
+      text: `upstairs
+exhibition
+rule
+against the rules
+in trouble
+tail
+rope
+entry
+No entry
+no good
+no wonder
+missing
+downstairs
+punish
+communications
+physics
+chemistry
+dig
+coal
+energy
+X-ray
+experiment
+sand
+control
+truck
+wheel
+compare with
+of all ages
+whole`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module6",
+    entry: {
+      id: "default_外研版初中_九上-Module6",
+      text: `deal
+exam
+fail
+guitar
+instrument
+musical
+habit
+get into the habit of
+schoolwork
+volunteer
+necessary
+shame
+instead
+instead of
+community
+knowledge
+point
+consider
+last word
+come round
+reason
+try out
+angry
+no longer
+be angry with sb
+repair
+truth
+least
+at least
+honest
+apologize
+bill
+pocket money`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module7",
+    entry: {
+      id: "default_外研版初中_九上-Module7",
+      text: `discuss
+thinker
+wise
+review
+influence
+sense
+make sense
+by the way
+suppose
+well-known
+adventure
+get into trouble
+run away
+escape
+cave
+dead
+for a time
+neighbour
+funeral
+surprised
+alive
+southern
+state
+pay for
+action
+everyday
+dialogue`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module8",
+    entry: {
+      id: "default_外研版初中_九上-Module8",
+      text: `stand for
+memory
+point
+decision
+excuse
+noon
+seat
+no way
+fair
+kick
+mad
+sportsman
+high jump
+ability
+hurdling
+sportswoman
+race
+record
+method
+hurdles
+Japan
+break
+sportsperson
+Asian
+suffer
+suffer from
+first place
+stop sb (from) doing sth
+courage
+pride
+take pride in`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九上-Module9",
+    entry: {
+      id: "default_外研版初中_九上-Module9",
+      text: `borrow
+put up
+website
+mail
+textbook
+mainly
+thousands of
+page
+electronic
+technology
+powerful
+memory
+full
+fix
+instructions
+lend
+properly
+look through
+printing
+at a time
+by hand
+development
+trade
+result
+spread
+in a way
+compare to
+introduction
+amount
+store
+varied
+form
+connection
+single
+direction
+replace
+wait and see`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module1",
+    entry: {
+      id: "default_外研版初中_九下-Module1",
+      text: `flight
+because of
+direct
+pilot
+succeed
+as long as
+school-leaver
+exactly
+take care
+sir
+officer
+stupid
+take off
+jacket`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module2",
+    entry: {
+      id: "default_外研版初中_九下-Module2",
+      text: `ours
+tie
+row
+pool
+pass
+secondary
+secondary school
+absent
+bell`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module3",
+    entry: {
+      id: "default_外研版初中_九下-Module3",
+      text: `wealthy
+fear
+used to
+wealth
+double
+seldom
+spare
+spare time
+speak up
+deaf
+tiny
+electric
+light
+candle
+postman
+cold
+heat
+full-time
+role
+education
+transport`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module4",
+    entry: {
+      id: "default_外研版初中_九下-Module4",
+      text: `set off
+sock
+whenever
+proper
+edge
+yourself
+go off
+starve
+go
+in one go
+rock
+rock climbing
+stone
+fairly
+smooth
+straight
+tent
+fall
+fall asleep
+hang
+sudden
+gun
+soft
+still
+wood
+blood`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module5",
+    entry: {
+      id: "default_外研版初中_九下-Module5",
+      text: `catch up
+agreement
+blind
+ouch
+call off
+thanks to
+health care
+expect
+require
+physical
+effort
+once in a while
+harm`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module6",
+    entry: {
+      id: "default_外研版初中_九下-Module6",
+      text: `invitation
+invite
+calendar
+balloon
+paint
+heat
+heat up
+knife
+fork
+spoon
+cheeseburger
+Italian
+Westerner
+West
+serve
+similar
+wing
+lady
+gentleman
+help yourself
+cross`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module7",
+    entry: {
+      id: "default_外研版初中_九下-Module7",
+      text: `achieve
+including
+speaker
+boss
+secretary
+quarter
+industry
+zero
+Indian
+type`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "九下-Module8",
+    entry: {
+      id: "default_外研版初中_九下-Module8",
+      text: `handbag
+beat
+pardon
+intend
+fetch
+pancake
+rose
+laugh at
+kindness
+give up
+try one's best
+disappointed
+note
+whom`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module1",
+    entry: {
+      id: "default_外研版初中_七上-Module1",
+      text: `Chinese
+from
+where
+year
+about
+what about
+Ms
+America
+not
+China
+everyone
+capital
+but
+very
+big
+city
+small
+first
+England
+hi
+first name
+American
+our
+grade
+he
+last
+last name
+all`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module10",
+    entry: {
+      id: "default_外研版初中_七上-Module10",
+      text: `go back
+lantern
+drive
+dragon
+off
+get off
+hot dog
+leave
+restaurant
+moment
+place
+thing
+dance
+clean
+sweep
+floor
+cook
+meal
+speak
+happen
+ready
+get ready for
+festival
+celebrate
+quite
+traditional
+at the moment
+dumpling
+beautiful
+programme
+at work
+sweater
+away
+put away
+hard
+join
+hurry
+hurry up
+Christmas
+coat
+mean
+lucky
+merry
+Merry Christmas
+tell`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module2",
+    entry: {
+      id: "default_外研版初中_七上-Module2",
+      text: `aunt
+brother
+mum
+cousin
+daughter
+family
+father
+grandfather
+grandmother
+grandparents
+mother
+parent
+sister
+son
+uncle
+photo
+these
+they
+left
+on the left
+dad
+right
+on the right
+who
+woman
+next
+next to
+husband
+front
+in front of
+those
+bus
+station
+its
+hospital
+hotel
+their
+police
+theatre
+actor
+driver
+manager
+nurse
+policeman
+we
+an
+job
+at
+same
+doctor
+farm
+worker
+man
+shop`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module3",
+    entry: {
+      id: "default_外研版初中_七上-Module3",
+      text: `computer
+furniture
+map
+picture
+television
+wall
+thirty
+forty
+fifty
+sixty
+seventy
+eighty
+ninety
+really
+many
+how many
+middle
+there
+lot
+near
+with
+a lot of
+for
+oh
+room
+any`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module4",
+    entry: {
+      id: "default_外研版初中_七上-Module4",
+      text: `world
+food
+tree
+drink
+building
+candy
+hall
+fruit
+dining hall
+meat
+gate
+vegetable
+library
+apple
+office
+bean
+playground
+beef
+science
+carrot
+lab
+chicken
+behind
+chocolate
+between
+coffee
+cola
+so
+juice
+milk
+potato
+tea
+tomato
+water
+shop
+go shopping
+have
+get
+have got
+some
+how about
+has
+bad
+healthy
+delicious
+bread
+fish
+hamburger
+ice cream
+noodle
+rice
+sugar
+much
+too much
+kind
+lots of
+children
+be good for
+sweet
+be bad for
+right
+egg
+buy
+eye`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module5",
+    entry: {
+      id: "default_外研版初中_七上-Module5",
+      text: `cheese
+half
+tooth
+past
+bit
+o'clock
+a bit
+to
+tired
+art
+soup
+geography
+important
+history
+remember
+IT
+well
+maths
+stay
+PE
+fat
+lesson
+get fat
+then
+or
+like
+breakfast
+difficult
+lunch
+love
+home
+subject
+dinner
+because
+banana
+interesting
+talk
+sleep
+begin
+go to sleep
+when
+park
+go to school
+busy
+weekday
+wash
+get up
+face
+have breakfast
+minute
+house`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module6",
+    entry: {
+      id: "default_外研版初中_七上-Module6",
+      text: `bear
+ugh
+elephant
+also
+giraffe
+plant
+lion
+look
+monkey
+look at
+panda
+tall
+tiger
+leaf
+zebra
+sure
+zoo
+bamboo
+guide
+cute
+animal
+such
+as
+such as
+come
+come from
+different
+country
+other
+shall
+them
+which
+over
+there
+over there
+funny
+call
+dangerous
+Africa
+many kinds of
+Asia
+even
+Europe`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module7",
+    entry: {
+      id: "default_外研版初中_七上-Module7",
+      text: `little
+keyboard
+a little
+mouse
+only
+screen
+about
+connect
+kilo
+turn
+people
+turn on
+all over the world
+learn
+African
+document
+as well as
+click
+grass
+use
+large
+save
+usually
+box
+alone
+finally
+be good at
+print
+strong
+catch
+paper
+share
+Australia
+company
+clothes
+often
+visit
+customer
+holiday
+internet`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module8",
+    entry: {
+      id: "default_外研版初中_七上-Module8",
+      text: `check
+card
+train
+party
+travel
+present
+plan
+would
+ticket
+always
+music
+movie
+night
+search
+information
+email
+send
+game
+sometimes
+great
+cake
+never
+special
+cut
+give
+sing
+happy
+secret
+cinema
+haha
+CD
+concert
+magazine
+scarf
+silk
+dress
+T-shirt
+dear
+hear
+hear from
+afraid
+I'm afraid
+can't
+choose
+exercise
+wear
+expensive
+shoe
+spend
+money
+film
+song
+match`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七上-Module9",
+    entry: {
+      id: "default_外研版初中_七上-Module9",
+      text: `postcard
+call
+lie
+sun
+line
+take
+take photos
+wait
+wait for
+walk
+weekend
+trip
+at weekends
+few
+a few
+sale
+on sale
+enjoy
+anyway
+most
+still
+star
+run
+study
+back`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module1",
+    entry: {
+      id: "default_外研版初中_七下-Module1",
+      text: `crayon
+eraser
+glove
+wallet
+watch
+whose
+first of all
+lose
+find
+lost and found box
+mine
+yours
+tape
+purple
+hers
+careful
+be careful with
+on
+from now on
+here is/are
+camera
+phone
+mobile phone
+lost and found office
+in a hurry
+leave
+plane
+taxi
+why
+airport
+hundred
+hundreds of
+look for
+thousand
+strange
+boat
+duck
+pig
+sausage`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module10",
+    entry: {
+      id: "default_外研版初中_七下-Module10",
+      text: `Pacific
+so
+guess
+excited
+wow
+arrive
+relax
+world-famous
+French
+sell
+top
+till
+light
+on
+wonderful
+palace`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module11",
+    entry: {
+      id: "default_外研版初中_七下-Module11",
+      text: `bow
+kiss
+shake
+shake hands
+smile
+British
+German
+Japanese
+Russian
+visitor
+Russia
+what
+nod
+head
+hug
+each
+each other
+India
+together
+Maori
+touch
+nose
+finger
+foot
+knee
+leg
+mouth
+body
+foreign
+North American
+personal
+arm
+arm in arm
+South American
+hold
+move
+Britain
+not at all
+polite
+somewhere
+wave
+fact
+in fact
+rude
+bring`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module12",
+    entry: {
+      id: "default_外研版初中_七下-Module12",
+      text: `lively
+modern
+noisy
+pop
+rock
+sound
+violin
+western
+by
+through
+both
+opera
+voice
+drum
+believe
+musician
+centre
+European
+classical
+century
+composer
+elder
+waltz
+dance music
+another
+piece
+poor
+perfect
+sad
+slow
+feel
+ship`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module2",
+    entry: {
+      id: "default_外研版初中_七下-Module2",
+      text: `play
+tennis
+piano
+ride
+club
+term
+board
+would like
+well
+all
+that's all
+worry
+worry about
+teach
+then
+monitor
+start
+get on well with sb
+ready
+ready to do sth
+promise
+fast
+fit
+just
+ball
+game
+team
+best
+score
+tidy
+sure
+everybody
+just like
+beautiful
+fly
+kite
+swim`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module3",
+    entry: {
+      id: "default_外研版初中_七下-Module3",
+      text: `go over
+picnic
+housework
+on
+else
+nobody
+at
+nothing
+silly
+fantastic
+forward
+look forward to
+fan
+make friends
+shirt
+cheer
+player
+hope
+win
+enjoy oneself
+myself
+during
+May
+May Day
+late
+walk
+take a walk
+country
+second
+collect
+litter
+fun
+summer holiday
+camp
+Australian
+sightseeing
+go sightseeing
+beach
+early`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module4",
+    entry: {
+      id: "default_外研版初中_七下-Module4",
+      text: `chalk
+ruler
+carry
+change
+everything
+future
+in the future
+life
+need
+will
+maybe
+ask
+question
+by
+level
+able
+be able to
+more
+not...anymore
+free
+air
+land
+machine
+rain
+robot
+sea
+space
+traffic
+jam
+traffic jam
+wind
+true
+come true
+here is/are
+bike
+car
+cheap
+everywhere
+not only...but also...
+into
+long
+heavy
+light
+easy
+working
+hour
+short
+rise
+as well`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module5",
+    entry: {
+      id: "default_外研版初中_七下-Module5",
+      text: `market
+supermarket
+biscuit
+lemon
+strawberry
+Mother's Day
+size
+take
+may
+try
+try on
+certainly
+wait a minute
+sale
+price
+look
+fresh
+advantage
+anyone
+anything
+anywhere
+compare
+pay
+post
+product
+receive
+safe
+several
+online
+shopping
+way
+one of
+almost
+something
+later
+open
+out
+go out
+over
+one day
+one`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module6",
+    entry: {
+      id: "default_外研版初中_七下-Module6",
+      text: `bank
+museum
+along
+across
+cross
+opposite
+tourist
+excuse
+excuse me
+street
+turn
+third
+guidebook
+bookshop
+right
+Why not...?
+could
+underground
+take
+tour
+square
+middle
+famous
+painting
+from
+metre
+above
+river
+clear
+bridge
+railway
+past
+church
+finish
+high
+post office
+up
+down
+stop`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module7",
+    entry: {
+      id: "default_外研版初中_七下-Module7",
+      text: `born
+strict
+friendly
+primary
+primary school
+town
+US
+hey
+village
+nice
+good
+difficult
+bathroom
+bedroom
+garden
+living room
+east
+coast
+ago
+store
+movie theater
+bored
+president
+comfortable
+lake
+last
+yesterday`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module8",
+    entry: {
+      id: "default_外研版初中_七下-Module8",
+      text: `hair
+gold
+forest
+once
+upon
+once upon a time
+decide
+go for a walk
+basket
+notice
+all alone
+dark
+pick
+pick up
+soon
+lost
+around
+little
+towards
+knock
+door
+answer
+push
+enter
+bowl
+hungry
+right
+finish
+either
+piece
+in pieces
+asleep
+return
+cry
+at first
+point
+point at
+shout
+jump
+without
+part`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "外研版初中",
+    label: "七下-Module9",
+    entry: {
+      id: "default_外研版初中_七下-Module9",
+      text: `March
+April
+June
+Women's Day
+National Day
+Children's Day
+July
+August
+September
+October
+November
+December
+writer
+find out
+real
+at the age of
+newspaper
+exact
+date
+become
+in the 1860s
+play
+poem
+marry
+successful
+work
+build
+on
+fire
+die
+rich
+language
+around the world
+young`,
+      timestamp: 0,
+    },
+  },
+  {
+    category: "中考1600",
+    label: "A",
+    entry: {
+      id: "default_中考1600_A",
       text: `a/an
 ability
 able
@@ -120,9 +10875,10 @@ awful`,
     },
   },
   {
+    category: "中考1600",
     label: "B",
     entry: {
-      id: "default_B",
+      id: "default_中考1600_B",
       text: `baby
 back
 background
@@ -232,9 +10988,10 @@ by`,
     },
   },
   {
+    category: "中考1600",
     label: "C",
     entry: {
-      id: "default_C",
+      id: "default_中考1600_C",
       text: `cabbage
 cake
 calendar
@@ -383,9 +11140,10 @@ cute`,
     },
   },
   {
+    category: "中考1600",
     label: "D",
     entry: {
-      id: "default_D",
+      id: "default_中考1600_D",
       text: `daily
 dance
 danger
@@ -461,9 +11219,10 @@ duty`,
     },
   },
   {
+    category: "中考1600",
     label: "E",
     entry: {
-      id: "default_E",
+      id: "default_中考1600_E",
       text: `each
 eagle
 ear
@@ -533,9 +11292,10 @@ eye`,
     },
   },
   {
+    category: "中考1600",
     label: "F",
     entry: {
-      id: "default_F",
+      id: "default_中考1600_F",
       text: `face
 fact
 factory
@@ -622,9 +11382,10 @@ future`,
     },
   },
   {
+    category: "中考1600",
     label: "G",
     entry: {
-      id: "default_G",
+      id: "default_中考1600_G",
       text: `game
 garden
 gas
@@ -673,9 +11434,10 @@ gym`,
     },
   },
   {
+    category: "中考1600",
     label: "H",
     entry: {
-      id: "default_H",
+      id: "default_中考1600_H",
       text: `habit
 hair
 half
@@ -755,9 +11517,10 @@ husband`,
     },
   },
   {
+    category: "中考1600",
     label: "IJK",
     entry: {
-      id: "default_IJK",
+      id: "default_中考1600_IJK",
       text: `ice
 ice cream
 idea
@@ -828,9 +11591,10 @@ kung fu`,
     },
   },
   {
+    category: "中考1600",
     label: "L",
     entry: {
-      id: "default_L",
+      id: "default_中考1600_L",
       text: `lab
 lady
 lake
@@ -899,9 +11663,10 @@ lunch`,
     },
   },
   {
+    category: "中考1600",
     label: "M",
     entry: {
-      id: "default_M",
+      id: "default_中考1600_M",
       text: `machine
 mad
 madam
@@ -986,9 +11751,10 @@ myself`,
     },
   },
   {
+    category: "中考1600",
     label: "N",
     entry: {
-      id: "default_N",
+      id: "default_中考1600_N",
       text: `name
 narrow
 nation
@@ -1033,9 +11799,10 @@ nurse`,
     },
   },
   {
+    category: "中考1600",
     label: "O",
     entry: {
-      id: "default_O",
+      id: "default_中考1600_O",
       text: `object
 ocean
 o'clock
@@ -1076,9 +11843,10 @@ own`,
     },
   },
   {
+    category: "中考1600",
     label: "P",
     entry: {
-      id: "default_P",
+      id: "default_中考1600_P",
       text: `pack
 packet
 page
@@ -1221,9 +11989,10 @@ put`,
     },
   },
   {
+    category: "中考1600",
     label: "QR",
     entry: {
-      id: "default_QR",
+      id: "default_中考1600_QR",
       text: `quality
 quarter
 queen
@@ -1303,9 +12072,10 @@ rush`,
     },
   },
   {
+    category: "中考1600",
     label: "S",
     entry: {
-      id: "default_S",
+      id: "default_中考1600_S",
       text: `sad
 safe
 safety
@@ -1500,9 +12270,10 @@ symbol`,
     },
   },
   {
+    category: "中考1600",
     label: "T",
     entry: {
-      id: "default_T",
+      id: "default_中考1600_T",
       text: `table
 tail
 take
@@ -1609,9 +12380,10 @@ TV`,
     },
   },
   {
+    category: "中考1600",
     label: "UV",
     entry: {
-      id: "default_UV",
+      id: "default_中考1600_UV",
       text: `ugly
 umbrella
 uncle
@@ -1649,9 +12421,10 @@ vote`,
     },
   },
   {
+    category: "中考1600",
     label: "W",
     entry: {
-      id: "default_W",
+      id: "default_中考1600_W",
       text: `wait
 wake
 walk
@@ -1736,9 +12509,10 @@ wrong`,
     },
   },
   {
+    category: "中考1600",
     label: "XYZ",
     entry: {
-      id: "default_XYZ",
+      id: "default_中考1600_XYZ",
       text: `X-ray
 yard
 year

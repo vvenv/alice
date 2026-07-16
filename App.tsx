@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import type { RootStackParamList } from "./src/navigation/types";
 import { DictationScreen } from "./src/screens/DictationScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { ThemeProvider, useThemeMode } from "./src/lib/theme";
 
 export type { RootStackParamList };
@@ -42,6 +43,12 @@ function AppContent() {
                 onEnd={() => props.navigation.goBack()}
               />
             )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="Settings"
+            options={{ headerShown: false, gestureEnabled: true }}
+          >
+            {() => <SettingsScreen />}
           </Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>

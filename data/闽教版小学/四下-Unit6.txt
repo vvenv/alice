@@ -1,0 +1,12 @@
+weather
+snow
+cold
+coat
+rain
+but
+warm
+today
+sunny
+take
+windy
+cloudy

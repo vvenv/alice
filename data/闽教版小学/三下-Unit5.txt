@@ -1,0 +1,15 @@
+face
+honey
+eye
+hand
+then
+arm
+nose
+head
+mouth
+leg
+ear
+foot
+feet
+touch
+pupil

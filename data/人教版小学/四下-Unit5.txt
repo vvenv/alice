@@ -1,0 +1,16 @@
+clothes
+pants
+hat
+dress
+skirt
+coat
+sweater
+sock
+shorts
+jacket
+shirt
+yours
+whose
+mine
+pack
+wait

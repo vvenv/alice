@@ -1,0 +1,64 @@
+world
+food
+tree
+drink
+building
+candy
+hall
+fruit
+dining hall
+meat
+gate
+vegetable
+library
+apple
+office
+bean
+playground
+beef
+science
+carrot
+lab
+chicken
+behind
+chocolate
+between
+coffee
+cola
+so
+juice
+milk
+potato
+tea
+tomato
+water
+shop
+go shopping
+have
+get
+have got
+some
+how about
+has
+bad
+healthy
+delicious
+bread
+fish
+hamburger
+ice cream
+noodle
+rice
+sugar
+much
+too much
+kind
+lots of
+children
+be good for
+sweet
+be bad for
+right
+egg
+buy
+eye

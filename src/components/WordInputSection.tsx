@@ -11,6 +11,7 @@ import {
 import { parseWords, parseWordLine } from "../lib/dictation";
 import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
+import { Button } from "./Button";
 
 interface WordInputSectionProps {
   value: string;
@@ -101,14 +102,9 @@ export function WordInputSection({
                     )}
                   </View>
                   {isCursor && (
-                    <Text
-                      style={[
-                        styles.cursorIndicator,
-                        { color: colors.primary },
-                      ]}
-                    >
-                      ◀
-                    </Text>
+                    <View
+                      style={[styles.cursorBar, { backgroundColor: colors.primary }]}
+                    />
                   )}
                 </TouchableOpacity>
               );
@@ -141,24 +137,8 @@ export function WordInputSection({
             共 {wordCount} 个单词
           </Text>
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: colors.border }]}
-              onPress={onSetSample}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
-                示例
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: colors.border }]}
-              onPress={onClear}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
-                清空
-              </Text>
-            </TouchableOpacity>
+            <Button label="示例" variant="outline" size="sm" onPress={onSetSample} />
+            <Button label="清空" variant="outline" size="sm" onPress={onClear} />
           </View>
         </View>
       )}
@@ -194,16 +174,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  smallBtn: {
-    borderRadius: radii.full,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  smallBtnText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
   displayContainer: {
     flex: 1,
     minHeight: 0,
@@ -220,7 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: 3,
     borderLeftColor: "transparent",
@@ -245,8 +215,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  cursorIndicator: {
-    fontSize: 14,
-    fontWeight: "700",
+  cursorBar: {
+    width: 3,
+    height: 20,
+    borderRadius: 2,
   },
 });

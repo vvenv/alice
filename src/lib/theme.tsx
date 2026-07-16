@@ -112,12 +112,14 @@ interface ThemeContextValue {
   colors: ThemeColors;
   mode: ThemeMode;
   toggleTheme: () => void;
+  setMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   colors: lightTheme,
   mode: "light",
   toggleTheme: () => {},
+  setMode: () => {},
 });
 
 const THEME_KEY = "alice_theme_mode";
@@ -163,10 +165,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const setThemeMode = useCallback((next: ThemeMode) => {
+    setMode((prev) => {
+      if (prev === next) return prev;
+      AsyncStorage.setItem(THEME_KEY, next).catch(() => {});
+      return next;
+    });
+  }, []);
+
   const colors = mode === "dark" ? darkTheme : lightTheme;
 
   return (
-    <ThemeContext.Provider value={{ colors, mode, toggleTheme }}>
+    <ThemeContext.Provider value={{ colors, mode, toggleTheme, setMode: setThemeMode }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -176,7 +186,11 @@ export function useThemeColors(): ThemeColors {
   return useContext(ThemeContext).colors;
 }
 
-export function useThemeMode(): { mode: ThemeMode; toggleTheme: () => void } {
-  const { mode, toggleTheme } = useContext(ThemeContext);
-  return { mode, toggleTheme };
+export function useThemeMode(): {
+  mode: ThemeMode;
+  toggleTheme: () => void;
+  setMode: (mode: ThemeMode) => void;
+} {
+  const { mode, toggleTheme, setMode } = useContext(ThemeContext);
+  return { mode, toggleTheme, setMode };
 }

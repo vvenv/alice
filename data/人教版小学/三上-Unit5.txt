@@ -1,0 +1,8 @@
+bread
+juice
+egg
+milk
+water
+cake
+fish
+rice

@@ -317,7 +317,7 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           ) : null}
           <View style={styles.unlockBtnRow}>
             <TouchableOpacity
-              style={[styles.cancelBtn, { borderColor: colors.border }]}
+              style={[styles.cancelBtn]}
               onPress={() => {
                 setShowUnlock(false);
                 setUnlockCode("");
@@ -519,8 +519,6 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     minHeight: 44,
-    borderRadius: radii.button,
-    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
   },

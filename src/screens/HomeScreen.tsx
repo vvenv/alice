@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -19,10 +19,11 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { Button, IconButton } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryDrawer } from "../components/HistoryDrawer";
+import { LibraryDrawer } from "../components/LibraryDrawer";
 import { OcrSection, type OcrSectionHandle } from "../components/OcrSection";
-import { OcrSettingsModal } from "../components/OcrSettingsModal";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
@@ -30,11 +31,10 @@ import { useToast } from "../hooks/useToast";
 import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { parseWords } from "../lib/dictation";
 import { enrichWordListText } from "../lib/dictionary";
-import { radii, spacing } from "../lib/designTokens";
+import { fonts, radii, spacing } from "../lib/designTokens";
 import {
   isCustomOcrConfigSet,
   loadOcrProviderConfig,
-  saveOcrProviderConfig,
   type OcrProviderConfig,
 } from "../lib/ocrConfig";
 import { OCR_UI_IDLE, type OcrUiState } from "../lib/ocr";
@@ -42,15 +42,15 @@ import {
   addWordHistory,
   clearWordHistory,
   deleteWordHistory,
-  isDefaultHistoryId,
+  getLibraryGroups,
   loadPersistedWrongWords,
   loadWordHistory,
   loadWordInput,
   saveWordInput,
+  type LibraryGroup,
   WordHistoryEntry,
 } from "../lib/storage";
 import { useThemeColors, useThemeMode } from "../lib/theme";
-import { clearTtsCache } from "../lib/tts";
 import type { RootStackParamList } from "../navigation/types";
 
 const SAMPLE_WORDS = "apple\nbanana\ncat\ndog\nelephant\nfish\ngrape";
@@ -66,10 +66,6 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 type HomeNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
-
-function isDefaultEntry(entry: WordHistoryEntry): boolean {
-  return isDefaultHistoryId(entry.id);
-}
 
 function wordCount(text: string): number {
   return parseWords(text).length;
@@ -98,11 +94,13 @@ export function HomeScreen() {
   const [isDisplayMode, setIsDisplayMode] = useState(true);
   const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [ocrUi, setOcrUi] = useState<OcrUiState>(OCR_UI_IDLE);
-  const [customOcrConfig, setCustomOcrConfig] = useState<OcrProviderConfig | null>(null);
-  const [ocrSettingsVisible, setOcrSettingsVisible] = useState(false);
+  const [customOcrConfig, setCustomOcrConfig] =
+    useState<OcrProviderConfig | null>(null);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
+  const [libraryDrawerVisible, setLibraryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const libraryGroups = useMemo<LibraryGroup[]>(() => getLibraryGroups(), []);
   const ocrRef = useRef<OcrSectionHandle>(null);
   // Edge-to-edge Android ignores adjustResize; pad manually when keyboard opens.
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
@@ -141,19 +139,14 @@ export function HomeScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [
-        savedInput,
-        ,
-        persistedOcrUnlocked,
-        savedHistory,
-        savedOcrConfig,
-      ] = await Promise.all([
-        loadWordInput(),
-        loadPersistedWrongWords(),
-        loadOcrUnlockState(),
-        loadWordHistory(),
-        loadOcrProviderConfig(),
-      ]);
+      const [savedInput, , persistedOcrUnlocked, savedHistory, savedOcrConfig] =
+        await Promise.all([
+          loadWordInput(),
+          loadPersistedWrongWords(),
+          loadOcrUnlockState(),
+          loadWordHistory(),
+          loadOcrProviderConfig(),
+        ]);
       if (cancelled) return;
       if (savedInput) setWordInput(enrichWordListText(savedInput));
       setOcrUnlocked(persistedOcrUnlocked);
@@ -165,6 +158,14 @@ export function HomeScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Refresh OCR config when returning from Settings (user may have changed it)
+  useEffect(() => {
+    const unsub = navigation.addListener("focus", () => {
+      loadOcrProviderConfig().then((cfg) => setCustomOcrConfig(cfg));
+    });
+    return unsub;
+  }, [navigation]);
 
   // Debounced persistence to avoid writing AsyncStorage on every keystroke
   useEffect(() => {
@@ -199,20 +200,6 @@ export function HomeScreen() {
     if (ok) setOcrUnlocked(true);
     return ok;
   }, []);
-
-  const handleSaveOcrConfig = useCallback(
-    (cfg: OcrProviderConfig | null) => {
-      setCustomOcrConfig(cfg);
-      saveOcrProviderConfig(cfg).catch(() => {});
-      setOcrSettingsVisible(false);
-      showToast(
-        cfg
-          ? "已保存自定义 OCR 服务配置"
-          : "已恢复默认 OCR 服务配置",
-      );
-    },
-    [showToast],
-  );
 
   const handleToggleDisplayMode = useCallback(() => {
     setIsDisplayMode((prev) => {
@@ -264,6 +251,16 @@ export function HomeScreen() {
     [showToast],
   );
 
+  const handleApplyLibrary = useCallback(
+    (entry: WordHistoryEntry) => {
+      const text = entry.enrichedText ?? entry.text;
+      setWordInput(enrichWordListText(text));
+      setIsDisplayMode(true);
+      showToast("已载入词库");
+    },
+    [showToast],
+  );
+
   const handleDeleteHistory = useCallback((id: string) => {
     setDialog({
       visible: true,
@@ -278,12 +275,11 @@ export function HomeScreen() {
   }, []);
 
   const handleClearHistory = useCallback(() => {
-    const userEntries = history.filter((e) => !isDefaultEntry(e));
-    if (userEntries.length === 0) return;
+    if (history.length === 0) return;
     setDialog({
       visible: true,
       title: "清空历史",
-      message: "确定要清空自定义历史记录吗？\n内置词库不会被清除。",
+      message: "确定要清空历史记录吗？",
       confirmLabel: "清空",
       action: () => {
         clearWordHistory().then(() => loadWordHistory().then(setHistory));
@@ -291,31 +287,10 @@ export function HomeScreen() {
     });
   }, [history]);
 
-  const handleClearTtsCache = useCallback(() => {
-    setDialog({
-      visible: true,
-      title: "清空发音缓存",
-      message: "确定要删除本地缓存的有道发音文件吗？\n下次听写会重新下载。",
-      confirmLabel: "清空",
-      action: () => {
-        clearTtsCache()
-          .then((count) => {
-            showToast(
-              count > 0 ? `已清空 ${count} 个发音缓存` : "暂无发音缓存",
-            );
-          })
-          .catch(() => {
-            showToast("清空发音缓存失败");
-          });
-      },
-    });
-  }, [showToast]);
-
   const parsedWordCount = wordCount(wordInput);
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
   const showOcrProgress = ocrUi.busy && Boolean(ocrUi.message);
-  const showHeaderCenter = showOcrProgress || canToggleDisplayMode;
   // A user who brings their own OCR key+URL is effectively unlocked — the
   // paywall only gates the bundled built-in key.
   const ocrEffectiveUnlocked =
@@ -359,16 +334,16 @@ export function HomeScreen() {
       onPress: () => runMenuAction(() => setHistoryDrawerVisible(true)),
     },
     {
-      key: "cache",
-      icon: "trash-outline",
-      label: "清缓",
-      onPress: () => runMenuAction(handleClearTtsCache),
+      key: "library",
+      icon: "library-outline",
+      label: "词库",
+      onPress: () => runMenuAction(() => setLibraryDrawerVisible(true)),
     },
     {
-      key: "ocr-settings",
-      icon: "server-outline",
-      label: "OCR 服务设置",
-      onPress: () => runMenuAction(() => setOcrSettingsVisible(true)),
+      key: "settings",
+      icon: "settings-outline",
+      label: "设置",
+      onPress: () => runMenuAction(() => navigation.navigate("Settings")),
     },
   ];
 
@@ -399,112 +374,43 @@ export function HomeScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.header}>
-          <TouchableOpacity
-            style={[
-              styles.headerBtn,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={mode === "dark" ? "sunny" : "moon"}
-              size={18}
-              color={colors.foreground}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerBrand}>
+            <Ionicons name="time-outline" size={24} color={colors.gold} />
+            <Text style={[styles.brandAlice, { color: colors.foreground }]}>
+              Alice
+            </Text>
+            <Text style={[styles.brandDictation, { color: colors.rose }]}>
+              听写
+            </Text>
+          </View>
 
-          {showHeaderCenter ? (
-            <View style={styles.headerCenter} pointerEvents="box-none">
-              {showOcrProgress ? (
-                <View
-                  style={[
-                    styles.headerCenterBtn,
-                    {
-                      backgroundColor: colors.primarySoft,
-                      borderColor: colors.primary,
-                      maxWidth: "62%",
-                    },
-                  ]}
-                  accessibilityLabel={ocrUi.message}
-                >
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text
-                    style={[
-                      styles.headerCenterText,
-                      {
-                        color: colors.primary,
-                        flexShrink: 1,
-                      },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {ocrUi.message}
-                  </Text>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.headerCenterBtn,
-                    {
-                      backgroundColor: effectiveDisplayMode
-                        ? colors.primarySoft
-                        : colors.surface,
-                      borderColor: effectiveDisplayMode
-                        ? colors.primary
-                        : colors.border,
-                    },
-                  ]}
-                  onPress={handleToggleDisplayMode}
-                  activeOpacity={0.7}
-                  accessibilityLabel={effectiveDisplayMode ? "编辑" : "完成"}
-                >
-                  <Ionicons
-                    name={
-                      effectiveDisplayMode
-                        ? "create-outline"
-                        : "checkmark-outline"
-                    }
-                    size={16}
-                    color={
-                      effectiveDisplayMode ? colors.primary : colors.foreground
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.headerCenterText,
-                      {
-                        color: effectiveDisplayMode
-                          ? colors.primary
-                          : colors.foreground,
-                      },
-                    ]}
-                  >
-                    {effectiveDisplayMode ? "编辑" : "完成"}
-                  </Text>
-                </TouchableOpacity>
-              )}
+          {showOcrProgress ? (
+            <View
+              style={[
+                styles.ocrProgressPill,
+                {
+                  backgroundColor: colors.primarySoft,
+                  borderColor: colors.primary,
+                },
+              ]}
+              accessibilityLabel={ocrUi.message}
+            >
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text
+                style={[styles.ocrProgressText, { color: colors.primary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {ocrUi.message}
+              </Text>
             </View>
           ) : null}
 
-          <TouchableOpacity
-            style={[
-              styles.headerBtn,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
+          <IconButton
+            icon="menu-outline"
             onPress={() => setMenuVisible(true)}
-            activeOpacity={0.7}
             accessibilityLabel="菜单"
-          >
-            <Ionicons name="menu-outline" size={18} color={colors.foreground} />
-          </TouchableOpacity>
+          />
         </View>
 
         <View style={styles.main}>
@@ -517,6 +423,41 @@ export function HomeScreen() {
             onOcrOutcome={showToast}
             hideActions
           />
+
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                单词列表
+              </Text>
+              {parsedWordCount > 0 ? (
+                <View
+                  style={[
+                    styles.countBadge,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.countBadgeText, { color: colors.muted }]}>
+                    {parsedWordCount} 词
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            {canToggleDisplayMode ? (
+              <Button
+                label={effectiveDisplayMode ? "编辑" : "完成"}
+                icon={
+                  effectiveDisplayMode ? "create-outline" : "checkmark-outline"
+                }
+                variant="outline"
+                size="sm"
+                active={!effectiveDisplayMode}
+                onPress={handleToggleDisplayMode}
+              />
+            ) : null}
+          </View>
 
           <WordInputSection
             value={wordInput}
@@ -539,6 +480,7 @@ export function HomeScreen() {
               onPlayToggle={handleStart}
               shuffle={shuffle}
               onShuffleChange={setShuffle}
+              wordCount={parsedWordCount}
             />
           </View>
         ) : null}
@@ -550,6 +492,12 @@ export function HomeScreen() {
           onApply={handleApplyHistory}
           onDelete={handleDeleteHistory}
           onClear={handleClearHistory}
+        />
+        <LibraryDrawer
+          visible={libraryDrawerVisible}
+          groups={libraryGroups}
+          onClose={() => setLibraryDrawerVisible(false)}
+          onApply={handleApplyLibrary}
         />
 
         <Modal
@@ -616,12 +564,6 @@ export function HomeScreen() {
             })
           }
         />
-        <OcrSettingsModal
-          visible={ocrSettingsVisible}
-          value={customOcrConfig}
-          onClose={() => setOcrSettingsVisible(false)}
-          onSave={handleSaveOcrConfig}
-        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -642,24 +584,26 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
-  headerBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    justifyContent: "center",
+  headerBrand: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    gap: spacing.xs,
   },
-  headerCenter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
+  brandAlice: {
+    fontFamily: fonts.display,
+    fontStyle: "italic",
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
-  headerCenterBtn: {
+  brandDictation: {
+    fontFamily: fonts.display,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  ocrProgressPill: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -668,10 +612,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radii.full,
     borderWidth: 1,
+    maxWidth: "80%",
   },
-  headerCenterText: {
-    fontSize: 14,
+  ocrProgressText: {
+    fontSize: 13,
     fontWeight: "600",
+    flexShrink: 1,
   },
   main: {
     flex: 1,
@@ -681,6 +627,34 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  countBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+    borderWidth: 1,
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
   },
   loadingContainer: {
     flex: 1,
@@ -701,7 +675,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   menuPanel: {
-    minWidth: 168,
+    minWidth: 184,
     borderRadius: radii.surface,
     borderWidth: 1,
     paddingVertical: spacing.sm,

@@ -1,0 +1,13 @@
+speak
+wait
+minute
+page
+write
+word
+sorry
+time
+call
+mobile
+way
+on my way
+city

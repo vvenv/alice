@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { WordHistoryEntry } from "../lib/storage";
-import { isDefaultHistoryId } from "../lib/storage";
 import { parseWords } from "../lib/dictation";
 import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
@@ -26,10 +25,6 @@ interface HistoryDrawerProps {
   onApply: (entry: WordHistoryEntry) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
-}
-
-function isDefaultEntry(entry: WordHistoryEntry): boolean {
-  return isDefaultHistoryId(entry.id);
 }
 
 function wordCount(text: string): number {
@@ -46,7 +41,7 @@ export function HistoryDrawer({
 }: HistoryDrawerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const userEntries = history.filter((e) => !isDefaultEntry(e));
+  const userEntries = history;
   // Percentage maxHeight + flex:1 ScrollView is unreliable on Android Modal.
   const drawerMaxHeight = Dimensions.get("window").height * 0.8;
   const bottomPad = Math.max(insets.bottom, spacing.xl);
@@ -162,29 +157,24 @@ export function HistoryDrawer({
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
-                      {isDefaultEntry(entry)
-                        ? entry.id.replace("default_", "")
-                        : entry.text.replace(/\n/g, " ")}
+                      {entry.text.replace(/\n/g, " ")}
                     </Text>
                   </TouchableOpacity>
                   <View style={styles.itemTrailing}>
                     <Text style={[styles.itemMeta, { color: colors.subtle }]}>
                       {wordCount(entry.text)}
-                      {isDefaultEntry(entry) ? " · 内置" : null}
                     </Text>
-                    {!isDefaultEntry(entry) && (
-                      <TouchableOpacity
-                        onPress={() => onDelete(entry.id)}
-                        activeOpacity={0.6}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={20}
-                          color={colors.subtle}
-                        />
-                      </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                      onPress={() => onDelete(entry.id)}
+                      activeOpacity={0.6}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={20}
+                        color={colors.subtle}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))

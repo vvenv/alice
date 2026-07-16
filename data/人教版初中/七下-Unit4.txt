@@ -1,0 +1,44 @@
+rule
+arrive
+(be) on time
+hallway
+hall
+dining hall
+listen
+listen to
+fight
+sorry
+outside
+wear
+important
+bring
+uniform
+quiet
+out
+go out
+practice
+dish
+do the dishes
+before
+make (one's) bed
+dirty
+kitchen
+more
+noisy
+relax
+read
+terrible
+feel
+strict
+be strict (with sb)
+remember
+follow
+follow the rules
+luck
+keep
+hair
+learn
+Clark
+Amy
+Molly
+New York

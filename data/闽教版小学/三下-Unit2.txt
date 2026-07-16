@@ -1,0 +1,10 @@
+can
+swim
+draw
+run
+ride
+bike
+skate
+yes
+can't
+cannot

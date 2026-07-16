@@ -1,6 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +12,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Button, IconButton } from "../components/Button";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { usePlayback } from "../hooks/usePlayback";
@@ -16,10 +21,12 @@ import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { parseWordLine, speakTextFromEntry } from "../lib/dictation";
 import { fonts, radii, spacing } from "../lib/designTokens";
+import { notifySuccess, notifyWarning } from "../lib/haptics";
 import { useThemeColors } from "../lib/theme";
 
 const STATUS_PLAYING = "#27ae60";
-const STATUS_PAUSED = "#f39c12";
+// react-native-web silently drops native-driver animations; fall back to JS there.
+const USE_NATIVE_DRIVER = Platform.OS !== "web";
 
 interface DictationScreenProps {
   words: string[];
@@ -38,6 +45,13 @@ export function DictationScreen({
   const [showWord, setShowWord] = useState(false);
   const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
   const [autoNext, setAutoNext] = useState(initialAutoNext);
+  const [exitDialogVisible, setExitDialogVisible] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState<number | null>(null);
+  const startTimeRef = useRef(Date.now());
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const countdownAnim = useRef(new Animated.Value(0)).current;
+  const prevRemainingRef = useRef<number | null>(null);
+  const finishAnim = useRef(new Animated.Value(0)).current;
 
   const { toast, showToast } = useToast();
   const {
@@ -82,6 +96,7 @@ export function DictationScreen({
     const word = speakTextFromEntry(
       playback.wordList[playback.currentIndex]!,
     );
+    notifyWarning();
     markWrong(word);
   }, [isActive, markWrong, playback.currentIndex, playback.wordList]);
 
@@ -89,7 +104,17 @@ export function DictationScreen({
     onEnd();
   }, [onEnd]);
 
-  const handleStop = useCallback(() => {
+  // Confirm before abandoning an in-progress session; exit directly otherwise.
+  const requestStop = useCallback(() => {
+    if (!isActive) {
+      handleExit();
+      return;
+    }
+    setExitDialogVisible(true);
+  }, [isActive, handleExit]);
+
+  const confirmStop = useCallback(() => {
+    setExitDialogVisible(false);
     playback.stopDictation();
     handleExit();
   }, [handleExit, playback]);
@@ -111,21 +136,70 @@ export function DictationScreen({
       : 0;
 
   const intervalMs = intervalSec * 1000;
-  const countdownScale =
-    playback.remainingMs !== null && intervalMs > 0
-      ? playback.remainingMs / intervalMs
-      : 0;
   const countdownLabel =
     playback.remainingMs !== null
       ? `${(playback.remainingMs / 1000).toFixed(1)}s`
       : "—";
 
-  const stateLabel =
-    playback.playState === "playing"
-      ? "播放中"
-      : playback.playState === "paused"
-        ? "已暂停"
-        : "已结束";
+  // Animate the top progress bar between words instead of jumping.
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [progress, progressAnim]);
+
+  // Drive the countdown bar with one linear animation per segment so it
+  // depletes at 60fps, rather than re-rendering on every 50ms scheduler tick.
+  useEffect(() => {
+    const prev = prevRemainingRef.current;
+    prevRemainingRef.current = playback.remainingMs;
+
+    if (playback.remainingMs === null) {
+      countdownAnim.stopAnimation();
+      Animated.timing(countdownAnim, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+      return;
+    }
+    // A value appearing or increasing marks the start of a new segment
+    // (next word, resume, or the interval slider being adjusted mid-wait).
+    if (prev === null || playback.remainingMs > prev) {
+      countdownAnim.stopAnimation();
+      countdownAnim.setValue(
+        intervalMs > 0 ? Math.min(1, playback.remainingMs / intervalMs) : 0,
+      );
+      Animated.timing(countdownAnim, {
+        toValue: 0,
+        duration: playback.remainingMs,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [playback.remainingMs, intervalMs, countdownAnim]);
+
+  // Completion: capture stats once, then celebrate.
+  useEffect(() => {
+    if (!isFinished || elapsedSec !== null) return;
+    // The session can finish while the exit dialog is open; its "尚未完成"
+    // message would be stale, so dismiss it.
+    setExitDialogVisible(false);
+    setElapsedSec(
+      Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000)),
+    );
+    notifySuccess();
+    Animated.spring(finishAnim, {
+      toValue: 1,
+      useNativeDriver: USE_NATIVE_DRIVER,
+      friction: 6,
+      tension: 60,
+    }).start();
+  }, [isFinished, elapsedSec, finishAnim]);
 
   // ---- Current word entry + meta for display (already enriched on Home) ----
   const currentLine =
@@ -138,29 +212,86 @@ export function DictationScreen({
       ? { pos: currentEntry.pos, meaning: currentEntry.meaning }
       : null;
 
+  const status = isFinished
+    ? { label: "已完成", dot: STATUS_PLAYING }
+    : playback.playState === "playing"
+      ? { label: "听写中", dot: STATUS_PLAYING }
+      : { label: "已暂停", dot: colors.gold };
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={["top", "bottom", "left", "right"]}
     >
       <View style={[styles.progressBar, { backgroundColor: colors.track }]}>
-        <View
+        <Animated.View
           style={[
-              styles.progressFill,
-              { width: `${progress * 100}%`, backgroundColor: colors.gold },
-            ]}
+            styles.progressFill,
+            {
+              backgroundColor: colors.gold,
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0%", "100%"],
+              }),
+            },
+          ]}
         />
       </View>
 
       <View style={styles.header}>
+        <View style={[styles.headerSide, styles.headerSideLeft]}>
+          <IconButton
+            icon="close"
+            onPress={requestStop}
+            accessibilityLabel="退出听写"
+          />
+        </View>
+
         <Text style={[styles.progressText, { color: colors.muted }]}>
-          {playback.currentIndex + 1} / {playback.wordList.length}
+          <Text style={styles.progressCurrent}>
+            {playback.currentIndex + 1}
+          </Text>
+          {" / "}
+          {playback.wordList.length}
         </Text>
+
+        <View style={[styles.headerSide, styles.headerSideRight]}>
+          <View
+            style={[
+              styles.statusPill,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderMuted,
+              },
+            ]}
+            accessibilityLabel={status.label}
+          >
+            <View style={[styles.statusDot, { backgroundColor: status.dot }]} />
+            <Text style={[styles.statusText, { color: colors.muted }]}>
+              {status.label}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.wordStage}>
         {isFinished ? (
-          <View style={styles.finishedContainer}>
+          <Animated.View
+            style={[
+              styles.finishedContainer,
+              {
+                opacity: finishAnim,
+                transform: [
+                  {
+                    scale: finishAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.85, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             <View
               style={[
                 styles.finishedCard,
@@ -178,24 +309,57 @@ export function DictationScreen({
               <Text style={[styles.finishedTitle, { color: colors.foreground }]}>
                 听写完成
               </Text>
-              <Text style={[styles.finishedSub, { color: colors.muted }]}>
-                共 {playback.wordList.length} 个单词
-              </Text>
+              <View
+                style={[styles.statsRow, { borderTopColor: colors.borderMuted }]}
+              >
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: colors.foreground }]}>
+                    {playback.wordList.length}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.muted }]}>
+                    单词
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      {
+                        color:
+                          wrongWords.length > 0
+                            ? colors.danger
+                            : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {wrongWords.length}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.muted }]}>
+                    错词
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: colors.foreground }]}>
+                    {elapsedSec !== null
+                      ? `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`
+                      : "—"}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.muted }]}>
+                    用时
+                  </Text>
+                </View>
+              </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.returnBtn, { backgroundColor: colors.primary }]}
+            <Button
+              label="返回首页"
+              icon="arrow-back"
+              variant="primary"
+              size="md"
               onPress={handleExit}
-              activeOpacity={0.7}
-            >
-              <View style={styles.returnBtnContent}>
-                <Ionicons name="arrow-back" size={18} color={colors.background} />
-                <Text style={[styles.returnBtnText, { color: colors.background }]}>
-                  返回首页
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+              style={styles.returnBtn}
+            />
+          </Animated.View>
         ) : (
           <>
             <View
@@ -257,26 +421,16 @@ export function DictationScreen({
               )}
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.markBtn,
-                {
-                  borderColor: colors.borderMuted,
-                  backgroundColor: colors.surface,
-                },
-                !markEnabled && styles.controlBtnDisabled,
-              ]}
+            <Button
+              label="标记错词"
+              icon="close-circle-outline"
+              variant="danger"
+              size="md"
               onPress={handleMarkWrong}
               disabled={!markEnabled}
-              activeOpacity={0.7}
-            >
-              <View style={styles.markBtnContent}>
-                <Ionicons name="close" size={14} color={colors.dangerMuted} />
-                <Text style={[styles.markBtnText, { color: colors.dangerMuted }]}>
-                  标记错词
-                </Text>
-              </View>
-            </TouchableOpacity>
+              haptic={false}
+              style={styles.markBtn}
+            />
 
             {showWord &&
               playback.currentIndex + 1 < playback.wordList.length && (
@@ -315,12 +469,15 @@ export function DictationScreen({
         {isActive && autoNext ? (
           <View style={styles.countdownSection}>
             <View style={[styles.countdownBar, { backgroundColor: colors.track }]}>
-              <View
+              <Animated.View
                 style={[
                   styles.countdownFill,
                   {
-                    width: `${countdownScale * 100}%`,
                     backgroundColor: colors.gold,
+                    width: countdownAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0%", "100%"],
+                    }),
                   },
                 ]}
               />
@@ -332,86 +489,33 @@ export function DictationScreen({
         ) : null}
 
         <View style={styles.actionSection}>
-          <View style={styles.stateIndicator}>
-            <View
-              style={[
-                styles.stateDot,
-                { backgroundColor: colors.subtle },
-                playback.playState === "playing" && {
-                  backgroundColor: STATUS_PLAYING,
-                },
-                playback.playState === "paused" && {
-                  backgroundColor: STATUS_PAUSED,
-                },
-              ]}
-            />
-            <Text style={[styles.stateText, { color: colors.muted }]}>
-              {stateLabel}
-            </Text>
-          </View>
-
           <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={[
-                styles.controlBtn,
-                { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
+            <Button
+              label={playback.playState === "playing" ? "暂停" : "继续"}
+              icon={playback.playState === "playing" ? "pause" : "play"}
+              variant="primary"
+              size="md"
               onPress={handlePlayToggle}
-              activeOpacity={0.7}
-            >
-              <View style={styles.controlBtnContent}>
-                <Ionicons
-                  name={playback.playState === "playing" ? "pause" : "play"}
-                  size={16}
-                  color={colors.background}
-                />
-                <Text style={[styles.controlBtnText, { color: colors.background }]}>
-                  {playback.playState === "playing" ? "暂停" : "继续"}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlBtn,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-                !skipEnabled && styles.controlBtnDisabled,
-              ]}
+              style={styles.controlFlex}
+            />
+            <Button
+              label="跳过"
+              icon="play-skip-forward"
+              variant="outline"
+              size="md"
               onPress={playback.skipToNextWord}
               disabled={!skipEnabled}
-              activeOpacity={0.7}
-            >
-              <View style={styles.controlBtnContent}>
-                <Ionicons name="play-skip-forward" size={16} color={colors.secondary} />
-                <Text style={[styles.controlBtnTextOutline, { color: colors.secondary }]}>
-                  跳过
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlBtn,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.dangerMuted,
-                },
-                !isActive && styles.controlBtnDisabled,
-              ]}
-              onPress={handleStop}
+              style={styles.controlFlex}
+            />
+            <Button
+              label="结束"
+              icon="stop"
+              variant="danger"
+              size="md"
+              onPress={requestStop}
               disabled={!isActive}
-              activeOpacity={0.7}
-            >
-              <View style={styles.controlBtnContent}>
-                <Ionicons name="stop" size={16} color={colors.danger} />
-                <Text style={[styles.controlBtnTextDanger, { color: colors.danger }]}>
-                  结束
-                </Text>
-              </View>
-            </TouchableOpacity>
+              style={styles.controlFlex}
+            />
           </View>
         </View>
 
@@ -421,22 +525,13 @@ export function DictationScreen({
               错词本 ({wrongWords.length})
             </Text>
             <View style={styles.wrongActions}>
-              <TouchableOpacity
-                style={[styles.smallBtn, { backgroundColor: colors.surface }]}
-                onPress={handleExport}
-              >
-                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
-                  导出
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallBtn, { backgroundColor: colors.surface }]}
+              <Button label="导出" variant="ghost" size="sm" onPress={handleExport} />
+              <Button
+                label="清空"
+                variant="ghost"
+                size="sm"
                 onPress={handleClearWrong}
-              >
-                <Text style={[styles.smallBtnText, { color: colors.secondary }]}>
-                  清空
-                </Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
           {wrongWords.length === 0 ? (
@@ -481,6 +576,15 @@ export function DictationScreen({
         </View>
       </View>
 
+      <ConfirmDialog
+        visible={exitDialogVisible}
+        title="结束听写"
+        message="当前听写尚未完成，确定要结束并返回吗？"
+        confirmLabel="结束"
+        destructive
+        onConfirm={confirmStop}
+        onCancel={() => setExitDialogVisible(false)}
+      />
       <Toast message={toast} />
     </SafeAreaView>
   );
@@ -488,20 +592,57 @@ export function DictationScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  progressBar: { height: 3 },
-  progressFill: { height: "100%" },
+  progressBar: { height: 4 },
+  progressFill: { height: "100%", borderBottomRightRadius: 2 },
 
   header: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
+  headerSide: {
+    minWidth: 80,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerSideLeft: {
+    justifyContent: "flex-start",
+  },
+  headerSideRight: {
+    justifyContent: "flex-end",
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs + 2,
+    height: 28,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.full,
+    borderWidth: 1,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: radii.full,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   progressText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
     fontVariant: ["tabular-nums"],
     textAlign: "center",
+  },
+  progressCurrent: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    fontWeight: "700",
   },
   toggleWordBtn: {
     position: "absolute",
@@ -528,7 +669,7 @@ const styles = StyleSheet.create({
   wordCard: {
     width: "100%",
     maxWidth: 360,
-    minHeight: 120,
+    minHeight: 160,
     borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
@@ -576,47 +717,12 @@ const styles = StyleSheet.create({
   },
 
   actionSection: { gap: spacing.md },
-  stateIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  stateDot: { width: 7, height: 7, borderRadius: radii.full },
-  stateText: { fontSize: 13, fontWeight: "500" },
-
   controlRow: { flexDirection: "row", gap: spacing.sm },
-  controlBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: radii.control,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-  },
-  controlBtnContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  controlBtnDisabled: { opacity: 0.4 },
-  controlBtnText: { fontSize: 14, fontWeight: "600" },
-  controlBtnTextOutline: { fontSize: 14, fontWeight: "600" },
-  controlBtnTextDanger: { fontSize: 14, fontWeight: "600" },
+  controlFlex: { flex: 1 },
   markBtn: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radii.full,
-    borderWidth: 1,
+    width: "100%",
+    maxWidth: 360,
   },
-  markBtnContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  markBtnText: { fontSize: 13, fontWeight: "600" },
   nextWordRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -640,21 +746,33 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   finishedTitle: { fontFamily: fonts.display, fontSize: 22, fontWeight: "700" },
-  finishedSub: { fontSize: 14 },
+  statsRow: {
+    flexDirection: "row",
+    alignSelf: "stretch",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.xs,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 2,
+  },
+  statValue: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
   returnBtn: {
     width: "100%",
     maxWidth: 320,
-    height: 48,
-    borderRadius: radii.control,
-    justifyContent: "center",
-    alignItems: "center",
   },
-  returnBtnContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  returnBtnText: { fontSize: 16, fontWeight: "600" },
 
   wrongSection: { gap: spacing.sm, maxHeight: 120 },
   wrongHeader: {
@@ -664,12 +782,6 @@ const styles = StyleSheet.create({
   },
   wrongTitle: { fontSize: 13, fontWeight: "600" },
   wrongActions: { flexDirection: "row", gap: spacing.sm },
-  smallBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.xs,
-  },
-  smallBtnText: { fontSize: 12, fontWeight: "500" },
   emptyWrong: {
     textAlign: "center",
     fontSize: 13,

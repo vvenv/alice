@@ -1,0 +1,9 @@
+pear
+apple
+orange
+banana
+watermelon
+strawberry
+grape
+buy
+fruit

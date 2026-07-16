@@ -1,0 +1,54 @@
+aunt
+brother
+mum
+cousin
+daughter
+family
+father
+grandfather
+grandmother
+grandparents
+mother
+parent
+sister
+son
+uncle
+photo
+these
+they
+left
+on the left
+dad
+right
+on the right
+who
+woman
+next
+next to
+husband
+front
+in front of
+those
+bus
+station
+its
+hospital
+hotel
+their
+police
+theatre
+actor
+driver
+manager
+nurse
+policeman
+we
+an
+job
+at
+same
+doctor
+farm
+worker
+man
+shop

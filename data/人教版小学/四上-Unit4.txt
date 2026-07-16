@@ -1,0 +1,12 @@
+bedroom
+living room
+study
+kitchen
+bathroom
+bed
+phone
+table
+sofa
+fridge
+find
+them

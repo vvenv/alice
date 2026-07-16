@@ -1,0 +1,12 @@
+duck
+pig
+cat
+bear
+dog
+elephant
+monkey
+bird
+tiger
+panda
+zoo
+funny
