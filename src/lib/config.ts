@@ -16,9 +16,9 @@ function extraString(key: string, fallback: string): string {
 }
 
 export const config: AppConfig = {
-  zhipuApiKey: extraString("zhipuApiKey", "YOUR_ZHIPU_API_KEY"),
+  zhipuApiKey: extraString("zhipuApiKey", ""),
   zhipuBaseUrl: extraString("zhipuBaseUrl", "https://open.bigmodel.cn/api/paas/v4"),
   visionModel: extraString("visionModel", "glm-4v-flash"),
-  hmacSecret: extraString("hmacSecret", "YOUR_HMAC_SECRET"),
+  hmacSecret: extraString("hmacSecret", ""),
   wechatId: extraString("wechatId", "vvenvw"),
 };

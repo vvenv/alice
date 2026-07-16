@@ -67,6 +67,17 @@ export function Footer() {
                 <span className="block text-ink/40">域名</span>
                 <span className="font-medium text-ink">alice.edao.plus</span>
               </li>
+              <li className="text-ink/60">
+                <span className="block text-ink/40">开源代码</span>
+                <a
+                  href="https://github.com/vvenv/alice"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-ink transition-colors hover:text-rose"
+                >
+                  github.com/vvenv/alice
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -78,7 +89,17 @@ export function Footer() {
 
         {/* 版权 */}
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-ink/40 sm:flex-row">
-          <p>© 2026 Alice 听写. All rights reserved.</p>
+          <p>
+            © 2026 Alice 听写 ·{" "}
+            <a
+              href="https://github.com/vvenv/alice/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-rose"
+            >
+              MIT License
+            </a>
+          </p>
           <p className="font-serif italic">
             Crafted with care, like a pocket watch.
           </p>

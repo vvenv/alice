@@ -34,6 +34,8 @@ export async function loadOcrUnlockState(): Promise<boolean> {
  * most mobile paywalls.
  */
 export function verifyUnlockCode(code: string): boolean {
+  // No secret configured (e.g. building from source without .env) → stay locked.
+  if (!config.hmacSecret) return false;
   const hex = hmacSha256Hex(config.hmacSecret, code.toUpperCase());
   const ok = hex.startsWith(VALID_PREFIX);
   if (ok) {

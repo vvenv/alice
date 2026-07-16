@@ -28,8 +28,17 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 # --- config ---
-SERVER="user@YOUR_SERVER_IP"
-REMOTE_DIR="/var/www/alice"
+# Deploy target comes from the gitignored .env (or the environment):
+#   DEPLOY_SERVER=user@your.server.ip
+#   DEPLOY_REMOTE_DIR=/var/www/alice
+if [ -f "$ROOT/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.example)}"
+REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
 PUBLIC_HOST="https://alice.edao.plus"
 WEBSITE_DIR="$ROOT/website"
 DOWNLOAD_TSX="$WEBSITE_DIR/src/components/Download.tsx"

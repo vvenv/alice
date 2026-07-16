@@ -1,117 +1,120 @@
-# Alice 听写
+# Alice 听写 🐰
+
+> "Down the rabbit-hole of words."
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Expo](https://img.shields.io/badge/Expo-57-000020?logo=expo&logoColor=white)](https://expo.dev)
+[![React Native](https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=white)](https://reactnative.dev)
+[![Website](https://img.shields.io/badge/官网-alice.edao.plus-E5397B)](https://alice.edao.plus)
 
 英文单词听写应用，基于 Expo (React Native)，支持 iOS / Android / Web。
 
+官网与下载：**<https://alice.edao.plus>**
+
 ## 功能
 
-- 粘贴英文单词列表 / 拍照 OCR 识别
+- 粘贴英文单词列表 / 拍照 OCR 识别（智谱 GLM-4V）
 - 可调间隔、自动播放下一个
-- 显示 / 隐藏当前单词
-- 标记错词，本地持久化
+- 显示 / 隐藏当前单词，词性与释义提示
+- 标记错词，本地持久化，历史记录管理
 - 导出错词到剪贴板
 - 亮色 / 暗色主题
 
 ## 技术栈
 
-- **Expo** — React Native 跨平台框架
+- **Expo / React Native** — 跨平台移动应用
 - **系统 en-US TTS** — 英文单词发音（`expo-speech`）
 - **智谱 GLM-4V** — 视觉 OCR 识别
+- **Vite + React + Tailwind CSS** — 官网（`website/` 子包）
 
 ## 快速开始
 
 ```bash
+git clone https://github.com/vvenv/alice.git
+cd alice
 pnpm install
+cp .env.example .env   # 填入自己的密钥（见下方「配置」）
+
 pnpm start          # Expo dev server
 pnpm web            # Web 模式
 pnpm ios            # iOS 模拟器
 pnpm android        # Android 模拟器
 ```
 
+官网本地开发：
+
+```bash
+pnpm --filter website dev
+```
+
 ## 配置
 
-编辑 `app.json` 的 `extra` 字段：
+所有敏感配置放在 gitignored 的 `.env` 中（模板见 [`.env.example`](.env.example)），由 [`app.config.js`](app.config.js) 在构建时注入：
 
-| 字段 | 说明 | 默认值 |
-|------|------|--------|
-| `zhipuApiKey` | 智谱 API Key（OCR） | 空（必填） |
-| `zhipuBaseUrl` | 智谱 API 地址 | `https://open.bigmodel.cn/api/paas/v4` |
-| `visionModel` | OCR 模型 | `glm-4v-flash` |
-| `hmacSecret` | 生成/验证解锁码的密钥 | `alice-dictation-default-secret` |
-| `wechatId` | 付费解锁展示的微信号 | `your_wechat_id` |
+| 环境变量 | 说明 | 必填 |
+|------|------|------|
+| `ZHIPU_API_KEY` | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | OCR 功能需要 |
+| `ALICE_HMAC_SECRET` | 生成/校验解锁码的 HMAC 密钥 | 付费解锁需要 |
+| `DEPLOY_SERVER` | 发布脚本的部署目标（`user@host`） | 仅发版需要 |
+| `DEPLOY_REMOTE_DIR` | 服务器上的站点目录 | 仅发版需要 |
+
+非敏感配置在 `app.json` 的 `expo.extra` 中（`zhipuBaseUrl`、`visionModel`、`wechatId`）。
+
+云端 CI 构建（GitHub Actions → EAS）不读取本地 `.env`，需在 [EAS 环境变量](https://docs.expo.dev/eas/environment-variables/) 中配置同名变量。
 
 ## OCR 付费解锁
 
-OCR 拍照识别功能为付费功能，付费流程：
+OCR 拍照识别为付费功能：
 
 1. **付费墙**：用户看到功能介绍 + 微信号，添加微信完成支付
-2. **输入解锁码**：支付完成后，输入 4 位字母/数字解锁码即可解锁
-3. **持久化**：解锁状态保存在本地，下次启动无需重复输入
+2. **输入解锁码**：支付后输入 4 位解锁码即可解锁
+3. **持久化**：解锁状态保存在本地，无需重复输入
 
-解锁码通过 HMAC-SHA256 本地校验，无需远程 API。
+解锁码通过 HMAC-SHA256 本地校验（密钥即 `ALICE_HMAC_SECRET`），无需远程 API。
 
-### 生成解锁码
-
-你本地运行脚本即可生成解锁码，每个用户可以领取不同的码：
+生成解锁码：
 
 ```bash
-# 生成 1 个解锁码
-pnpm generate-code
-
-# 生成 5 个解锁码
-pnpm generate-code --count 5
-
-# 使用自定义密钥（需与 app.json 中的 hmacSecret 一致）
-pnpm generate-code --secret "你的密钥" --count 3
+pnpm code                       # 生成 1 个（密钥读取 .env）
+pnpm code --count 5             # 生成 5 个
+pnpm code --secret "自定义密钥"  # 需与 app 构建时的密钥一致
 ```
 
-输出示例：
+> **注意**：解锁码与构建 app 时的 `ALICE_HMAC_SECRET` 绑定，换密钥后旧码作废。
 
-```
-Secret: alice-dictation-default-secret
-Prefix: 00
-Count:  3
+## 发版
 
-  1. FUFW
-     HMAC: 009909f8c5d6483e... (starts with "00" ✓)
-
-  2. GLA8
-     HMAC: 00c265428c950c59... (starts with "00" ✓)
-
-  3. HNRX
-     HMAC: 00a68c057b1a850a... (starts with "00" ✓)
-
-All codes: FUFW, GLA8, HNRX
-```
-
-> **注意**：生成的解锁码必须与 app 内置的 `hmacSecret` 匹配。如果修改了 `app.json` 中的密钥，需要用新密钥重新生成解锁码。
-
-## 移动端发版（EAS）
-
-首次发版前在本地完成 EAS 初始化，并将 Access Token 配置到 GitHub Secrets：
+### 一键 Android 发版（本地构建 + 部署官网）
 
 ```bash
-pnpm exec eas login
-pnpm exec eas init          # 写入 app.json 的 expo.extra.eas.projectId
+pnpm release:android
 ```
 
-在 GitHub → Settings → Secrets → Actions 添加 `EXPO_TOKEN`（Expo 账号 → Access Tokens）。
+流程：EAS 本地构建 APK → 暂存到 `website/public/downloads/` → 更新下载链接 → 构建官网 → rsync 部署到 `DEPLOY_SERVER`。详见 [`scripts/release.sh`](scripts/release.sh)。
 
-### GitHub Actions 手动发版
+### GitHub Actions 发版
 
-仓库 **Actions → Release → Run workflow**，可选择：
+首次需在本地 `pnpm exec eas login && pnpm exec eas init`，并在 GitHub → Settings → Secrets → Actions 添加 `EXPO_TOKEN`。之后在 **Actions → CI → Run workflow** 选择 platform / profile 触发。
 
-| 参数 | 说明 |
-|------|------|
-| platform | `all` / `android` / `ios` |
-| profile | `preview`（内测 APK）/ `production`（商店包） |
-| submit | 是否自动提交应用商店（仅 production） |
+## 项目结构
 
-推送 `v*` 标签（如 `v0.1.0`）会自动触发 production 全平台构建。
-
-### 本地发版
-
-```bash
-pnpm build:android -- --profile preview
-pnpm build:ios -- --profile production
-pnpm build:mobile -- --profile preview
 ```
+├── App.tsx / index.js      # 应用入口
+├── app.json                # Expo 静态配置（不含密钥）
+├── app.config.js           # 动态配置：从 .env 注入密钥
+├── src/
+│   ├── screens/            # 页面（首页、听写）
+│   ├── components/         # UI 组件
+│   └── lib/                # 配置、OCR、解锁校验、存储等
+├── data/                   # 内置词表（A–Z）
+├── scripts/                # 发版、解锁码、词典构建脚本
+└── website/                # 官网（Vite + React + Tailwind）
+```
+
+## 贡献
+
+欢迎 Issue 和 PR！请先阅读 [贡献指南](CONTRIBUTING.md)。
+
+## 许可证
+
+[MIT](LICENSE) © 2026 vvenv

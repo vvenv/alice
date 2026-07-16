@@ -7,7 +7,21 @@
  *   npx tsx scripts/generate-unlock-code.ts --secret "your-secret-key"
  */
 
+import fs from "node:fs";
+import path from "node:path";
+
 import { hmacSha256Hex } from "../src/lib/crypto";
+
+/** Read ALICE_HMAC_SECRET from process.env, falling back to the gitignored .env file. */
+function envSecret(): string | undefined {
+  if (process.env.ALICE_HMAC_SECRET) return process.env.ALICE_HMAC_SECRET;
+  const envPath = path.join(__dirname, "..", ".env");
+  if (!fs.existsSync(envPath)) return undefined;
+  const m = fs
+    .readFileSync(envPath, "utf8")
+    .match(/^\s*ALICE_HMAC_SECRET\s*=\s*(.+?)\s*$/m);
+  return m?.[1].replace(/^(['"])(.*)\1$/, "$2");
+}
 
 /* ---- CLI ---- */
 
@@ -36,7 +50,7 @@ function generateCode(secret: string, prefix: string): string {
 
 function main() {
   const args = process.argv.slice(2);
-  let secret = "YOUR_HMAC_SECRET";
+  let secret = envSecret();
   let count = 1;
   let prefix = "00";
 
@@ -49,11 +63,18 @@ function main() {
       prefix = args[++i];
     } else if (args[i] === "--help" || args[i] === "-h") {
       console.log("Usage: npx tsx scripts/generate-unlock-code.ts [options]");
-      console.log("  --secret <key>    HMAC secret (default: alice-dictation-default-secret)");
+      console.log("  --secret <key>    HMAC secret (default: ALICE_HMAC_SECRET from env/.env)");
       console.log("  --count <n>       Number of codes to generate (default: 1)");
       console.log("  --prefix <hex>    Required hex prefix (default: 00)");
       process.exit(0);
     }
+  }
+
+  if (!secret) {
+    console.error(
+      "Error: no HMAC secret. Set ALICE_HMAC_SECRET in .env or pass --secret <key>.",
+    );
+    process.exit(1);
   }
 
   console.log(`Secret: ${secret}`);

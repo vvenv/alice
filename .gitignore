@@ -31,6 +31,11 @@ release/
 *.sln
 *.sw?
 
+# Local-only (secrets / internal notes — never commit)
+CODE.md
+.trae/
+.claude/
+
 # Environment
 .env
 .env.local
