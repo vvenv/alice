@@ -2,17 +2,21 @@
   "expo": {
     "name": "Alice 听写",
     "slug": "alice-dictation",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vvenv.alice",
       "infoPlist": {
         "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -28,7 +32,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "versionCode": 2
+      "versionCode": 3
     },
     "plugins": [
       "./plugins/withGradleJvmArgs",

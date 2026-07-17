@@ -1,6 +1,6 @@
 {
   "name": "alice-dictation",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "main": "index.js",
   "packageManager": "pnpm@11.13.1",
