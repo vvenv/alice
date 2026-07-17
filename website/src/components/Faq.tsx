@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, MessageCircle } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useReveal } from "../hooks/useReveal";
 
 interface QA {
@@ -56,15 +56,8 @@ export function Faq() {
               <span className="italic text-rose"> 疑问</span>
             </h2>
             <p className="mt-5 text-base leading-relaxed text-ink/60">
-              关于隐私与使用的解答。没有你想问的？欢迎添加微信沟通。
+              关于隐私与使用的解答。
             </p>
-            <a
-              href="#download"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-rose transition-colors hover:text-gold"
-            >
-              <MessageCircle className="h-4 w-4" />
-              联系开发者
-            </a>
           </div>
 
           {/* 右侧问答列表 */}
@@ -93,7 +86,7 @@ export function Faq() {
                       {item.q}
                     </span>
                     <ChevronDown
-                      className={`h-5 w-5 flex-shrink-0 text-gold transition-transform duration-300 ${
+                      className={`h-5 w-5 shrink-0 text-gold transition-transform duration-300 ${
                         isOpen ? "rotate-180" : ""
                       }`}
                     />

@@ -56,8 +56,8 @@ export function Footer() {
             </h4>
             <ul className="space-y-3 text-sm">
               <li className="text-ink/60">
-                <span className="block text-ink/40">开发者微信</span>
-                <span className="font-medium text-ink">vvenvw</span>
+                <span className="block text-ink/40">邮箱</span>
+                <span className="font-medium text-ink">vvenvw[at]gmail.com</span>
               </li>
               <li className="text-ink/60">
                 <span className="block text-ink/40">开源代码</span>
