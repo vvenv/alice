@@ -11,9 +11,16 @@
 
 官网与下载：**<https://alice.edao.plus>**
 
+## 截图
+
+| 首页 | 词库 | 听写 | 完成 |
+| :---: | :---: | :---: | :---: |
+| ![首页：单词列表与拍照识词](docs/screenshots/home.png) | ![词库：内置教材词表与搜索](docs/screenshots/library.png) | ![听写：怀表倒计时](docs/screenshots/dictation.png) | ![完成：成绩单与错词本](docs/screenshots/finish.png) |
+
 ## 功能
 
-- 粘贴英文单词列表 / 拍照 OCR 识别（智谱 GLM-4V）
+- 粘贴英文单词列表 / 拍照 OCR 识别（智谱 GLM-4V，支持自定义 OCR 服务商）
+- 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
 - 可调间隔、自动播放下一个
 - 显示 / 隐藏当前单词，词性与释义提示
 - 标记错词，本地持久化，历史记录管理
@@ -106,7 +113,8 @@ pnpm release:android
 │   ├── screens/            # 页面（首页、听写）
 │   ├── components/         # UI 组件
 │   └── lib/                # 配置、OCR、解锁校验、存储等
-├── data/                   # 内置词表（A–Z）
+├── data/                   # 内置词库（教材单元 / 中高考词表）
+├── docs/                   # 文档资源（README 截图等）
 ├── scripts/                # 发版、解锁码、词典构建脚本
 └── website/                # 官网（Vite + React + Tailwind）
 ```

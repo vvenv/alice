@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   finishedCard: {
     width: "100%",
     maxWidth: 320,
-    minHeight: 180,
+    minHeight: 240,
     borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
