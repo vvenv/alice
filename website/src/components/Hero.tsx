@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  Apple,
   Smartphone,
   Volume2,
   Camera,
@@ -102,20 +101,12 @@ export function Hero() {
             <SuitHeart className="absolute -right-2 bottom-20 h-7 w-7 -rotate-12 text-rose/20" />
 
             {/* 浮动光晕 */}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-rose/10 via-transparent to-gold/10 blur-3xl" />
+            <div className="absolute inset-0 -z-10 bg-linear-to-tr from-rose/10 via-transparent to-gold/10 blur-3xl" />
 
             <div className="animate-float">
               <PhoneFrame>
                 <DictationScreenMock />
               </PhoneFrame>
-            </div>
-
-            {/* 平台标识 */}
-            <div className="absolute -bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-ink/10 bg-paper/90 px-5 py-2.5 text-xs text-ink/60 shadow-lg backdrop-blur">
-              <Apple className="h-4 w-4" />
-              <span className="h-3 w-px bg-ink/15" />
-              <Smartphone className="h-4 w-4" />
-              <span>iOS · Android · Web</span>
             </div>
           </div>
         </div>

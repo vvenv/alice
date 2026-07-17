@@ -2,9 +2,9 @@ import { useReveal } from "../hooks/useReveal";
 import {
   PhoneFrame,
   DictationScreenMock,
+  FinishScreenMock,
+  HomeScreenMock,
   LibraryScreenMock,
-  OcrScreenMock,
-  WrongWordsMock,
 } from "./PhoneMockup";
 import { PocketWatch } from "./Decorations";
 
@@ -21,9 +21,9 @@ const ITEMS: ShowCaseItem[] = [
   {
     eyebrow: "Step 01 · 识别",
     title: "拍一张照片，单词自动入列",
-    desc: "对准课本单词表，AI 数秒内完成识别。印刷体、手写体均可准确提取。",
-    points: ["AI 智能识别", "支持印刷体与手写", "自动去重与排序"],
-    mock: <OcrScreenMock />,
+    desc: "对准课本单词表，AI 数秒内完成识别，自动补全词性与释义，瞬间生成听写列表。",
+    points: ["AI 智能识别，印刷体与手写均可", "自动补全词性与中文释义", "识别结果可随时编辑"],
+    mock: <HomeScreenMock />,
   },
   {
     eyebrow: "Step 02 · 词库",
@@ -36,16 +36,16 @@ const ITEMS: ShowCaseItem[] = [
   {
     eyebrow: "Step 03 · 听写",
     title: "逐词朗读，间隔随心",
-    desc: "纯正美音逐词朗读，间隔可调、自动连播。当前单词可显示或隐藏。",
-    points: ["纯正美式发音", "间隔 1–10s 可调", "显示/隐藏切换"],
+    desc: "怀表式倒计时逐词朗读，间隔可调、自动连播。单词可显示或隐藏，写错随手标记。",
+    points: ["怀表倒计时，节奏尽在掌握", "间隔 1–10s 可调 · 自动连播", "显示/隐藏切换 · 一键标记错词"],
     mock: <DictationScreenMock />,
   },
   {
     eyebrow: "Step 04 · 回顾",
     title: "错词留痕，有的放矢",
-    desc: "标记的错词自动收入错词本。一键导出，粘贴到任意应用反复练习。",
-    points: ["错词自动保存", "一键导出错词", "练习次数统计"],
-    mock: <WrongWordsMock />,
+    desc: "听写完成即出成绩单，错词自动收入错词本。一键再听一遍，或导出反复练习。",
+    points: ["单词 / 错词 / 用时统计", "错词再听一遍", "一键导出错词本"],
+    mock: <FinishScreenMock />,
     reverse: true,
   },
 ];
