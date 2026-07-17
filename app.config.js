@@ -17,10 +17,15 @@ function loadEnvFile() {
 
 const env = { ...loadEnvFile(), ...process.env };
 
+// Web bundles are public JS — never embed a shared OCR key.
+const isWebBuild =
+  process.env.ALICE_WEB_BUILD === "1" ||
+  process.argv.some((a, i, arr) => a === "web" || (a === "--platform" && arr[i + 1] === "web"));
+
 module.exports = ({ config }) => ({
   ...config,
   extra: {
     ...config.extra,
-    zhipuApiKey: env.ZHIPU_API_KEY ?? "",
+    zhipuApiKey: isWebBuild ? "" : (env.ZHIPU_API_KEY ?? ""),
   },
 });

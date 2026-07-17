@@ -34,6 +34,11 @@
       ],
       "versionCode": 3
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png"
+    },
     "plugins": [
       "./plugins/withGradleJvmArgs",
       [
@@ -65,6 +70,9 @@
     ],
     "updates": {
       "enabled": false
+    },
+    "experiments": {
+      "baseUrl": "/app"
     },
     "extra": {
       "zhipuBaseUrl": "https://open.bigmodel.cn/api/paas/v4",

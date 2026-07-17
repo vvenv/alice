@@ -17,6 +17,7 @@ import { testOcrConfig } from "../lib/ocr";
 import {
   isCustomOcrConfigSet,
   OCR_PROVIDER_PRESETS,
+  requiresCustomOcrConfig,
   type OcrProviderConfig,
 } from "../lib/ocrConfig";
 import { fonts, radii, spacing } from "../lib/designTokens";
@@ -24,10 +25,10 @@ import { useThemeColors } from "../lib/theme";
 
 interface OcrSettingsModalProps {
   visible: boolean;
-  /** Current saved custom config (null = using built-in default). */
+  /** Current saved custom config (null = using built-in default on native). */
   value: OcrProviderConfig | null;
   onClose: () => void;
-  /** Persist the config (null clears it, reverting to the built-in default). */
+  /** Persist the config (null clears it). */
   onSave: (cfg: OcrProviderConfig | null) => void;
 }
 
@@ -109,6 +110,7 @@ export function OcrSettingsModal({
   }, [baseUrl, apiKey, model, canSave]);
 
   const usingCustom = isCustomOcrConfigSet(value);
+  const webRequiresKey = requiresCustomOcrConfig();
 
   return (
     <Modal
@@ -151,8 +153,17 @@ export function OcrSettingsModal({
             keyboardShouldPersistTaps="handled"
           >
             <Text style={[styles.statusLine, { color: colors.muted }]}>
-              {usingCustom ? "当前使用自定义服务配置" : "当前使用内置服务配置"}
+              {usingCustom
+                ? "当前使用自定义服务配置"
+                : webRequiresKey
+                  ? "尚未配置 — Web 版需自备 API Key"
+                  : "当前使用内置服务配置"}
             </Text>
+            {webRequiresKey && !usingCustom ? (
+              <Text style={[styles.hint, { color: colors.subtle }]}>
+                听写与词库不需要 Key；仅拍照识别需要。请选择下方服务商并填写密钥。
+              </Text>
+            ) : null}
 
             <Text style={[styles.sectionLabel, { color: colors.subtle }]}>
               服务商预设
@@ -348,7 +359,7 @@ export function OcrSettingsModal({
               activeOpacity={0.7}
             >
               <Text style={[styles.footerBtnText, { color: colors.muted }]}>
-                恢复默认
+                {webRequiresKey ? "清除配置" : "恢复默认"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

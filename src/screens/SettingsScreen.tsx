@@ -23,6 +23,7 @@ import { fonts, radii, spacing } from "../lib/designTokens";
 import {
   isCustomOcrConfigSet,
   loadOcrProviderConfig,
+  requiresCustomOcrConfig,
   saveOcrProviderConfig,
   type OcrProviderConfig,
 } from "../lib/ocrConfig";
@@ -86,7 +87,13 @@ export function SettingsScreen() {
       setCustomOcrConfig(cfg);
       saveOcrProviderConfig(cfg).catch(() => {});
       setOcrSettingsVisible(false);
-      showToast(cfg ? "已保存自定义 OCR 服务配置" : "已恢复默认 OCR 服务配置");
+      if (cfg) {
+        showToast("已保存自定义 OCR 服务配置");
+      } else if (requiresCustomOcrConfig()) {
+        showToast("已清除 OCR 服务配置");
+      } else {
+        showToast("已恢复默认 OCR 服务配置");
+      }
     },
     [showToast],
   );
@@ -112,7 +119,11 @@ export function SettingsScreen() {
   }, [showToast]);
 
   const usingCustom = isCustomOcrConfigSet(customOcrConfig);
-  const ocrDetail = usingCustom ? customOcrConfig!.model : "内置服务";
+  const ocrDetail = usingCustom
+    ? customOcrConfig!.model
+    : requiresCustomOcrConfig()
+      ? "未配置"
+      : "内置服务";
 
   const appVersion = Constants.expoConfig?.version ?? "—";
 

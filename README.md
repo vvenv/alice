@@ -19,7 +19,7 @@
 
 ## 功能
 
-- 粘贴英文单词列表 / 拍照 OCR 识别（智谱 GLM-4V，支持自定义 OCR 服务商）
+- 粘贴英文单词列表 / 拍照 OCR 识别（Android 默认智谱 GLM-4V；支持自定义 OCR 服务商；Web 版需自备 API Key）
 - 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
 - 可调间隔、自动播放下一个
 - 显示 / 隐藏当前单词，词性与释义提示
@@ -60,7 +60,7 @@ pnpm --filter website dev
 
 | 环境变量 | 说明 | 必填 |
 |------|------|------|
-| `ZHIPU_API_KEY` | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | OCR 功能需要 |
+| `ZHIPU_API_KEY` | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | Android OCR 需要；Web 构建不会注入 |
 | `DEPLOY_SERVER` | 发布脚本的部署目标（`user@host`） | 仅发版需要 |
 | `DEPLOY_REMOTE_DIR` | 服务器上的站点目录 | 仅发版需要 |
 
@@ -91,6 +91,14 @@ pnpm release:website
 ```
 
 构建 `website/` 并用 rsync 部署到 `DEPLOY_SERVER`；会排除 `downloads/`，不会动线上 APK。详见 [`scripts/release-website.sh`](scripts/release-website.sh)。
+
+### 发布 Web 应用
+
+```bash
+pnpm release:webapp
+```
+
+静态导出 Expo Web（`dist/`，不嵌入 OCR Key）并 rsync 到 `DEPLOY_SERVER` 的 `/app/`。入口：<https://alice.edao.plus/app/>。详见 [`scripts/release-webapp.sh`](scripts/release-webapp.sh)。
 
 ### GitHub Actions 发版
 

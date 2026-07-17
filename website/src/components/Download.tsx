@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Apple, Smartphone, Globe } from "lucide-react";
-import { APK_URL } from "@/data/site";
+import { APK_URL, WEB_APP_URL } from "@/data/site";
 import { useReveal } from "../hooks/useReveal";
 import { PocketWatch, SuitHeart, SuitSpade } from "./Decorations";
 
@@ -93,11 +93,16 @@ export function Download() {
                   </div>
                 </a>
 
-                {/* Web — 敬请期待 */}
-                <button
-                  onClick={showToast}
-                  className="group inline-flex cursor-pointer items-center gap-3 rounded-xl border border-paper/20 bg-paper/5 px-6 py-4 backdrop-blur-sm transition-all duration-300 hover:border-gold/50 hover:bg-paper/10"
+                {/* Web — 浏览器版 */}
+                <a
+                  href={WEB_APP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative inline-flex items-center gap-3 rounded-xl border border-paper/20 bg-paper/5 px-6 py-4 backdrop-blur-sm transition-all duration-300 hover:border-gold/50 hover:bg-paper/10"
                 >
+                  <span className="absolute -right-2 -top-2 rounded-full bg-paper/15 px-2 py-0.5 text-[10px] font-bold text-paper">
+                    NEW
+                  </span>
                   <Globe className="h-7 w-7 text-paper" />
                   <div className="text-left">
                     <div className="text-[10px] uppercase tracking-widest text-paper/50">
@@ -107,7 +112,7 @@ export function Download() {
                       Web 浏览器
                     </div>
                   </div>
-                </button>
+                </a>
               </div>
 
               {/* 二维码区 */}
@@ -134,7 +139,10 @@ export function Download() {
                     版本 v0.2.1
                   </div>
                   <div className="mt-1 text-sm text-paper/50">
-                    支持 Android 8+
+                    支持 Android 8+ · Web 浏览器
+                  </div>
+                  <div className="mt-1 text-xs text-paper/40">
+                    Web 版拍照识别需自备 OCR API Key
                   </div>
                 </div>
               </div>
@@ -152,7 +160,9 @@ export function Download() {
         >
           <div className="flex items-center gap-3 rounded-2xl border border-gold/30 bg-ink px-6 py-4 shadow-2xl">
             <span className="text-lg">⏳</span>
-            <span className="text-sm font-medium text-paper">iOS 与 Web 版本敬请期待</span>
+            <span className="text-sm font-medium text-paper">
+              iOS 版本敬请期待，可先用 Web 版
+            </span>
           </div>
         </div>
       )}

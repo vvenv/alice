@@ -7,7 +7,7 @@
 #   2. Build the APK locally via EAS (--local, preview profile) to a temp path
 #   3. Move it to website/public/downloads/alice-<version>-<timestamp>.apk
 #      (removing any previous timestamped APK there)
-#   4. Update APK_URL in website/src/components/Download.tsx
+#   4. Update APK_URL in website/src/data/site.ts
 #   5. Build the website (pnpm --filter website build)
 #   6. Deploy dist/ to the server via rsync. If the new APK's bytes already
 #      exist on the server (same sha256), rename it in place and skip the
@@ -73,7 +73,6 @@ SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.exam
 REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
 PUBLIC_HOST="https://alice.edao.plus"
 WEBSITE_DIR="$ROOT/website"
-DOWNLOAD_TSX="$WEBSITE_DIR/src/components/Download.tsx"
 APK_PUBLIC_DIR="$WEBSITE_DIR/public/downloads"
 
 # --- 0. optional version bump ---
@@ -118,8 +117,9 @@ mv "$TMP_APK" "$APK_PUBLIC"
 echo "  staged at website/public/downloads/$APK_NAME"
 
 # --- 3. update APK_URL ---
-echo "▶ [3/6] Updating APK_URL in Download.tsx..."
-APK_URL="$APK_URL" perl -pi -e 's{https://alice\.edao\.plus/downloads/alice-[^"]+\.apk}{$ENV{APK_URL}}g' "$DOWNLOAD_TSX"
+SITE_TS="$WEBSITE_DIR/src/data/site.ts"
+echo "▶ [3/6] Updating APK_URL in site.ts..."
+APK_URL="$APK_URL" perl -pi -e 's{https://alice\.edao\.plus/downloads/alice-[^"]+\.apk}{$ENV{APK_URL}}g' "$SITE_TS"
 echo "  → $APK_URL"
 
 # --- 4. build website ---
@@ -162,8 +162,8 @@ echo ""
 echo "Reminder: review & commit when ready —"
 if [ -n "$VERSION_ARG" ]; then
   echo "  git add package.json app.json android/app/build.gradle ios/Alice.xcodeproj/project.pbxproj \\"
-  echo "         website/src/components/Download.tsx"
+  echo "         website/src/data/site.ts"
 else
-  echo "  git add website/src/components/Download.tsx"
+  echo "  git add website/src/data/site.ts"
 fi
-echo "  (APK is gitignored; only the URL change in Download.tsx is tracked)"
+echo "  (APK is gitignored; only the URL change in site.ts is tracked)"

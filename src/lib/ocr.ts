@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import {
   buildChatCompletionsUrl,
   loadOcrProviderConfig,
+  requiresCustomOcrConfig,
   resolveOcrConfig,
 } from "./ocrConfig";
 
@@ -122,7 +123,15 @@ export async function ocrWordsFromImage(
   onProgress?.("recognizing");
 
   const custom = await loadOcrProviderConfig();
-  const { baseUrl, apiKey, model } = resolveOcrConfig(custom);
+  const resolved = resolveOcrConfig(custom);
+  if (!resolved) {
+    throw new Error(
+      requiresCustomOcrConfig()
+        ? "请先在设置中配置 OCR 服务（Web 版需自备 API Key）"
+        : "请先在设置中配置 OCR 服务",
+    );
+  }
+  const { baseUrl, apiKey, model } = resolved;
   const endpoint = buildChatCompletionsUrl(baseUrl);
 
   let response: Response;
