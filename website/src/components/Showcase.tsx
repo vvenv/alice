@@ -2,6 +2,7 @@ import { useReveal } from "../hooks/useReveal";
 import {
   PhoneFrame,
   DictationScreenMock,
+  LibraryScreenMock,
   OcrScreenMock,
   WrongWordsMock,
 } from "./PhoneMockup";
@@ -25,19 +26,27 @@ const ITEMS: ShowCaseItem[] = [
     mock: <OcrScreenMock />,
   },
   {
-    eyebrow: "Step 02 · 听写",
+    eyebrow: "Step 02 · 词库",
+    title: "不想拍照？词库开箱即用",
+    desc: "内置中考 1600、高考 3500 与人教、外研、闽教版教材单元词表，搜索即达，点击即载入。",
+    points: ["中考 1600 · 高考 3500", "教材单元词表逐课收录", "标题、分类模糊搜索"],
+    mock: <LibraryScreenMock />,
+    reverse: true,
+  },
+  {
+    eyebrow: "Step 03 · 听写",
     title: "逐词朗读，间隔随心",
     desc: "纯正美音逐词朗读，间隔可调、自动连播。当前单词可显示或隐藏。",
     points: ["纯正美式发音", "间隔 1–10s 可调", "显示/隐藏切换"],
     mock: <DictationScreenMock />,
-    reverse: true,
   },
   {
-    eyebrow: "Step 03 · 回顾",
+    eyebrow: "Step 04 · 回顾",
     title: "错词留痕，有的放矢",
     desc: "标记的错词自动收入错词本。一键导出，粘贴到任意应用反复练习。",
     points: ["错词自动保存", "一键导出错词", "练习次数统计"],
     mock: <WrongWordsMock />,
+    reverse: true,
   },
 ];
 

@@ -2,7 +2,7 @@ import {
   Camera,
   Volume2,
   RefreshCw,
-  Moon,
+  Library,
   type LucideIcon,
 } from "lucide-react";
 import { useStaggeredReveal } from "../hooks/useReveal";
@@ -35,10 +35,10 @@ const FEATURES: Feature[] = [
     tag: "本地保存",
   },
   {
-    icon: Moon,
-    title: "三端体验一致",
-    desc: "iOS、Android、Web 三端通用，亮色 / 暗色主题自适应。",
-    tag: "多端通用",
+    icon: Library,
+    title: "内置教材词库",
+    desc: "中考 1600、高考 3500，人教、外研、闽教版教材单元词表开箱即用，支持搜索。",
+    tag: "教材同步",
   },
 ];
 

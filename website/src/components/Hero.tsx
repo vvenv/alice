@@ -5,6 +5,7 @@ import {
   Volume2,
   Camera,
   BookOpen,
+  Library,
 } from "lucide-react";
 import { PhoneFrame, DictationScreenMock } from "./PhoneMockup";
 import { PocketWatch, GearCluster, SuitHeart, SuitSpade } from "./Decorations";
@@ -28,7 +29,7 @@ export function Hero() {
               style={{ animation: "fadeUp 0.8s 0.1s forwards" }}
             >
               <SuitHeart className="h-3 w-3" />
-              拍照即听写 · 三端通用
+              拍照即听写 · 内置教材词库
             </div>
 
             <h1
@@ -50,7 +51,7 @@ export function Hero() {
               className="mt-6 text-base leading-relaxed text-ink/70 opacity-0"
               style={{ animation: "fadeUp 0.9s 0.5s forwards" }}
             >
-              拍照识别单词，逐词朗读、间隔可控、错词留痕。 让听写回归语言本身。
+              拍照识别单词，内置教材词库，逐词朗读、错词留痕。 让听写回归语言本身。
             </p>
 
             <div
@@ -69,11 +70,12 @@ export function Hero() {
 
             {/* 数据指标 */}
             <div
-              className="mt-10 flex items-center gap-8 opacity-0"
+              className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4 opacity-0"
               style={{ animation: "fadeUp 0.9s 0.8s forwards" }}
             >
               {[
                 { icon: Camera, label: "拍照识别", value: "拍照即用" },
+                { icon: Library, label: "内置词库", value: "教材同步" },
                 { icon: Volume2, label: "语音朗读", value: "纯正美音" },
                 { icon: BookOpen, label: "错词追踪", value: "本地保存" },
               ].map((item) => (

@@ -4,8 +4,8 @@ import { PocketWatch } from "./Decorations";
 const STEPS = [
   {
     num: "I",
-    title: "拍照或粘贴",
-    desc: "拍下课本单词表，或直接粘贴单词文本。",
+    title: "拍照、词库或粘贴",
+    desc: "拍下课本单词表、从内置词库选择，或直接粘贴文本。",
   },
   {
     num: "II",

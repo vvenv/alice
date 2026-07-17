@@ -151,6 +151,87 @@ export function OcrScreenMock() {
   );
 }
 
+/** 词库界面模拟（底部抽屉） */
+export function LibraryScreenMock() {
+  const groups = [
+    {
+      cat: "人教版初中",
+      items: [
+        { l: "七上 Unit 1", n: 38, cur: true },
+        { l: "七上 Unit 2", n: 42 },
+      ],
+    },
+    {
+      cat: "中考1600",
+      items: [{ l: "A", n: 96 }],
+    },
+    {
+      cat: "高考3500",
+      items: [{ l: "A", n: 128 }],
+    },
+  ];
+  return (
+    <div className="flex h-[380px] flex-col justify-end">
+      {/* 首页背景（虚化） */}
+      <div className="pointer-events-none absolute inset-x-4 top-10 space-y-2 opacity-30 blur-[1px]">
+        <div className="h-5 w-24 rounded bg-ink/20" />
+        <div className="h-20 rounded-2xl bg-ink/10" />
+        <div className="h-3 w-32 rounded bg-ink/15" />
+      </div>
+      {/* 底部抽屉 */}
+      <div className="relative rounded-t-3xl border border-b-0 border-ink/10 bg-paper pb-3 shadow-[0_-12px_32px_-12px_rgba(26,43,74,0.25)]">
+        {/* 抽屉把手 */}
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-ink/15" />
+        <div className="px-3 pt-2">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-display text-sm font-semibold text-ink">
+              词库 (86)
+            </span>
+            <span className="text-xs text-ink/30">✕</span>
+          </div>
+          {/* 搜索框 */}
+          <div className="mb-2.5 flex items-center gap-2 rounded-xl border border-ink/10 bg-ink/5 px-3 py-1.5">
+            <span className="text-xs text-ink/40">⌕</span>
+            <span className="text-[11px] text-ink/35">搜索标题或分类</span>
+          </div>
+          {/* 分组列表 */}
+          <div className="space-y-2">
+            {groups.map((g) => (
+              <div key={g.cat}>
+                <div className="mb-1 px-1 text-[10px] font-medium uppercase tracking-wider text-gold/80">
+                  {g.cat}
+                </div>
+                <div className="space-y-1">
+                  {g.items.map((item) => (
+                    <div
+                      key={`${g.cat}-${item.l}`}
+                      className={`flex items-center justify-between rounded-lg border px-3 py-1.5 text-xs ${
+                        item.cur
+                          ? "border-rose/30 bg-rose/10 text-rose"
+                          : "border-ink/8 bg-paper text-ink/70"
+                      }`}
+                    >
+                      <span className="font-medium">{item.l}</span>
+                      <span
+                        className={`text-[10px] ${item.cur ? "text-rose/70" : "text-ink/35"}`}
+                      >
+                        {item.n} 词
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2.5 rounded-lg bg-ink px-3 py-1.5 text-center text-[11px] font-medium text-paper">
+            点击即载入听写
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** 错词本界面模拟 */
 export function WrongWordsMock() {
   const words = [
