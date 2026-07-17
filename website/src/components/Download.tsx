@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Apple, Smartphone, Globe } from "lucide-react";
+import { APK_URL } from "@/data/site";
 import { useReveal } from "../hooks/useReveal";
 import { PocketWatch, SuitHeart, SuitSpade } from "./Decorations";
-
-const APK_URL =
-  "https://alice.edao.plus/downloads/alice-0.2.1-20260717-1752.apk";
 
 export function Download() {
   const { ref, visible } = useReveal();

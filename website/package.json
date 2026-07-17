@@ -5,17 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "tsc -b --noEmit"
+    "check": "tsc -b --noEmit",
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1",
     "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.14"
   },
@@ -32,6 +32,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
+    "playwright": "^1.57.0",
     "postcss": "^8.5.19",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
