@@ -9,12 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
-    "prerender": "node scripts/prerender.mjs",
-    "fonts:subset": "python3 scripts/subset-cjk-fonts.py"
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
-    "@fontsource/cormorant-garamond": "^5.2.11",
-    "@fontsource/playfair-display": "^5.2.8",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",

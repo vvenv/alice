@@ -55,7 +55,7 @@ export function Features() {
           </div>
           <h2 className="heading-serif text-4xl sm:text-5xl">
             为听写而生的
-            <span className="em-italic inline-block text-rose"> 每一处细节</span>
+            <span className="italic text-rose"> 每一处细节</span>
           </h2>
           <p className="mt-5 text-base leading-relaxed text-ink/60">
             从识别到发音，从练习到回顾，每个环节都打磨到顺手。

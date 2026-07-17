@@ -36,7 +36,7 @@ export function Hero() {
               style={{ animation: "fadeUp 0.9s 0.2s forwards" }}
             >
               Alice
-              <span className="em-italic block text-rose">听写</span>
+              <span className="block italic text-rose">听写</span>
             </h1>
 
             <p

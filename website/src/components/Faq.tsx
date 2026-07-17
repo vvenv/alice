@@ -16,7 +16,7 @@ export function Faq() {
             </div>
             <h2 className="heading-serif text-4xl sm:text-5xl">
               常见
-              <span className="em-italic inline-block text-rose"> 疑问</span>
+              <span className="italic text-rose"> 疑问</span>
             </h2>
             <p className="mt-5 text-base leading-relaxed text-ink/60">
               关于隐私与使用的解答。
