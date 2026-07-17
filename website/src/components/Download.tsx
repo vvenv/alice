@@ -4,7 +4,7 @@ import { useReveal } from "../hooks/useReveal";
 import { PocketWatch, SuitHeart, SuitSpade } from "./Decorations";
 
 const APK_URL =
-  "https://alice.edao.plus/downloads/alice-0.2.0-20260717-1704.apk";
+  "https://alice.edao.plus/downloads/alice-0.2.0-20260717-1721.apk";
 
 export function Download() {
   const { ref, visible } = useReveal();
