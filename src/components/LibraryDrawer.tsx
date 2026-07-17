@@ -71,9 +71,15 @@ export function LibraryDrawer({
 }: LibraryDrawerProps) {
   const colors = useThemeColors();
   const [query, setQuery] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
-    if (!visible) setQuery("");
+    if (!visible) {
+      setQuery("");
+      setExpandedCategories(new Set());
+    }
   }, [visible]);
 
   const filteredGroups = useMemo(
@@ -83,6 +89,18 @@ export function LibraryDrawer({
   const totalCount = groups.reduce((n, g) => n + g.items.length, 0);
   const filteredCount = filteredGroups.reduce((n, g) => n + g.items.length, 0);
   const isFiltering = query.trim().length > 0;
+
+  const isGroupExpanded = (category: string) =>
+    isFiltering || expandedCategories.has(category);
+
+  const toggleGroup = (category: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  };
 
   return (
     <BottomSheet
@@ -160,58 +178,90 @@ export function LibraryDrawer({
                 未找到匹配词库
               </Text>
             ) : (
-              filteredGroups.map((group) => (
-                <View key={group.category} style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.subtle }]}>
-                    {group.category}
-                  </Text>
-                  <View
-                    style={[
-                      styles.sectionBody,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.borderSubtle,
-                      },
-                    ]}
-                  >
-                    {group.items.map((item, idx) => (
-                      <TouchableOpacity
-                        key={item.entry.id}
+              filteredGroups.map((group) => {
+                const expanded = isGroupExpanded(group.category);
+                return (
+                  <View key={group.category} style={styles.section}>
+                    <TouchableOpacity
+                      style={styles.sectionHeader}
+                      onPress={() => {
+                        if (!isFiltering) toggleGroup(group.category);
+                      }}
+                      activeOpacity={isFiltering ? 1 : 0.6}
+                      disabled={isFiltering}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded }}
+                      accessibilityLabel={`${group.category}，${group.items.length} 个词表${expanded ? "，已展开" : "，已折叠"}`}
+                    >
+                      <Ionicons
+                        name={expanded ? "chevron-down" : "chevron-forward"}
+                        size={14}
+                        color={colors.subtle}
+                      />
+                      <Text
+                        style={[styles.sectionTitle, { color: colors.subtle }]}
+                      >
+                        {group.category}
+                      </Text>
+                      <Text
+                        style={[styles.sectionCount, { color: colors.subtle }]}
+                      >
+                        {group.items.length}
+                      </Text>
+                    </TouchableOpacity>
+                    {expanded ? (
+                      <View
                         style={[
-                          styles.item,
-                          idx > 0 && {
-                            borderTopColor: colors.borderSubtle,
-                            borderTopWidth: StyleSheet.hairlineWidth,
+                          styles.sectionBody,
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: colors.borderSubtle,
                           },
                         ]}
-                        onPress={() => {
-                          onApply(item.entry);
-                          onClose();
-                        }}
-                        activeOpacity={0.6}
-                        accessibilityRole="button"
-                        accessibilityLabel={`载入 ${item.label}`}
                       >
-                        <Text
-                          style={[
-                            styles.itemText,
-                            { color: colors.foreground },
-                          ]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.label}
-                        </Text>
-                        <Text
-                          style={[styles.itemMeta, { color: colors.subtle }]}
-                        >
-                          {wordCount(item.entry.text)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                        {group.items.map((item, idx) => (
+                          <TouchableOpacity
+                            key={item.entry.id}
+                            style={[
+                              styles.item,
+                              idx > 0 && {
+                                borderTopColor: colors.borderSubtle,
+                                borderTopWidth: StyleSheet.hairlineWidth,
+                              },
+                            ]}
+                            onPress={() => {
+                              onApply(item.entry);
+                              onClose();
+                            }}
+                            activeOpacity={0.6}
+                            accessibilityRole="button"
+                            accessibilityLabel={`载入 ${item.label}`}
+                          >
+                            <Text
+                              style={[
+                                styles.itemText,
+                                { color: colors.foreground },
+                              ]}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {item.label}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.itemMeta,
+                                { color: colors.subtle },
+                              ]}
+                            >
+                              {wordCount(item.entry.text)}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    ) : null}
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </ScrollView>
         </View>
@@ -253,12 +303,22 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.xs,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
   sectionTitle: {
+    flex: 1,
     fontFamily: fonts.displayZh,
     fontSize: 12,
     fontWeight: "600",
-    paddingHorizontal: spacing.xs,
     textTransform: "uppercase",
+  },
+  sectionCount: {
+    fontSize: 11,
   },
   sectionBody: {
     borderRadius: radii.control,
