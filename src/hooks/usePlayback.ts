@@ -346,6 +346,30 @@ export function usePlayback({
     setRemainingMs(Math.max(0, newDeadline - Date.now()));
   }, [intervalSec]);
 
+  // ---- Auto-next live toggle ----
+  // After speak2 with autoNext off, the scheduler is cleared while playState
+  // stays "playing". Re-enabling must restart the interval → next-word cycle;
+  // disabling mid-interval should cancel the countdown and stay put.
+  useEffect(() => {
+    if (playStateRef.current !== "playing") return;
+
+    if (!autoNext) {
+      const s = schedulerRef.current;
+      if (s?.phase === "interval") {
+        abortCycle();
+        clearCountdown();
+        schedulerRef.current = null;
+      }
+      return;
+    }
+
+    if (schedulerRef.current === null) {
+      const index = currentIndexRef.current;
+      if (index >= wordListRef.current.length) return;
+      startFrom(index, "interval");
+    }
+  }, [autoNext, abortCycle, clearCountdown, startFrom]);
+
   useEffect(
     () => () => {
       abortCycle();
