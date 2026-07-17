@@ -60,14 +60,6 @@ export function Footer() {
                 <span className="font-medium text-ink">vvenvw</span>
               </li>
               <li className="text-ink/60">
-                <span className="block text-ink/40">版本</span>
-                <span className="font-medium text-ink">v0.1.0</span>
-              </li>
-              <li className="text-ink/60">
-                <span className="block text-ink/40">域名</span>
-                <span className="font-medium text-ink">alice.edao.plus</span>
-              </li>
-              <li className="text-ink/60">
                 <span className="block text-ink/40">开源代码</span>
                 <a
                   href="https://github.com/vvenv/alice"

@@ -133,14 +133,10 @@ export function Download() {
 
                 <div className="text-left">
                   <div className="font-display text-lg font-semibold text-paper">
-                    版本 v0.2.0
+                    版本 v0.2.1
                   </div>
                   <div className="mt-1 text-sm text-paper/50">
                     支持 Android 8+
-                  </div>
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-gold/15 px-3 py-1 text-xs text-gold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                    全部功能永久免费
                   </div>
                 </div>
               </div>
