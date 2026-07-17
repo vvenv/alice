@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { FAQS } from "@/data/faq";
 import { useReveal } from "../hooks/useReveal";
 
 export function Faq() {
-  const [open, setOpen] = useState<number | null>(0);
   const { ref, visible } = useReveal();
 
   return (
@@ -30,48 +28,23 @@ export function Faq() {
             ref={ref}
             className={`reveal space-y-3 ${visible ? "is-visible" : ""}`}
           >
-            {FAQS.map((item, i) => {
-              const isOpen = open === i;
-              return (
-                <div
-                  key={i}
-                  className={`overflow-hidden rounded-xl border transition-all duration-300 ${
-                    isOpen
-                      ? "border-gold/30 bg-paper shadow-[0_4px_20px_-8px_rgba(184,134,11,0.2)]"
-                      : "border-ink/10 bg-paper/50 hover:border-ink/15"
-                  }`}
-                >
-                  <button
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
-                  >
-                    <span
-                      className={`font-display text-lg font-semibold transition-colors ${isOpen ? "text-rose" : "text-ink"}`}
-                    >
-                      {item.q}
-                    </span>
-                    <ChevronDown
-                      className={`h-5 w-5 shrink-0 text-gold transition-transform duration-300 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <div
-                    className={`grid transition-all duration-300 ${
-                      isOpen
-                        ? "grid-rows-[1fr] opacity-100"
-                        : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <p className="px-6 pb-5 text-sm leading-relaxed text-ink/65">
-                        {item.a}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {FAQS.map((item, i) => (
+              <details
+                key={i}
+                open={i === 0}
+                className="group overflow-hidden rounded-xl border border-ink/10 bg-paper/50 transition-all duration-300 open:shadow-[0_4px_20px_-8px_rgba(184,134,11,0.2)] hover:border-ink/15 open:hover:border-gold/30"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left [&::-webkit-details-marker]:hidden">
+                  <span className="font-display text-lg font-semibold text-ink transition-colors group-open:text-rose">
+                    {item.q}
+                  </span>
+                  <ChevronDown className="h-5 w-5 shrink-0 text-gold transition-transform duration-300 group-open:rotate-180" />
+                </summary>
+                <p className="px-6 pb-5 text-sm leading-relaxed text-ink/65">
+                  {item.a}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </div>
