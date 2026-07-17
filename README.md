@@ -73,10 +73,16 @@ pnpm --filter website dev
 ### 一键 Android 发版（本地构建 + 部署官网）
 
 ```bash
-pnpm release:android
+pnpm release:android           # 保持当前版本发版
+pnpm release:android patch     # 0.2.0 → 0.2.1
+pnpm release:android minor     # 0.2.0 → 0.3.0
+pnpm release:android major     # 0.2.0 → 1.0.0
+pnpm release:android 0.3.0     # 指定版本号
 ```
 
-流程：EAS 本地构建 APK → 暂存到 `website/public/downloads/` → 更新下载链接 → 构建官网 → rsync 部署到 `DEPLOY_SERVER`。详见 [`scripts/release.sh`](scripts/release.sh)。
+传入 bump 类型或版本号时，会同步更新 `package.json`、`app.json`（含 `android.versionCode`）、`android/app/build.gradle`、iOS `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`。
+
+流程：可选升版 → EAS 本地构建 APK → 暂存到 `website/public/downloads/` → 更新下载链接 → 构建官网 → rsync 部署到 `DEPLOY_SERVER`。详见 [`scripts/release.sh`](scripts/release.sh)。
 
 ### GitHub Actions 发版
 

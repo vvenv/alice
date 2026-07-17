@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# One-click Android release: build APK → stage on website → publish to server.
+# One-click Android release: (optional) bump version → build APK → stage on website → publish.
 #
 # Flow:
+#   0. Optionally bump version (patch / minor / major / x.y.z)
 #   1. Read version from app.json
 #   2. Build the APK locally via EAS (--local, preview profile) to a temp path
 #   3. Move it to website/public/downloads/alice-<version>-<timestamp>.apk
@@ -13,8 +14,12 @@
 #      ~89 MB upload; otherwise upload everything.
 #
 # Usage:
-#   pnpm release:android        # build + deploy
-#   bash scripts/release.sh     # same, directly
+#   pnpm release:android              # build + deploy (keep current version)
+#   pnpm release:android patch        # bump patch (0.2.0 → 0.2.1) then release
+#   pnpm release:android minor        # bump minor (0.2.0 → 0.3.0) then release
+#   pnpm release:android major        # bump major (0.2.0 → 1.0.0) then release
+#   pnpm release:android 0.3.0        # set explicit version then release
+#   bash scripts/release.sh patch     # same, directly
 #
 # Prereqs: EAS CLI authenticated, Java 17+ / Android SDK for --local builds,
 #          SSH key auth to the deploy server (BatchMode).
@@ -26,6 +31,33 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+
+# shellcheck source=scripts/lib/version.sh
+VERSION_ROOT="$ROOT"
+source "$ROOT/scripts/lib/version.sh"
+
+error() { echo "ERROR: $*" >&2; exit 1; }
+
+# --- args ---
+VERSION_ARG=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help|-h)
+      sed -n '3,24p' "$0"
+      exit 0
+      ;;
+    -*)
+      error "未知选项: $1（可用 patch / minor / major / x.y.z）"
+      ;;
+    *)
+      if [ -n "$VERSION_ARG" ]; then
+        error "多余的参数: $1"
+      fi
+      VERSION_ARG="$1"
+      shift
+      ;;
+  esac
+done
 
 # --- config ---
 # Deploy target comes from the gitignored .env (or the environment):
@@ -43,6 +75,15 @@ PUBLIC_HOST="https://alice.edao.plus"
 WEBSITE_DIR="$ROOT/website"
 DOWNLOAD_TSX="$WEBSITE_DIR/src/components/Download.tsx"
 APK_PUBLIC_DIR="$WEBSITE_DIR/public/downloads"
+
+# --- 0. optional version bump ---
+if [ -n "$VERSION_ARG" ]; then
+  CURRENT="$(get_current_version)"
+  NEW_VERSION="$(resolve_version "$VERSION_ARG")" || error "无法解析版本: $VERSION_ARG"
+  NEW_CODE="$(sync_versions "$NEW_VERSION")"
+  echo "▶ Bumped version $CURRENT → $NEW_VERSION (versionCode $NEW_CODE)"
+  echo ""
+fi
 
 # --- read version + timestamp ---
 VERSION="$(node -p "require('./app.json').expo.version")"
@@ -119,5 +160,10 @@ echo "  APK:  $PUBLIC_HOST/downloads/$APK_NAME"
 echo "  Site: $PUBLIC_HOST/#download"
 echo ""
 echo "Reminder: review & commit when ready —"
-echo "  git add website/src/components/Download.tsx website/public/downloads/$APK_NAME"
+if [ -n "$VERSION_ARG" ]; then
+  echo "  git add package.json app.json android/app/build.gradle ios/Alice.xcodeproj/project.pbxproj \\"
+  echo "         website/src/components/Download.tsx"
+else
+  echo "  git add website/src/components/Download.tsx"
+fi
 echo "  (APK is gitignored; only the URL change in Download.tsx is tracked)"
