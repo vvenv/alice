@@ -84,21 +84,17 @@ pnpm release:android 0.3.0     # 指定版本号
 
 流程：可选升版 → EAS 本地构建 APK → 暂存到 `website/public/downloads/` → 更新下载链接 → 构建官网 → rsync 部署到 `DEPLOY_SERVER`。详见 [`scripts/release.sh`](scripts/release.sh)。
 
-### 仅发布官网
+### 发布官网 + Web 应用
 
 ```bash
-pnpm release:website
+pnpm release:website              # 落地页 + /app/（推荐）
+pnpm release:website -- --skip-webapp  # 仅落地页
+pnpm release:webapp               # 仅更新 /app/
 ```
 
-构建 `website/` 并用 rsync 部署到 `DEPLOY_SERVER`；会排除 `downloads/`，不会动线上 APK。详见 [`scripts/release-website.sh`](scripts/release-website.sh)。
+官网与 Web 应用**无先后顺序要求**：落地页 rsync 会排除 `downloads/` 和 `app/`，不会互相覆盖。`release:website` 默认一并发布 Web 应用。入口：<https://alice.edao.plus/app/>。
 
-### 发布 Web 应用
-
-```bash
-pnpm release:webapp
-```
-
-静态导出 Expo Web（`dist/`，不嵌入 OCR Key）并 rsync 到 `DEPLOY_SERVER` 的 `/app/`。入口：<https://alice.edao.plus/app/>。详见 [`scripts/release-webapp.sh`](scripts/release-webapp.sh)。
+详见 [`scripts/release-website.sh`](scripts/release-website.sh)、[`scripts/release-webapp.sh`](scripts/release-webapp.sh)。
 
 ### GitHub Actions 发版
 

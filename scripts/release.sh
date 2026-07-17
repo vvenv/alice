@@ -9,9 +9,9 @@
 #      (removing any previous timestamped APK there)
 #   4. Update APK_URL in website/src/data/site.ts
 #   5. Build the website (pnpm --filter website build)
-#   6. Deploy dist/ to the server via rsync. If the new APK's bytes already
-#      exist on the server (same sha256), rename it in place and skip the
-#      ~89 MB upload; otherwise upload everything.
+#   6. Deploy dist/ to the server via rsync (always excludes app/). If the new
+#      APK's bytes already exist on the server (same sha256), rename it in place
+#      and skip the ~89 MB upload; otherwise upload everything.
 #
 # Usage:
 #   pnpm release:android              # build + deploy (keep current version)
@@ -130,7 +130,8 @@ pnpm --filter website build
 echo "▶ [5/6] Deploying to $SERVER:$REMOTE_DIR..."
 LOCAL_APK="$WEBSITE_DIR/dist/downloads/$APK_NAME"
 LOCAL_SHA="$(shasum -a 256 "$LOCAL_APK" | cut -d' ' -f1)"
-RSYNC_EXCLUDE=""
+# Always preserve the Expo Web app under /app/ (deployed separately).
+RSYNC_EXCLUDES=(--exclude=app)
 
 # compare with whatever APK already lives on the server
 EXISTING="$(ssh -o BatchMode=yes "$SERVER" "ls $REMOTE_DIR/downloads/*.apk 2>/dev/null | head -1" 2>/dev/null || true)"
@@ -139,7 +140,7 @@ if [ -n "$EXISTING" ]; then
   if [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
     echo "  server APK bytes identical (sha ${LOCAL_SHA:0:12}...) → rename in place, skip upload"
     ssh -o BatchMode=yes "$SERVER" "mv '$EXISTING' '$REMOTE_DIR/downloads/$APK_NAME'"
-    RSYNC_EXCLUDE="--exclude=downloads"
+    RSYNC_EXCLUDES+=(--exclude=downloads)
   else
     echo "  server APK differs (local ${LOCAL_SHA:0:12}... vs remote ${REMOTE_SHA:0:12}...) → upload new APK"
   fi
@@ -147,8 +148,7 @@ else
   echo "  no APK on server yet → upload"
 fi
 
-rsync -avz --delete $RSYNC_EXCLUDE "$WEBSITE_DIR/dist/" "$SERVER:$REMOTE_DIR/"
-
+rsync -avz --delete "${RSYNC_EXCLUDES[@]}" "$WEBSITE_DIR/dist/" "$SERVER:$REMOTE_DIR/"
 # --- 6. verify ---
 echo "▶ [6/6] Verifying..."
 ssh -o BatchMode=yes "$SERVER" \

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Deploy the Expo Web app to /app/ on the marketing site host.
 #
+# Safe to run before or after release-website.sh: the website sync excludes
+# app/, and this script only writes into …/app/.
+#
 # Flow:
 #   1. Static-export the app (pnpm build → dist/), with no embedded OCR key
 #   2. rsync dist/ to $REMOTE_DIR/app/
@@ -8,6 +11,7 @@
 # Usage:
 #   pnpm release:webapp
 #   bash scripts/release-webapp.sh
+#   (also invoked by release-website.sh unless --skip-webapp)
 #
 # Prereqs: SSH key auth to the deploy server (BatchMode).
 # Config from .env (see .env.example):
