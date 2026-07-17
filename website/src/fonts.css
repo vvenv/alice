@@ -1,25 +1,57 @@
 /*
-  Self-hosted fonts (no fonts.googleapis.com).
-  Noto SC weights use unicode-range chunks — browser only fetches needed glyphs.
+  Self-hosted fonts — no fonts.googleapis.com at runtime.
+
+  Latin: @fontsource (full faces, true italic).
+  CJK: glyph-subsetted woff2 in /public/fonts (regenerate via scripts/subset-cjk-fonts.py).
 */
 
 /* Latin display — true italic available */
-@import "@fontsource/playfair-display/400.css";
-@import "@fontsource/playfair-display/700.css";
-@import "@fontsource/playfair-display/400-italic.css";
-@import "@fontsource/playfair-display/700-italic.css";
+@import "@fontsource/playfair-display/latin-400.css";
+@import "@fontsource/playfair-display/latin-700.css";
+@import "@fontsource/playfair-display/latin-400-italic.css";
+@import "@fontsource/playfair-display/latin-700-italic.css";
 
 /* Latin serif accents — true italic available */
-@import "@fontsource/cormorant-garamond/400.css";
-@import "@fontsource/cormorant-garamond/500.css";
-@import "@fontsource/cormorant-garamond/400-italic.css";
-@import "@fontsource/cormorant-garamond/500-italic.css";
+@import "@fontsource/cormorant-garamond/latin-400.css";
+@import "@fontsource/cormorant-garamond/latin-500.css";
+@import "@fontsource/cormorant-garamond/latin-400-italic.css";
+@import "@fontsource/cormorant-garamond/latin-500-italic.css";
 
-/* CJK serif for headings — upright only (no italic faces exist) */
-@import "@fontsource/noto-serif-sc/400.css";
-@import "@fontsource/noto-serif-sc/700.css";
+/* CJK serif — upright only; no italic faces exist for Noto Serif SC */
+@font-face {
+  font-family: "Noto Serif SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/noto-serif-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Serif SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/noto-serif-sc-700.woff2") format("woff2");
+}
 
-/* CJK sans for body */
-@import "@fontsource/noto-sans-sc/400.css";
-@import "@fontsource/noto-sans-sc/500.css";
-@import "@fontsource/noto-sans-sc/700.css";
+/* CJK sans */
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-700.woff2") format("woff2");
+}

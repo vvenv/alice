@@ -11,9 +11,12 @@
   --color-midnight: #0f1a2e;
   --color-nightpaper: #162238;
 
-  --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
-  --font-serif: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
-  --font-sans: "Noto Sans SC", system-ui, sans-serif;
+  --font-display: "Playfair Display", "Noto Serif SC", "Source Han Serif SC",
+    "Songti SC", Georgia, serif;
+  --font-serif: "Cormorant Garamond", "Noto Serif SC", "Source Han Serif SC",
+    "Songti SC", Georgia, serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
+    "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
 
   --tracking-tightest: -0.04em;
 
@@ -52,6 +55,8 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Avoid inconsistent fake italic/bold on CJK across Android/iOS/desktop */
+    font-synthesis: none;
   }
 
   body {
@@ -136,6 +141,18 @@
     @apply font-display font-bold leading-[1.05] tracking-tightest text-ink;
   }
 
+  /*
+    CJK-safe emphasis: Noto Serif SC has no italic faces, and Android often
+    won't synthesize font-style:italic for CJK. Use a controlled skew instead.
+    Keep Tailwind `italic` only for Latin-only strings (Playfair/Cormorant).
+    Pair with `inline-block` or `block` so transform applies.
+  */
+  .em-italic {
+    font-style: normal;
+    transform: skewX(-8deg);
+    transform-origin: center bottom;
+  }
+
   /* 滚动渐显 */
   .reveal {
     opacity: 0;
@@ -156,7 +173,7 @@
   .ornament-divider::before,
   .ornament-divider::after {
     content: "";
-    @apply h-px w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent;
+    @apply h-px w-16 bg-linear-to-r from-transparent via-gold/40 to-transparent;
   }
 }
 

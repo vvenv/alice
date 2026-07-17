@@ -65,7 +65,7 @@ export function Showcase() {
           </div>
           <h2 className="heading-serif text-4xl sm:text-5xl">
             从拍照到回顾，
-            <span className="italic text-rose"> 一气呵成</span>
+            <span className="em-italic inline-block text-rose"> 一气呵成</span>
           </h2>
         </div>
 
@@ -119,7 +119,7 @@ function ShowcaseRow({ item }: { item: ShowCaseItem }) {
         style={{ transitionDelay: "250ms" }}
       >
         <div className="relative">
-          <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-gradient-to-tr from-gold/8 to-rose/8 blur-3xl" />
+          <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-linear-to-tr from-gold/8 to-rose/8 blur-3xl" />
           <PhoneFrame>{item.mock}</PhoneFrame>
         </div>
       </div>

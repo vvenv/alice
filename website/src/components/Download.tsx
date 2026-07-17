@@ -44,12 +44,12 @@ export function Download() {
             <SuitSpade className="pointer-events-none absolute left-[12%] bottom-10 h-6 w-6 -rotate-12 text-gold/15" />
 
             <div className="relative z-10">
-              <div className="eyebrow mb-4 !text-gold/80">
+              <div className="eyebrow mb-4 text-gold/80!">
                 <span>Get Alice</span>
               </div>
               <h2 className="font-display text-4xl font-bold leading-tight text-paper sm:text-5xl">
                 开启你的
-                <span className="italic text-rose"> 听写之旅</span>
+                <span className="em-italic inline-block text-rose"> 听写之旅</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-paper/60">
                 扫码下载，全部功能永久免费，无内购、无广告。
@@ -154,7 +154,7 @@ export function Download() {
       {/* Toast 提示 */}
       {toast && (
         <div
-          className={`fixed bottom-8 left-0 right-0 z-[100] flex justify-center transition-opacity duration-500 ${
+          className={`fixed bottom-8 left-0 right-0 z-100 flex justify-center transition-opacity duration-500 ${
             hide ? "opacity-0" : "opacity-100"
           }`}
         >
