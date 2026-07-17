@@ -3,8 +3,8 @@ import * as path from "path";
 
 /**
  * Layout: data/<category>/<label>.txt
- * - <category> = subdirectory name (e.g. "中考1600", "人教版-七年级上")
- * - <label>    = filename without .txt (e.g. "A", "Unit1")
+ * - <category> = subdirectory name (e.g. "中考1600", "人教版初中")
+ * - <label>    = filename without .txt (e.g. "A", "七上 Unit 1")
  * - Files directly under data/ (no subdirectory) are assigned category "其他"
  * - Empty subdirectories are skipped
  *
@@ -14,6 +14,38 @@ import * as path from "path";
 
 const DATA_DIR = path.resolve(__dirname, "../data");
 const OUTPUT_FILE = path.resolve(__dirname, "../src/lib/defaultHistory.ts");
+
+/** Map grade shorthand so 三→九 sort by school year, not pinyin. */
+const GRADE_RANK: Record<string, number> = {
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
+};
+
+const TERM_RANK: Record<string, number> = { 上: 0, 下: 1, 全: 2 };
+
+/**
+ * Sort titles by grade → 上/下/全 → Unit/Module number.
+ * Falls back to natural string compare for letter lists (A, B, …).
+ */
+function compareLabels(a: string, b: string): number {
+  const gradeRe = /^([三四五六七八九])([上下全])/;
+  const ma = a.match(gradeRe);
+  const mb = b.match(gradeRe);
+  if (ma && mb) {
+    const ra = GRADE_RANK[ma[1]!] ?? 99;
+    const rb = GRADE_RANK[mb[1]!] ?? 99;
+    if (ra !== rb) return ra - rb;
+    const ta = TERM_RANK[ma[2]!] ?? 9;
+    const tb = TERM_RANK[mb[2]!] ?? 9;
+    if (ta !== tb) return ta - tb;
+  }
+  return a.localeCompare(b, "zh-Hans", { numeric: true, sensitivity: "base" });
+}
 
 interface RawEntry {
   category: string;
@@ -25,7 +57,7 @@ function collectEntries(): RawEntry[] {
   const entries: RawEntry[] = [];
   const topLevels = fs
     .readdirSync(DATA_DIR, { withFileTypes: true })
-    .sort((a, b) => a.name.localeCompare(b.name, "zh-Hans"));
+    .sort((a, b) => compareLabels(a.name, b.name));
 
   for (const top of topLevels) {
     if (top.isDirectory()) {
@@ -34,7 +66,7 @@ function collectEntries(): RawEntry[] {
       const files = fs
         .readdirSync(dirPath)
         .filter((f) => f.endsWith(".txt"))
-        .sort((a, b) => a.localeCompare(b, "zh-Hans"));
+        .sort(compareLabels);
       for (const filename of files) {
         const content = fs
           .readFileSync(path.join(dirPath, filename), "utf-8")

@@ -29,7 +29,7 @@ function wordCount(text: string): number {
   return parseWords(text).length;
 }
 
-/** Lowercase and strip common separators so "七上unit1" matches "七上-Unit1". */
+/** Lowercase and strip common separators so "七上unit1" matches "七上 Unit 1". */
 function normalizeForSearch(value: string): string {
   return value.toLowerCase().replace(/[\s\-_./]+/g, "");
 }
