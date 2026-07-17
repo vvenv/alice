@@ -48,10 +48,15 @@ export function DictationScreen({
   const colors = useThemeColors();
   const { width, height } = useWindowDimensions();
   const useDualPane = width >= 768 || (width >= 700 && width > height);
+  const useCompactLayout = !useDualPane && height < 900;
   const dialSize = Math.round(
     Math.max(
-      220,
-      Math.min(300, width * (useDualPane ? 0.36 : 0.8), height * 0.48),
+      useCompactLayout ? 200 : 220,
+      Math.min(
+        useCompactLayout ? 260 : 300,
+        width * (useDualPane ? 0.36 : 0.8),
+        height * (useCompactLayout ? 0.38 : 0.48),
+      ),
     ),
   );
   const [showWord, setShowWord] = useState(false);
@@ -365,7 +370,13 @@ export function DictationScreen({
       <View
         style={[styles.contentLayout, useDualPane && styles.contentLayoutWide]}
       >
-        <View style={[styles.wordStage, useDualPane && styles.wordStageWide]}>
+        <View
+          style={[
+            styles.wordStage,
+            useCompactLayout && styles.wordStageCompact,
+            useDualPane && styles.wordStageWide,
+          ]}
+        >
           {isFinished ? (
             <Animated.View
               style={[
@@ -573,7 +584,7 @@ export function DictationScreen({
                 label="标记错词"
                 icon="close-circle-outline"
                 variant="danger"
-                size="md"
+                size="sm"
                 onPress={handleMarkWrong}
                 disabled={!markEnabled}
                 haptic={false}
@@ -606,6 +617,7 @@ export function DictationScreen({
         <View
           style={[
             styles.bottomPanel,
+            useCompactLayout && styles.bottomPanelCompact,
             useDualPane && styles.bottomPanelWide,
             {
               backgroundColor: colors.surfaceSunken,
@@ -669,6 +681,7 @@ export function DictationScreen({
           <View
             style={[
               styles.wrongSection,
+              useCompactLayout && styles.wrongSectionCompact,
               useDualPane && styles.wrongSectionWide,
             ]}
           >
@@ -824,6 +837,10 @@ const styles = StyleSheet.create({
     minHeight: 120,
     gap: spacing.lg,
   },
+  wordStageCompact: {
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
+  },
   wordStageWide: {
     flexBasis: 0,
   },
@@ -879,6 +896,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.lg,
   },
+  bottomPanelCompact: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+  },
   bottomPanelWide: {
     width: 380,
     maxWidth: "42%",
@@ -906,8 +928,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   markBtn: {
-    width: "100%",
-    maxWidth: 288,
+    alignSelf: "center",
   },
   nextWordRow: {
     flexDirection: "row",
@@ -965,6 +986,7 @@ const styles = StyleSheet.create({
   },
 
   wrongSection: { gap: spacing.sm, maxHeight: 120 },
+  wrongSectionCompact: { maxHeight: 88 },
   wrongSectionWide: { flex: 1, maxHeight: undefined, minHeight: 0 },
   wrongHeader: {
     flexDirection: "row",
