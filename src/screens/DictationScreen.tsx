@@ -557,6 +557,34 @@ export function DictationScreen({
                         {"•••••"}
                       </Text>
                     )}
+                    {showWord &&
+                      playback.currentIndex + 1 <
+                        playback.wordList.length && (
+                        <View style={styles.nextWordRow}>
+                          <Text
+                            style={[
+                              styles.nextWordLabel,
+                              { color: colors.muted },
+                            ]}
+                          >
+                            下一个
+                          </Text>
+                          <Text
+                            style={[
+                              styles.nextWordText,
+                              { color: colors.subtle },
+                            ]}
+                          >
+                            {
+                              parseWordLine(
+                                playback.wordList[
+                                  playback.currentIndex + 1
+                                ]!,
+                              ).word
+                            }
+                          </Text>
+                        </View>
+                      )}
                     <Text
                       style={[
                         styles.dialCountdown,
@@ -590,26 +618,6 @@ export function DictationScreen({
                 haptic={false}
                 style={styles.markBtn}
               />
-
-              {showWord &&
-                playback.currentIndex + 1 < playback.wordList.length && (
-                  <View style={styles.nextWordRow}>
-                    <Text
-                      style={[styles.nextWordLabel, { color: colors.muted }]}
-                    >
-                      下一个
-                    </Text>
-                    <Text
-                      style={[styles.nextWordText, { color: colors.subtle }]}
-                    >
-                      {
-                        parseWordLine(
-                          playback.wordList[playback.currentIndex + 1]!,
-                        ).word
-                      }
-                    </Text>
-                  </View>
-                )}
             </>
           )}
         </View>
