@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -15,7 +16,9 @@ import Constants from "expo-constants";
 import { IconButton } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { OcrSettingsModal } from "../components/OcrSettingsModal";
+import { Toast } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
+import { loadSoundEnabled, setSoundEnabled } from "../lib/sound";
 import { fonts, radii, spacing } from "../lib/designTokens";
 import {
   isCustomOcrConfigSet,
@@ -48,7 +51,17 @@ export function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigation>();
   const colors = useThemeColors();
   const { mode, setMode } = useThemeMode();
-  const { showToast } = useToast();
+  const { toast, showToast, hideToast } = useToast();
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    loadSoundEnabled().then(setSoundOn);
+  }, []);
+
+  const handleToggleSound = useCallback((value: boolean) => {
+    setSoundOn(value);
+    setSoundEnabled(value);
+  }, []);
 
   const [customOcrConfig, setCustomOcrConfig] = useState<OcrProviderConfig | null>(null);
   const [ocrSettingsVisible, setOcrSettingsVisible] = useState(false);
@@ -218,6 +231,34 @@ export function SettingsScreen() {
           </View>
         </View>
 
+        {/* 声音 — sound effects toggle */}
+        <Text style={[styles.sectionLabel, { color: colors.subtle }]}>
+          声音
+        </Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.surfaceRaised, borderColor: colors.borderSubtle },
+          ]}
+        >
+          <View style={styles.row}>
+            <Ionicons
+              name="musical-notes-outline"
+              size={18}
+              color={colors.secondary}
+            />
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>
+              提示音
+            </Text>
+            <Switch
+              value={soundOn}
+              onValueChange={handleToggleSound}
+              trackColor={{ false: colors.track, true: colors.primarySoft }}
+              thumbColor={soundOn ? colors.primary : colors.background}
+            />
+          </View>
+        </View>
+
         {/* Other sections */}
         {sections.map((section) => (
           <View key={section.key}>
@@ -298,6 +339,7 @@ export function SettingsScreen() {
           setDialog((d) => (d ? { ...d, visible: false } : null))
         }
       />
+      <Toast toast={toast} onActionPress={hideToast} />
     </SafeAreaView>
   );
 }

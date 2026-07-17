@@ -23,6 +23,7 @@ import { useWrongWords } from "../hooks/useWrongWords";
 import { parseWordLine, speakTextFromEntry } from "../lib/dictation";
 import { fonts, radii, spacing } from "../lib/designTokens";
 import { notifySuccess, notifyWarning } from "../lib/haptics";
+import { playChime, playTick } from "../lib/sound";
 import { useThemeColors } from "../lib/theme";
 
 const STATUS_PLAYING = "#27ae60";
@@ -54,7 +55,7 @@ export function DictationScreen({
   const prevRemainingRef = useRef<number | null>(null);
   const finishAnim = useRef(new Animated.Value(0)).current;
 
-  const { toast, showToast } = useToast();
+  const { toast, showToast, hideToast } = useToast();
   const {
     wrongWords,
     markedFlash,
@@ -62,6 +63,7 @@ export function DictationScreen({
     exportWrong,
     clearWrong,
     removeWrongWord,
+    restoreWrongWord,
   } = useWrongWords();
 
   const playback = usePlayback({ intervalSec, autoNext });
@@ -131,6 +133,31 @@ export function DictationScreen({
     showToast("已清空错词本");
   }, [wrongWords, clearWrong, showToast]);
 
+  const handleRemoveWrongWord = useCallback(
+    (word: string) => {
+      removeWrongWord(word);
+      showToast(`已移除 ${word}`, {
+        label: "撤销",
+        onPress: () => restoreWrongWord(word),
+      });
+    },
+    [removeWrongWord, restoreWrongWord, showToast],
+  );
+
+  // Replay only the words marked wrong, restoring enriched lines when we
+  // still have them in the current word list.
+  const handleRetryWrong = useCallback(() => {
+    if (wrongWords.length === 0) return;
+    const lines = wrongWords.map(
+      (w) => playback.wordList.find((l) => speakTextFromEntry(l) === w) ?? w,
+    );
+    setElapsedSec(null);
+    finishAnim.setValue(0);
+    startTimeRef.current = Date.now();
+    setShowWord(false);
+    playback.startDictation(lines);
+  }, [wrongWords, playback, finishAnim]);
+
   const progress =
     playback.wordList.length > 0
       ? (playback.currentIndex + 1) / playback.wordList.length
@@ -194,6 +221,7 @@ export function DictationScreen({
       Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000)),
     );
     notifySuccess();
+    playChime();
     Animated.spring(finishAnim, {
       toValue: 1,
       useNativeDriver: USE_NATIVE_DRIVER,
@@ -201,6 +229,21 @@ export function DictationScreen({
       tension: 60,
     }).start();
   }, [isFinished, elapsedSec, finishAnim]);
+
+  // Soft watch tick as each word's countdown enters its final second.
+  const prevTickMsRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevTickMsRef.current;
+    prevTickMsRef.current = playback.remainingMs;
+    if (
+      prev !== null &&
+      playback.remainingMs !== null &&
+      prev > 1000 &&
+      playback.remainingMs <= 1000
+    ) {
+      playTick();
+    }
+  }, [playback.remainingMs]);
 
   // ---- Current word entry + meta for display (already enriched on Home) ----
   const currentLine =
@@ -352,10 +395,20 @@ export function DictationScreen({
               </View>
             </View>
 
+            {wrongWords.length > 0 ? (
+              <Button
+                label={`错词再听一遍 (${wrongWords.length})`}
+                icon="refresh"
+                variant="primary"
+                size="md"
+                onPress={handleRetryWrong}
+                style={styles.returnBtn}
+              />
+            ) : null}
             <Button
               label="返回首页"
               icon="arrow-back"
-              variant="primary"
+              variant={wrongWords.length > 0 ? "outline" : "primary"}
               size="md"
               onPress={handleExit}
               style={styles.returnBtn}
@@ -562,8 +615,10 @@ export function DictationScreen({
                       borderColor: colors.borderMuted,
                     },
                   ]}
-                  onPress={() => removeWrongWord(word)}
+                  onPress={() => handleRemoveWrongWord(word)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`移除错词 ${word}`}
                 >
                   <Text style={[styles.chipText, { color: colors.foreground }]}>
                     {word}
@@ -587,7 +642,7 @@ export function DictationScreen({
         onConfirm={confirmStop}
         onCancel={() => setExitDialogVisible(false)}
       />
-      <Toast message={toast} />
+      <Toast toast={toast} onActionPress={hideToast} />
     </SafeAreaView>
   );
 }

@@ -188,7 +188,10 @@ export function Button({
   );
 }
 
-type IconButtonVariant = "surface" | "primary" | "danger";
+type IconButtonVariant = "surface" | "primary" | "danger" | "gold";
+
+// Ink reads well on both themes' golds.
+const GOLD_INK = "#1A2B4A";
 
 interface IconButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -231,7 +234,14 @@ export function IconButton({
       border: colors.dangerMuted,
       icon: colors.danger,
     },
+    gold: {
+      bg: colors.gold,
+      border: "transparent",
+      icon: GOLD_INK,
+    },
   }[variant];
+
+  const isFilled = variant === "primary" || variant === "gold";
 
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
@@ -255,10 +265,10 @@ export function IconButton({
             borderRadius: radii.full,
             backgroundColor: palette.bg,
             borderColor: palette.border,
-            borderWidth: variant === "primary" ? 0 : 1,
+            borderWidth: isFilled ? 0 : 1,
           },
-          variant === "primary" && {
-            shadowColor: colors.primary,
+          isFilled && {
+            shadowColor: variant === "gold" ? colors.gold : colors.primary,
             shadowOpacity: 0.35,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },

@@ -195,6 +195,22 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
 
     // ---- Paywall view (step 1: show WeChat ID) ----
     if (!ocrUnlocked && !showUnlock) {
+      // Collapsed: a quiet one-line link, not a card competing with the list.
+      if (paywallCollapsed) {
+        return (
+          <TouchableOpacity
+            style={styles.paywallLink}
+            onPress={togglePaywall}
+            activeOpacity={0.6}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons name="lock-closed" size={12} color={colors.subtle} />
+            <Text style={[styles.paywallLinkText, { color: colors.subtle }]}>
+              拍照识词未解锁 · 查看详情
+            </Text>
+          </TouchableOpacity>
+        );
+      }
       return (
         <View
           style={[
@@ -210,10 +226,10 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           >
             <Ionicons name="lock-closed" size={18} color={colors.muted} />
             <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-              解锁高级功能
+              解锁拍照识词
             </Text>
             <Ionicons
-              name={paywallCollapsed ? "chevron-forward" : "chevron-down"}
+              name="chevron-down"
               size={16}
               color={colors.muted}
               style={styles.chevron}
@@ -440,6 +456,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: "center",
     gap: spacing.sm,
+  },
+  paywallLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  paywallLinkText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   paywallHeader: {
     flexDirection: "row",

@@ -43,6 +43,16 @@ export function useWrongWords(initialWords?: string[]) {
     [wrongWords],
   );
 
+  /** Add a word back (undo for removeWrongWord) — no marked flash. */
+  const restoreWrongWord = useCallback((word: string) => {
+    setWrongWords((prev) => {
+      if (prev.includes(word)) return prev;
+      const next = [...prev, word];
+      saveWrongWords(next);
+      return next;
+    });
+  }, []);
+
   return {
     wrongWords,
     markedFlash,
@@ -50,6 +60,7 @@ export function useWrongWords(initialWords?: string[]) {
     exportWrong,
     clearWrong,
     removeWrongWord,
+    restoreWrongWord,
     hasWrongWords: wrongWords.length > 0,
   };
 }

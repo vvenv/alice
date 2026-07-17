@@ -7,19 +7,15 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   StyleSheet,
   TouchableOpacity,
   Text,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { BottomSheet } from "../components/BottomSheet";
 import { Button, IconButton } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryDrawer } from "../components/HistoryDrawer";
@@ -83,7 +79,6 @@ type MenuItem = {
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigation>();
-  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { mode, toggleTheme } = useThemeMode();
   const [ready, setReady] = useState(false);
@@ -101,6 +96,7 @@ export function HomeScreen() {
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [libraryDrawerVisible, setLibraryDrawerVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [cameraSheetVisible, setCameraSheetVisible] = useState(false);
   const libraryGroups = useMemo<LibraryGroup[]>(() => getLibraryGroups(), []);
   const ocrRef = useRef<OcrSectionHandle>(null);
   // Edge-to-edge Android ignores adjustResize; pad manually when keyboard opens.
@@ -135,7 +131,7 @@ export function HomeScreen() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { toast, showToast } = useToast();
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -298,55 +294,90 @@ export function HomeScreen() {
     ocrUnlocked || isCustomOcrConfigSet(customOcrConfig);
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
+  const closeCameraSheet = useCallback(() => setCameraSheetVisible(false), []);
 
-  const runMenuAction = useCallback(
-    (action: () => void) => {
-      closeMenu();
-      // Android Dialog teardown needs a beat before presenting another Modal;
-      // a single rAF is often too early on real devices and leaves the sheet
-      // stuck mid-open.
-      const delayMs = Platform.OS === "android" ? 320 : 0;
-      if (delayMs === 0) {
-        requestAnimationFrame(action);
-      } else {
-        setTimeout(action, delayMs);
-      }
-    },
-    [closeMenu],
-  );
+  const runSheetAction = useCallback((close: () => void, action: () => void) => {
+    close();
+    // Android Dialog teardown needs a beat before presenting another Modal;
+    // a single rAF is often too early on real devices and leaves the sheet
+    // stuck mid-open.
+    const delayMs = Platform.OS === "android" ? 320 : 0;
+    if (delayMs === 0) {
+      requestAnimationFrame(action);
+    } else {
+      setTimeout(action, delayMs);
+    }
+  }, []);
 
   const menuItems: MenuItem[] = [
     {
-      key: "photo",
-      icon: "camera-outline",
-      label: "拍照",
-      onPress: () => runMenuAction(() => ocrRef.current?.processPhoto()),
-    },
-    {
-      key: "album",
-      icon: "images-outline",
-      label: "相册",
-      onPress: () => runMenuAction(() => ocrRef.current?.processAlbum()),
-    },
-    {
       key: "history",
       icon: "time-outline",
-      label: "历史",
-      onPress: () => runMenuAction(() => setHistoryDrawerVisible(true)),
+      label: "历史记录",
+      onPress: () =>
+        runSheetAction(closeMenu, () => setHistoryDrawerVisible(true)),
     },
     {
       key: "library",
       icon: "library-outline",
       label: "词库",
-      onPress: () => runMenuAction(() => setLibraryDrawerVisible(true)),
+      onPress: () =>
+        runSheetAction(closeMenu, () => setLibraryDrawerVisible(true)),
     },
     {
       key: "settings",
       icon: "settings-outline",
       label: "设置",
-      onPress: () => runMenuAction(() => navigation.navigate("Settings")),
+      onPress: () =>
+        runSheetAction(closeMenu, () => navigation.navigate("Settings")),
     },
   ];
+
+  const cameraItems: MenuItem[] = [
+    {
+      key: "photo",
+      icon: "camera-outline",
+      label: "拍摄照片",
+      onPress: () =>
+        runSheetAction(closeCameraSheet, () => ocrRef.current?.processPhoto()),
+    },
+    {
+      key: "album",
+      icon: "images-outline",
+      label: "从相册选取",
+      onPress: () =>
+        runSheetAction(closeCameraSheet, () => ocrRef.current?.processAlbum()),
+    },
+  ];
+
+  const renderSheetRow = (item: MenuItem) => (
+    <TouchableOpacity
+      key={item.key}
+      style={[
+        styles.sheetRow,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.borderSubtle,
+        },
+      ]}
+      onPress={item.onPress}
+      disabled={item.disabled}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+    >
+      <Ionicons name={item.icon} size={20} color={colors.foreground} />
+      <Text style={[styles.sheetRowText, { color: colors.foreground }]}>
+        {item.label}
+      </Text>
+      <Ionicons
+        name="chevron-forward"
+        size={16}
+        color={colors.subtle}
+        style={styles.sheetRowChevron}
+      />
+    </TouchableOpacity>
+  );
 
   if (!ready) {
     return (
@@ -474,6 +505,21 @@ export function HomeScreen() {
             onStartIndexChange={setStartIndex}
             isDisplayMode={isDisplayMode}
           />
+
+          {!androidKeyboardOpen ? (
+            <IconButton
+              icon="camera"
+              size={56}
+              variant="gold"
+              onPress={() => setCameraSheetVisible(true)}
+              accessibilityLabel="拍照识词"
+              style={[
+                styles.cameraFab,
+                // Keep clear of the edit-mode footer (示例/清空 row).
+                !effectiveDisplayMode && styles.cameraFabRaised,
+              ]}
+            />
+          ) : null}
         </View>
 
         {!androidKeyboardOpen ? (
@@ -490,7 +536,7 @@ export function HomeScreen() {
             />
           </View>
         ) : null}
-        <Toast message={toast} />
+        <Toast toast={toast} onActionPress={hideToast} />
         <HistoryDrawer
           visible={historyDrawerVisible}
           history={history}
@@ -506,56 +552,17 @@ export function HomeScreen() {
           onApply={handleApplyLibrary}
         />
 
-        <Modal
-          visible={menuVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={closeMenu}
+        <BottomSheet visible={menuVisible} onClose={closeMenu} title="更多">
+          <View style={styles.sheetList}>{menuItems.map(renderSheetRow)}</View>
+        </BottomSheet>
+
+        <BottomSheet
+          visible={cameraSheetVisible}
+          onClose={closeCameraSheet}
+          title="拍照识词"
         >
-          <Pressable style={styles.menuBackdrop} onPress={closeMenu}>
-            <Pressable
-              style={[
-                styles.menuPanel,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  marginTop: insets.top + spacing.sm + 36,
-                  marginRight: spacing.lg,
-                },
-              ]}
-              onPress={() => {}}
-            >
-              {menuItems.map((item) => (
-                <TouchableOpacity
-                  key={item.key}
-                  style={[
-                    styles.menuItem,
-                    item.accent && { backgroundColor: colors.primarySoft },
-                  ]}
-                  onPress={item.onPress}
-                  disabled={item.disabled}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={item.icon}
-                    size={18}
-                    color={item.accent ? colors.primary : colors.foreground}
-                  />
-                  <Text
-                    style={[
-                      styles.menuItemText,
-                      {
-                        color: item.accent ? colors.primary : colors.foreground,
-                      },
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </Pressable>
-          </Pressable>
-        </Modal>
+          <View style={styles.sheetList}>{cameraItems.map(renderSheetRow)}</View>
+        </BottomSheet>
         <ConfirmDialog
           visible={dialog?.visible}
           title={dialog?.title}
@@ -683,34 +690,32 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  menuBackdrop: {
-    flex: 1,
-    backgroundColor: "transparent",
-    alignItems: "flex-end",
+  sheetList: {
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
   },
-  menuPanel: {
-    minWidth: 184,
-    borderRadius: radii.surface,
-    borderWidth: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  menuItem: {
+  sheetRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radii.control,
-    marginHorizontal: spacing.xs,
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    minHeight: 52,
+    borderRadius: radii.surface,
+    borderWidth: 1,
   },
-  menuItemText: {
+  sheetRowText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  sheetRowChevron: {
+    marginLeft: "auto",
+  },
+  cameraFab: {
+    position: "absolute",
+    right: spacing.lg,
+    bottom: spacing.md,
+  },
+  cameraFabRaised: {
+    bottom: spacing.md + 40,
   },
 });

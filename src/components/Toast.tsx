@@ -1,30 +1,88 @@
-import { Animated, StyleSheet, Text } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+} from "react-native";
 
+import type { ToastState } from "../hooks/useToast";
+import { radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
-import { radii } from "../lib/designTokens";
+
+// react-native-web silently drops native-driver animations; fall back to JS there.
+const USE_NATIVE_DRIVER = Platform.OS !== "web";
 
 interface ToastProps {
-  message: string;
+  toast: ToastState;
+  /** Called when the action button is pressed (dismisses the toast). */
+  onActionPress?: () => void;
 }
 
-export function Toast({ message }: ToastProps) {
+export function Toast({ toast, onActionPress }: ToastProps) {
   const colors = useThemeColors();
+  const anim = useRef(new Animated.Value(0)).current;
 
-  if (!message) return null;
+  useEffect(() => {
+    if (!toast) return;
+    anim.setValue(0);
+    Animated.spring(anim, {
+      toValue: 1,
+      friction: 8,
+      tension: 80,
+      useNativeDriver: USE_NATIVE_DRIVER,
+    }).start();
+  }, [toast, anim]);
+
+  if (!toast) return null;
 
   return (
-    <Animated.View style={styles.wrapper}>
-      <Text
+    <Animated.View
+      style={[
+        styles.wrapper,
+        {
+          opacity: anim,
+          transform: [
+            {
+              translateY: anim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [16, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+      pointerEvents="box-none"
+    >
+      <Animated.View
         style={[
-          styles.text,
+          styles.pill,
           {
             backgroundColor: colors.foreground,
-            color: colors.background,
+            shadowColor: "#000",
           },
         ]}
       >
-        {message}
-      </Text>
+        <Text style={[styles.text, { color: colors.background }]}>
+          {toast.message}
+        </Text>
+        {toast.action ? (
+          <Pressable
+            onPress={() => {
+              toast.action?.onPress();
+              onActionPress?.();
+            }}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={toast.action.label}
+          >
+            <Text style={[styles.actionText, { color: colors.gold }]}>
+              {toast.action.label}
+            </Text>
+          </Pressable>
+        ) : null}
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -38,17 +96,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 50,
   },
-  text: {
-    fontSize: 14,
-    fontWeight: "500",
-    paddingHorizontal: 16,
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
     borderRadius: radii.full,
-    overflow: "hidden",
-    shadowColor: "#000",
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
