@@ -45,7 +45,7 @@ interface ButtonProps {
 
 const SIZE_SPECS = {
   lg: {
-    height: 52,
+    minHeight: 52,
     borderRadius: radii.button,
     paddingHorizontal: spacing.xl,
     fontSize: 17,
@@ -53,7 +53,7 @@ const SIZE_SPECS = {
     gap: spacing.sm,
   },
   md: {
-    height: 48,
+    minHeight: 48,
     borderRadius: radii.control,
     paddingHorizontal: spacing.lg,
     fontSize: 14,
@@ -61,7 +61,7 @@ const SIZE_SPECS = {
     gap: spacing.xs,
   },
   sm: {
-    height: 30,
+    minHeight: 30,
     borderRadius: radii.full,
     paddingHorizontal: spacing.md,
     fontSize: 12,
@@ -121,13 +121,21 @@ export function Button({
     },
     outline: active
       ? { bg: colors.primarySoft, border: colors.primary, text: colors.primary }
-      : { bg: colors.background, border: colors.border, text: colors.secondary },
+      : {
+          bg: colors.background,
+          border: colors.border,
+          text: colors.secondary,
+        },
     danger: {
       bg: colors.background,
       border: colors.dangerMuted,
       text: colors.danger,
     },
-    ghost: { bg: colors.surface, border: "transparent", text: colors.secondary },
+    ghost: {
+      bg: colors.surface,
+      border: "transparent",
+      text: colors.secondary,
+    },
   }[variant];
 
   const hasBorder = variant === "outline" || variant === "danger";
@@ -151,7 +159,8 @@ export function Button({
         style={[
           styles.base,
           {
-            height: spec.height,
+            minHeight: spec.minHeight,
+            paddingVertical: size === "sm" ? spacing.xs : spacing.sm,
             borderRadius: spec.borderRadius,
             paddingHorizontal: spec.paddingHorizontal,
             gap: spec.gap,
@@ -291,9 +300,11 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: "600",
+    flexShrink: 1,
+    textAlign: "center",
   },
   labelDisplay: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontWeight: "700",
     letterSpacing: 0.5,
   },

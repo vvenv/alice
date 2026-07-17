@@ -1,6 +1,6 @@
 {
   "name": "alice-dictation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "index.js",
   "packageManager": "pnpm@11.13.1",
@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@babel/runtime": "^8.0.0",
+    "@expo-google-fonts/noto-serif-sc": "^0.4.3",
+    "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/metro-runtime": "^57.0.5",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "^3.1.1",

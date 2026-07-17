@@ -6,12 +6,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   Animated,
-  Dimensions,
   Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -46,8 +46,9 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
 
-  const sheetMaxHeight = Dimensions.get("window").height * maxHeightRatio;
+  const sheetMaxHeight = height * maxHeightRatio;
   const bottomPad = Math.max(insets.bottom, spacing.xl);
   const chromeHeight =
     spacing.lg + // paddingTop
@@ -137,6 +138,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
     borderTopLeftRadius: radii.shell,
     borderTopRightRadius: radii.shell,
     borderWidth: 1,
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 17,
     fontWeight: "700",
   },

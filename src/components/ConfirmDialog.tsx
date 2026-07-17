@@ -1,4 +1,11 @@
-import { StyleSheet, Text, TouchableOpacity, View, Modal, Pressable } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Modal,
+  Pressable,
+} from "react-native";
 import { fonts, radii, spacing } from "../lib/designTokens";
 import { useThemeColors } from "../lib/theme";
 
@@ -32,7 +39,10 @@ export function ConfirmDialog({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable style={[styles.backdrop, { backgroundColor: colors.overlay }]} onPress={onCancel}>
+      <Pressable
+        style={[styles.backdrop, { backgroundColor: colors.overlay }]}
+        onPress={onCancel}
+      >
         <Pressable
           style={[
             styles.dialog,
@@ -42,6 +52,7 @@ export function ConfirmDialog({
             },
           ]}
           onPress={() => {}} // prevent closing when tapping dialog
+          accessibilityViewIsModal
         >
           <Text style={[styles.title, { color: colors.foreground }]}>
             {title}
@@ -51,9 +62,15 @@ export function ConfirmDialog({
           </Text>
           <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]}
+              style={[
+                styles.btn,
+                styles.cancelBtn,
+                { borderColor: colors.border },
+              ]}
               onPress={onCancel}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={cancelLabel}
             >
               <Text style={[styles.btnText, { color: colors.muted }]}>
                 {cancelLabel}
@@ -71,6 +88,8 @@ export function ConfirmDialog({
                 onCancel();
               }}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={confirmLabel}
             >
               <Text
                 style={[
@@ -106,7 +125,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 17,
     fontWeight: "700",
     textAlign: "center",
@@ -123,7 +142,9 @@ const styles = StyleSheet.create({
   },
   btn: {
     flex: 1,
-    height: 42,
+    minHeight: 42,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     borderRadius: radii.control,
     justifyContent: "center",
     alignItems: "center",

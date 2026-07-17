@@ -126,11 +126,7 @@ export function LibraryDrawer({
                 accessibilityRole="button"
                 accessibilityLabel="清除搜索"
               >
-                <Ionicons
-                  name="close-circle"
-                  size={16}
-                  color={colors.subtle}
-                />
+                <Ionicons name="close-circle" size={16} color={colors.subtle} />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -258,7 +254,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   sectionTitle: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 12,
     fontWeight: "600",
     paddingHorizontal: spacing.xs,

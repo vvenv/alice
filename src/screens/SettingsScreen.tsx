@@ -30,7 +30,10 @@ import { useThemeColors, useThemeMode } from "../lib/theme";
 import { clearTtsCache } from "../lib/tts";
 import type { RootStackParamList } from "../navigation/types";
 
-type SettingsNavigation = NativeStackNavigationProp<RootStackParamList, "Settings">;
+type SettingsNavigation = NativeStackNavigationProp<
+  RootStackParamList,
+  "Settings"
+>;
 
 type Section = {
   key: string;
@@ -63,7 +66,8 @@ export function SettingsScreen() {
     setSoundEnabled(value);
   }, []);
 
-  const [customOcrConfig, setCustomOcrConfig] = useState<OcrProviderConfig | null>(null);
+  const [customOcrConfig, setCustomOcrConfig] =
+    useState<OcrProviderConfig | null>(null);
   const [ocrSettingsVisible, setOcrSettingsVisible] = useState(false);
   const [dialog, setDialog] = useState<{
     visible: boolean;
@@ -82,11 +86,7 @@ export function SettingsScreen() {
       setCustomOcrConfig(cfg);
       saveOcrProviderConfig(cfg).catch(() => {});
       setOcrSettingsVisible(false);
-      showToast(
-        cfg
-          ? "已保存自定义 OCR 服务配置"
-          : "已恢复默认 OCR 服务配置",
-      );
+      showToast(cfg ? "已保存自定义 OCR 服务配置" : "已恢复默认 OCR 服务配置");
     },
     [showToast],
   );
@@ -112,9 +112,7 @@ export function SettingsScreen() {
   }, [showToast]);
 
   const usingCustom = isCustomOcrConfigSet(customOcrConfig);
-  const ocrDetail = usingCustom
-    ? customOcrConfig!.model
-    : "内置服务";
+  const ocrDetail = usingCustom ? customOcrConfig!.model : "内置服务";
 
   const appVersion = Constants.expoConfig?.version ?? "—";
 
@@ -190,14 +188,17 @@ export function SettingsScreen() {
         <View
           style={[
             styles.card,
-            { backgroundColor: colors.surfaceRaised, borderColor: colors.borderSubtle },
+            {
+              backgroundColor: colors.surfaceRaised,
+              borderColor: colors.borderSubtle,
+            },
           ]}
         >
           <View style={styles.themeRow}>
-            {([
+            {[
               { key: "light" as const, label: "浅色", icon: "sunny" as const },
               { key: "dark" as const, label: "深色", icon: "moon" as const },
-            ]).map((opt) => {
+            ].map((opt) => {
               const active = mode === opt.key;
               return (
                 <TouchableOpacity
@@ -206,11 +207,16 @@ export function SettingsScreen() {
                     styles.themeChip,
                     {
                       borderColor: active ? colors.primary : colors.border,
-                      backgroundColor: active ? colors.primarySoft : colors.surface,
+                      backgroundColor: active
+                        ? colors.primarySoft
+                        : colors.surface,
                     },
                   ]}
                   onPress={() => setMode(opt.key)}
                   activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`${opt.label}主题`}
+                  accessibilityState={{ selected: active }}
                 >
                   <Ionicons
                     name={opt.icon}
@@ -238,7 +244,10 @@ export function SettingsScreen() {
         <View
           style={[
             styles.card,
-            { backgroundColor: colors.surfaceRaised, borderColor: colors.borderSubtle },
+            {
+              backgroundColor: colors.surfaceRaised,
+              borderColor: colors.borderSubtle,
+            },
           ]}
         >
           <View style={styles.row}>
@@ -253,6 +262,9 @@ export function SettingsScreen() {
             <Switch
               value={soundOn}
               onValueChange={handleToggleSound}
+              accessibilityLabel="提示音"
+              accessibilityRole="switch"
+              accessibilityState={{ checked: soundOn }}
               trackColor={{ false: colors.track, true: colors.primarySoft }}
               thumbColor={soundOn ? colors.primary : colors.background}
             />
@@ -268,7 +280,10 @@ export function SettingsScreen() {
             <View
               style={[
                 styles.card,
-                { backgroundColor: colors.surfaceRaised, borderColor: colors.borderSubtle },
+                {
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.borderSubtle,
+                },
               ]}
             >
               {section.rows.map((row, idx) => (
@@ -294,7 +309,9 @@ export function SettingsScreen() {
                     style={[
                       styles.rowLabel,
                       {
-                        color: row.destructive ? colors.danger : colors.foreground,
+                        color: row.destructive
+                          ? colors.danger
+                          : colors.foreground,
                       },
                     ]}
                   >
@@ -335,9 +352,7 @@ export function SettingsScreen() {
         confirmLabel={dialog?.confirmLabel}
         destructive
         onConfirm={dialog?.action ?? (() => {})}
-        onCancel={() =>
-          setDialog((d) => (d ? { ...d, visible: false } : null))
-        }
+        onCancel={() => setDialog((d) => (d ? { ...d, visible: false } : null))}
       />
       <Toast toast={toast} onActionPress={hideToast} />
     </SafeAreaView>
@@ -364,7 +379,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   headerTitle: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 18,
     fontWeight: "700",
     letterSpacing: 0.3,
@@ -373,6 +388,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing["2xl"],

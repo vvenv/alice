@@ -264,18 +264,21 @@ export function HomeScreen() {
   const closeMenu = useCallback(() => setMenuVisible(false), []);
   const closeCameraSheet = useCallback(() => setCameraSheetVisible(false), []);
 
-  const runSheetAction = useCallback((close: () => void, action: () => void) => {
-    close();
-    // Android Dialog teardown needs a beat before presenting another Modal;
-    // a single rAF is often too early on real devices and leaves the sheet
-    // stuck mid-open.
-    const delayMs = Platform.OS === "android" ? 320 : 0;
-    if (delayMs === 0) {
-      requestAnimationFrame(action);
-    } else {
-      setTimeout(action, delayMs);
-    }
-  }, []);
+  const runSheetAction = useCallback(
+    (close: () => void, action: () => void) => {
+      close();
+      // Android Dialog teardown needs a beat before presenting another Modal;
+      // a single rAF is often too early on real devices and leaves the sheet
+      // stuck mid-open.
+      const delayMs = Platform.OS === "android" ? 320 : 0;
+      if (delayMs === 0) {
+        requestAnimationFrame(action);
+      } else {
+        setTimeout(action, delayMs);
+      }
+    },
+    [],
+  );
 
   const menuItems: MenuItem[] = [
     {
@@ -442,7 +445,9 @@ export function HomeScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.countBadgeText, { color: colors.muted }]}>
+                  <Text
+                    style={[styles.countBadgeText, { color: colors.muted }]}
+                  >
                     {parsedWordCount} 词
                   </Text>
                 </View>
@@ -527,7 +532,9 @@ export function HomeScreen() {
           onClose={closeCameraSheet}
           title="拍照识词"
         >
-          <View style={styles.sheetList}>{cameraItems.map(renderSheetRow)}</View>
+          <View style={styles.sheetList}>
+            {cameraItems.map(renderSheetRow)}
+          </View>
         </BottomSheet>
         <ConfirmDialog
           visible={dialog?.visible}
@@ -570,6 +577,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+    width: "100%",
+    maxWidth: 720,
+    alignSelf: "center",
   },
   headerBrand: {
     flex: 1,
@@ -578,14 +588,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   brandAlice: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayItalic,
     fontStyle: "italic",
     fontSize: 24,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
   brandDictation: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 24,
     fontWeight: "700",
     letterSpacing: 0.3,
@@ -595,7 +605,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
-    height: 32,
+    minHeight: 32,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -611,6 +622,7 @@ const styles = StyleSheet.create({
     minHeight: 0,
     gap: spacing.sm,
     width: "100%",
+    maxWidth: 720,
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
@@ -622,7 +634,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   sectionTitle: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.3,
@@ -654,6 +666,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     width: "100%",
+    maxWidth: 720,
     alignSelf: "center",
   },
   sheetList: {

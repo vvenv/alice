@@ -63,6 +63,9 @@ export function PlaybackControls({
           <Switch
             value={autoNext}
             onValueChange={onAutoNextChange}
+            accessibilityLabel="自动播放下一词"
+            accessibilityRole="switch"
+            accessibilityState={{ checked: autoNext }}
             trackColor={{ false: colors.track, true: colors.primarySoft }}
             thumbColor={autoNext ? colors.primary : colors.background}
           />
@@ -75,6 +78,9 @@ export function PlaybackControls({
             <Switch
               value={shuffle}
               onValueChange={onShuffleChange}
+              accessibilityLabel="随机顺序"
+              accessibilityRole="switch"
+              accessibilityState={{ checked: Boolean(shuffle) }}
               trackColor={{ false: colors.track, true: colors.primarySoft }}
               thumbColor={shuffle ? colors.primary : colors.background}
             />
@@ -86,7 +92,9 @@ export function PlaybackControls({
         <Button
           label="开始听写"
           leading={
-            <View style={[styles.playMedallion, { backgroundColor: colors.gold }]}>
+            <View
+              style={[styles.playMedallion, { backgroundColor: colors.gold }]}
+            >
               <Ionicons name="play" size={14} color={MEDALLION_INK} />
             </View>
           }

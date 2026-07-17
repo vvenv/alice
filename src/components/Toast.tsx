@@ -1,11 +1,6 @@
 import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ToastState } from "../hooks/useToast";
 import { radii, spacing } from "../lib/designTokens";
@@ -22,6 +17,7 @@ interface ToastProps {
 
 export function Toast({ toast, onActionPress }: ToastProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -42,6 +38,7 @@ export function Toast({ toast, onActionPress }: ToastProps) {
       style={[
         styles.wrapper,
         {
+          bottom: Math.max(40, insets.bottom + spacing.lg),
           opacity: anim,
           transform: [
             {
@@ -54,6 +51,8 @@ export function Toast({ toast, onActionPress }: ToastProps) {
         },
       ]}
       pointerEvents="box-none"
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
     >
       <Animated.View
         style={[
@@ -90,7 +89,6 @@ export function Toast({ toast, onActionPress }: ToastProps) {
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
-    bottom: 40,
     left: 0,
     right: 0,
     alignItems: "center",

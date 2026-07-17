@@ -3,20 +3,16 @@
     "name": "Alice 听写",
     "slug": "alice-dictation",
     "version": "0.2.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vvenv.alice",
       "infoPlist": {
         "NSCameraUsageDescription": "用于拍摄单词图片进行 OCR 识别",
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -47,6 +43,19 @@
         {
           "microphonePermission": false,
           "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#1A2B4A",
+          "dark": {
+            "image": "./assets/icon.png",
+            "backgroundColor": "#1A2B4A"
+          }
         }
       ]
     ],

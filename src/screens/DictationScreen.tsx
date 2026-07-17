@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  PanResponder,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,7 +24,7 @@ import { useToast } from "../hooks/useToast";
 import { useWrongWords } from "../hooks/useWrongWords";
 import { parseWordLine, speakTextFromEntry } from "../lib/dictation";
 import { fonts, radii, spacing } from "../lib/designTokens";
-import { notifySuccess, notifyWarning } from "../lib/haptics";
+import { notifySuccess, notifyWarning, tapLight } from "../lib/haptics";
 import { playChime, playTick } from "../lib/sound";
 import { useThemeColors } from "../lib/theme";
 
@@ -44,6 +46,14 @@ export function DictationScreen({
   onEnd,
 }: DictationScreenProps) {
   const colors = useThemeColors();
+  const { width, height } = useWindowDimensions();
+  const useDualPane = width >= 768 || (width >= 700 && width > height);
+  const dialSize = Math.round(
+    Math.max(
+      220,
+      Math.min(300, width * (useDualPane ? 0.36 : 0.8), height * 0.48),
+    ),
+  );
   const [showWord, setShowWord] = useState(false);
   const [intervalSec, setIntervalSec] = useState(initialIntervalSec);
   const [autoNext, setAutoNext] = useState(initialAutoNext);
@@ -96,12 +106,37 @@ export function DictationScreen({
 
   const handleMarkWrong = useCallback(() => {
     if (!isActive || playback.currentIndex >= playback.wordList.length) return;
-    const word = speakTextFromEntry(
-      playback.wordList[playback.currentIndex]!,
-    );
+    const word = speakTextFromEntry(playback.wordList[playback.currentIndex]!);
     notifyWarning();
     markWrong(word);
   }, [isActive, markWrong, playback.currentIndex, playback.wordList]);
+
+  const handleSkip = useCallback(() => {
+    if (!skipEnabled) return;
+    tapLight();
+    playback.skipToNextWord();
+  }, [playback, skipEnabled]);
+
+  const dialPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          (markEnabled || skipEnabled) &&
+          Math.abs(gesture.dx) > 12 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderRelease: (_, gesture) => {
+          if (
+            Math.abs(gesture.dx) < 64 ||
+            Math.abs(gesture.dx) <= Math.abs(gesture.dy)
+          ) {
+            return;
+          }
+          if (gesture.dx < 0) handleMarkWrong();
+          else handleSkip();
+        },
+      }),
+    [handleMarkWrong, handleSkip, markEnabled, skipEnabled],
+  );
 
   const handleExit = useCallback(() => {
     onEnd();
@@ -267,7 +302,16 @@ export function DictationScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={["top", "bottom", "left", "right"]}
     >
-      <View style={[styles.progressBar, { backgroundColor: colors.track }]}>
+      <View
+        style={[styles.progressBar, { backgroundColor: colors.track }]}
+        accessibilityRole="progressbar"
+        accessibilityLabel="听写进度"
+        accessibilityValue={{
+          min: 0,
+          max: playback.wordList.length,
+          now: Math.min(playback.currentIndex + 1, playback.wordList.length),
+        }}
+      >
         <Animated.View
           style={[
             styles.progressFill,
@@ -318,318 +362,380 @@ export function DictationScreen({
         </View>
       </View>
 
-      <View style={styles.wordStage}>
-        {isFinished ? (
-          <Animated.View
-            style={[
-              styles.finishedContainer,
-              {
-                opacity: finishAnim,
-                transform: [
-                  {
-                    scale: finishAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.85, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View
+      <View
+        style={[styles.contentLayout, useDualPane && styles.contentLayoutWide]}
+      >
+        <View style={[styles.wordStage, useDualPane && styles.wordStageWide]}>
+          {isFinished ? (
+            <Animated.View
               style={[
-                styles.finishedCard,
+                styles.finishedContainer,
                 {
-                  backgroundColor: colors.surfaceRaised,
-                  borderColor: colors.borderSubtle,
+                  opacity: finishAnim,
+                  transform: [
+                    {
+                      scale: finishAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.85, 1],
+                      }),
+                    },
+                  ],
                 },
               ]}
             >
-              <Ionicons
-                name="checkmark-circle"
-                size={48}
-                color={STATUS_PLAYING}
-              />
-              <Text style={[styles.finishedTitle, { color: colors.foreground }]}>
-                听写完成
-              </Text>
               <View
-                style={[styles.statsRow, { borderTopColor: colors.borderMuted }]}
+                style={[
+                  styles.finishedCard,
+                  {
+                    backgroundColor: colors.surfaceRaised,
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
               >
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: colors.foreground }]}>
-                    {playback.wordList.length}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>
-                    单词
-                  </Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text
-                    style={[
-                      styles.statValue,
-                      {
-                        color:
-                          wrongWords.length > 0
-                            ? colors.danger
-                            : colors.foreground,
-                      },
-                    ]}
-                  >
-                    {wrongWords.length}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>
-                    错词
-                  </Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: colors.foreground }]}>
-                    {elapsedSec !== null
-                      ? `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`
-                      : "—"}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>
-                    用时
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {wrongWords.length > 0 ? (
-              <Button
-                label={`错词再听一遍 (${wrongWords.length})`}
-                icon="refresh"
-                variant="primary"
-                size="md"
-                onPress={handleRetryWrong}
-                style={styles.returnBtn}
-              />
-            ) : null}
-            <Button
-              label="返回首页"
-              icon="arrow-back"
-              variant={wrongWords.length > 0 ? "outline" : "primary"}
-              size="md"
-              onPress={handleExit}
-              style={styles.returnBtn}
-            />
-          </Animated.View>
-        ) : (
-          <>
-            <View style={styles.watchWrap}>
-              <CountdownRing
-                size={288}
-                strokeWidth={7}
-                progress={countdownAnim}
-                color={colors.gold}
-                trackColor={colors.track}
-                ticks={12}
-                tickColor={colors.borderMuted}
-              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={48}
+                  color={STATUS_PLAYING}
+                />
+                <Text
+                  style={[styles.finishedTitle, { color: colors.foreground }]}
+                >
+                  听写完成
+                </Text>
                 <View
                   style={[
-                    styles.dial,
-                    {
-                      backgroundColor: markedFlash
-                        ? colors.dangerSoft
-                        : colors.surfaceRaised,
-                      borderColor: markedFlash
-                        ? colors.danger
-                        : colors.borderSubtle,
-                    },
+                    styles.statsRow,
+                    { borderTopColor: colors.borderMuted },
                   ]}
                 >
-                  {showWord &&
-                  playback.currentIndex < playback.wordList.length ? (
-                    <View style={styles.wordRevealContent}>
+                  <View style={styles.statItem}>
+                    <Text
+                      style={[styles.statValue, { color: colors.foreground }]}
+                    >
+                      {playback.wordList.length}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.muted }]}>
+                      单词
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text
+                      style={[
+                        styles.statValue,
+                        {
+                          color:
+                            wrongWords.length > 0
+                              ? colors.danger
+                              : colors.foreground,
+                        },
+                      ]}
+                    >
+                      {wrongWords.length}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.muted }]}>
+                      错词
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text
+                      style={[styles.statValue, { color: colors.foreground }]}
+                    >
+                      {elapsedSec !== null
+                        ? `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`
+                        : "—"}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.muted }]}>
+                      用时
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {wrongWords.length > 0 ? (
+                <Button
+                  label={`错词再听一遍 (${wrongWords.length})`}
+                  icon="refresh"
+                  variant="primary"
+                  size="md"
+                  onPress={handleRetryWrong}
+                  style={styles.returnBtn}
+                />
+              ) : null}
+              <Button
+                label="返回首页"
+                icon="arrow-back"
+                variant={wrongWords.length > 0 ? "outline" : "primary"}
+                size="md"
+                onPress={handleExit}
+                style={styles.returnBtn}
+              />
+            </Animated.View>
+          ) : (
+            <>
+              <View style={styles.watchWrap}>
+                <CountdownRing
+                  size={dialSize}
+                  strokeWidth={7}
+                  progress={countdownAnim}
+                  color={colors.gold}
+                  trackColor={colors.track}
+                  ticks={12}
+                  tickColor={colors.borderMuted}
+                >
+                  <View
+                    {...dialPanResponder.panHandlers}
+                    style={[
+                      styles.dial,
+                      {
+                        width: dialSize - 7 * 2 - 24,
+                        height: dialSize - 7 * 2 - 24,
+                      },
+                      {
+                        backgroundColor: markedFlash
+                          ? colors.dangerSoft
+                          : colors.surfaceRaised,
+                        borderColor: markedFlash
+                          ? colors.danger
+                          : colors.borderSubtle,
+                      },
+                    ]}
+                    accessible
+                    accessibilityRole="adjustable"
+                    accessibilityLabel="听写表盘"
+                    accessibilityHint="向左滑标记错词，向右滑跳过"
+                    accessibilityActions={[
+                      { name: "markWrong", label: "标记错词" },
+                      { name: "skip", label: "跳过" },
+                    ]}
+                    onAccessibilityAction={(event) => {
+                      if (event.nativeEvent.actionName === "markWrong") {
+                        handleMarkWrong();
+                      } else if (event.nativeEvent.actionName === "skip") {
+                        handleSkip();
+                      }
+                    }}
+                  >
+                    {showWord &&
+                    playback.currentIndex < playback.wordList.length ? (
+                      <View style={styles.wordRevealContent}>
+                        <Text
+                          style={[
+                            styles.wordText,
+                            { color: colors.foreground },
+                          ]}
+                          numberOfLines={2}
+                          adjustsFontSizeToFit
+                        >
+                          {currentEntry.word}
+                        </Text>
+                        {currentMeta &&
+                          (currentMeta.pos || currentMeta.meaning) && (
+                            <Text
+                              style={[styles.wordMeta, { color: colors.muted }]}
+                              numberOfLines={2}
+                            >
+                              {currentMeta.pos ? `${currentMeta.pos} ` : ""}
+                              {currentMeta.meaning ?? ""}
+                            </Text>
+                          )}
+                      </View>
+                    ) : (
                       <Text
                         style={[styles.wordText, { color: colors.foreground }]}
-                        numberOfLines={2}
-                        adjustsFontSizeToFit
                       >
-                        {currentEntry.word}
+                        {"•••••"}
                       </Text>
-                      {currentMeta &&
-                        (currentMeta.pos || currentMeta.meaning) && (
-                          <Text
-                            style={[styles.wordMeta, { color: colors.muted }]}
-                            numberOfLines={2}
-                          >
-                            {currentMeta.pos ? `${currentMeta.pos} ` : ""}
-                            {currentMeta.meaning ?? ""}
-                          </Text>
-                        )}
-                    </View>
-                  ) : (
-                    <Text style={[styles.wordText, { color: colors.foreground }]}>
-                      {"•••••"}
+                    )}
+                    <Text
+                      style={[
+                        styles.dialCountdown,
+                        { color: colors.gold },
+                        (!isActive ||
+                          !autoNext ||
+                          playback.remainingMs === null) &&
+                          styles.dialCountdownHidden,
+                      ]}
+                    >
+                      {countdownLabel}
                     </Text>
-                  )}
-                  <Text
-                    style={[
-                      styles.dialCountdown,
-                      { color: colors.gold },
-                      (!isActive || !autoNext || playback.remainingMs === null) &&
-                        styles.dialCountdownHidden,
-                    ]}
-                  >
-                    {countdownLabel}
-                  </Text>
-                </View>
-              </CountdownRing>
+                  </View>
+                </CountdownRing>
 
-              <IconButton
-                icon={showWord ? "eye" : "eye-off"}
-                onPress={() => setShowWord((v) => !v)}
-                accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
-                style={styles.eyeBtn}
+                <IconButton
+                  icon={showWord ? "eye" : "eye-off"}
+                  onPress={() => setShowWord((v) => !v)}
+                  accessibilityLabel={showWord ? "隐藏单词" : "显示单词"}
+                  style={styles.eyeBtn}
+                />
+              </View>
+
+              <Button
+                label="标记错词"
+                icon="close-circle-outline"
+                variant="danger"
+                size="md"
+                onPress={handleMarkWrong}
+                disabled={!markEnabled}
+                haptic={false}
+                style={styles.markBtn}
               />
-            </View>
 
-            <Button
-              label="标记错词"
-              icon="close-circle-outline"
-              variant="danger"
-              size="md"
-              onPress={handleMarkWrong}
-              disabled={!markEnabled}
-              haptic={false}
-              style={styles.markBtn}
-            />
-
-            {showWord &&
-              playback.currentIndex + 1 < playback.wordList.length && (
-                <View style={styles.nextWordRow}>
-                  <Text style={[styles.nextWordLabel, { color: colors.muted }]}>
-                    下一个
-                  </Text>
-                  <Text style={[styles.nextWordText, { color: colors.subtle }]}>
-                    {parseWordLine(
-                      playback.wordList[playback.currentIndex + 1]!,
-                    ).word}
-                  </Text>
-                </View>
-              )}
-          </>
-        )}
-      </View>
-
-      <View
-        style={[
-          styles.bottomPanel,
-          {
-            backgroundColor: colors.surfaceSunken,
-            borderTopColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <PlaybackControls
-          intervalSec={intervalSec}
-          autoNext={autoNext}
-          onIntervalChange={setIntervalSec}
-          onAutoNextChange={setAutoNext}
-          showPlayButton={false}
-        />
-
-        <View style={styles.controlRow}>
-          <View style={[styles.controlItem, styles.controlItemSide]}>
-            <IconButton
-              icon="stop"
-              size={48}
-              variant="danger"
-              onPress={requestStop}
-              disabled={!isActive}
-              accessibilityLabel="结束"
-            />
-            <Text style={[styles.controlLabel, { color: colors.muted }]}>
-              结束
-            </Text>
-          </View>
-          <View style={styles.controlItem}>
-            <IconButton
-              icon={playback.playState === "playing" ? "pause" : "play"}
-              size={64}
-              variant="primary"
-              onPress={handlePlayToggle}
-              accessibilityLabel={
-                playback.playState === "playing" ? "暂停" : "继续"
-              }
-            />
-            <Text style={[styles.controlLabel, { color: colors.muted }]}>
-              {playback.playState === "playing" ? "暂停" : "继续"}
-            </Text>
-          </View>
-          <View style={[styles.controlItem, styles.controlItemSide]}>
-            <IconButton
-              icon="play-skip-forward"
-              size={48}
-              variant="surface"
-              onPress={playback.skipToNextWord}
-              disabled={!skipEnabled}
-              accessibilityLabel="跳过"
-            />
-            <Text style={[styles.controlLabel, { color: colors.muted }]}>
-              跳过
-            </Text>
-          </View>
+              {showWord &&
+                playback.currentIndex + 1 < playback.wordList.length && (
+                  <View style={styles.nextWordRow}>
+                    <Text
+                      style={[styles.nextWordLabel, { color: colors.muted }]}
+                    >
+                      下一个
+                    </Text>
+                    <Text
+                      style={[styles.nextWordText, { color: colors.subtle }]}
+                    >
+                      {
+                        parseWordLine(
+                          playback.wordList[playback.currentIndex + 1]!,
+                        ).word
+                      }
+                    </Text>
+                  </View>
+                )}
+            </>
+          )}
         </View>
 
-        <View style={styles.wrongSection}>
-          <View style={styles.wrongHeader}>
-            <Text style={[styles.wrongTitle, { color: colors.muted }]}>
-              错词本 ({wrongWords.length})
-            </Text>
-            <View style={styles.wrongActions}>
-              <Button label="导出" variant="ghost" size="sm" onPress={handleExport} />
-              <Button
-                label="清空"
-                variant="ghost"
-                size="sm"
-                onPress={handleClearWrong}
+        <View
+          style={[
+            styles.bottomPanel,
+            useDualPane && styles.bottomPanelWide,
+            {
+              backgroundColor: colors.surfaceSunken,
+              borderTopColor: colors.borderSubtle,
+              borderLeftColor: colors.borderSubtle,
+            },
+          ]}
+        >
+          <PlaybackControls
+            intervalSec={intervalSec}
+            autoNext={autoNext}
+            onIntervalChange={setIntervalSec}
+            onAutoNextChange={setAutoNext}
+            showPlayButton={false}
+          />
+
+          <View style={styles.controlRow}>
+            <View style={[styles.controlItem, styles.controlItemSide]}>
+              <IconButton
+                icon="stop"
+                size={48}
+                variant="danger"
+                onPress={requestStop}
+                disabled={!isActive}
+                accessibilityLabel="结束"
               />
+              <Text style={[styles.controlLabel, { color: colors.muted }]}>
+                结束
+              </Text>
+            </View>
+            <View style={styles.controlItem}>
+              <IconButton
+                icon={playback.playState === "playing" ? "pause" : "play"}
+                size={64}
+                variant="primary"
+                onPress={handlePlayToggle}
+                accessibilityLabel={
+                  playback.playState === "playing" ? "暂停" : "继续"
+                }
+              />
+              <Text style={[styles.controlLabel, { color: colors.muted }]}>
+                {playback.playState === "playing" ? "暂停" : "继续"}
+              </Text>
+            </View>
+            <View style={[styles.controlItem, styles.controlItemSide]}>
+              <IconButton
+                icon="play-skip-forward"
+                size={48}
+                variant="surface"
+                onPress={handleSkip}
+                haptic={false}
+                disabled={!skipEnabled}
+                accessibilityLabel="跳过"
+              />
+              <Text style={[styles.controlLabel, { color: colors.muted }]}>
+                跳过
+              </Text>
             </View>
           </View>
-          {wrongWords.length === 0 ? (
-            <Text
-              style={[
-                styles.emptyWrong,
-                { color: colors.subtle, backgroundColor: colors.surface },
-              ]}
-            >
-              尚无错词
-            </Text>
-          ) : (
-            <ScrollView
-              style={styles.wrongScroll}
-              contentContainerStyle={styles.chipRow}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={false}
-            >
-              {wrongWords.map((word) => (
-                <TouchableOpacity
-                  key={word}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: colors.background,
-                      borderColor: colors.borderMuted,
-                    },
-                  ]}
-                  onPress={() => handleRemoveWrongWord(word)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={`移除错词 ${word}`}
-                >
-                  <Text style={[styles.chipText, { color: colors.foreground }]}>
-                    {word}
-                  </Text>
-                  <Text style={[styles.chipRemove, { color: colors.subtle }]}>
-                    {" "}×
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+
+          <View
+            style={[
+              styles.wrongSection,
+              useDualPane && styles.wrongSectionWide,
+            ]}
+          >
+            <View style={styles.wrongHeader}>
+              <Text style={[styles.wrongTitle, { color: colors.muted }]}>
+                错词本 ({wrongWords.length})
+              </Text>
+              <View style={styles.wrongActions}>
+                <Button
+                  label="导出"
+                  variant="ghost"
+                  size="sm"
+                  onPress={handleExport}
+                />
+                <Button
+                  label="清空"
+                  variant="ghost"
+                  size="sm"
+                  onPress={handleClearWrong}
+                />
+              </View>
+            </View>
+            {wrongWords.length === 0 ? (
+              <Text
+                style={[
+                  styles.emptyWrong,
+                  { color: colors.subtle, backgroundColor: colors.surface },
+                ]}
+              >
+                尚无错词
+              </Text>
+            ) : (
+              <ScrollView
+                style={styles.wrongScroll}
+                contentContainerStyle={styles.chipRow}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+              >
+                {wrongWords.map((word) => (
+                  <TouchableOpacity
+                    key={word}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.borderMuted,
+                      },
+                    ]}
+                    onPress={() => handleRemoveWrongWord(word)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`移除错词 ${word}`}
+                  >
+                    <Text
+                      style={[styles.chipText, { color: colors.foreground }]}
+                    >
+                      {word}
+                    </Text>
+                    <Text style={[styles.chipRemove, { color: colors.subtle }]}>
+                      {" "}
+                      ×
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         </View>
       </View>
 
@@ -676,7 +782,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs + 2,
-    height: 28,
+    minHeight: 28,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -701,6 +808,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
+  contentLayout: {
+    flex: 1,
+    minHeight: 0,
+  },
+  contentLayoutWide: {
+    flexDirection: "row",
+  },
   wordStage: {
     flex: 1,
     justifyContent: "center",
@@ -709,6 +823,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     minHeight: 120,
     gap: spacing.lg,
+  },
+  wordStageWide: {
+    flexBasis: 0,
   },
   watchWrap: {
     alignItems: "center",
@@ -762,6 +879,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.lg,
   },
+  bottomPanelWide: {
+    width: 380,
+    maxWidth: "42%",
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    paddingTop: spacing.xl,
+  },
 
   controlRow: {
     flexDirection: "row",
@@ -807,7 +931,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.md,
   },
-  finishedTitle: { fontFamily: fonts.display, fontSize: 22, fontWeight: "700" },
+  finishedTitle: {
+    fontFamily: fonts.displayZh,
+    fontSize: 22,
+    fontWeight: "700",
+  },
   statsRow: {
     flexDirection: "row",
     alignSelf: "stretch",
@@ -837,6 +965,7 @@ const styles = StyleSheet.create({
   },
 
   wrongSection: { gap: spacing.sm, maxHeight: 120 },
+  wrongSectionWide: { flex: 1, maxHeight: undefined, minHeight: 0 },
   wrongHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -71,7 +71,9 @@ export function OcrSettingsModal({
   }, []);
 
   const canSave =
-    baseUrl.trim().length > 0 && model.trim().length > 0 && apiKey.trim().length > 0;
+    baseUrl.trim().length > 0 &&
+    model.trim().length > 0 &&
+    apiKey.trim().length > 0;
 
   const handleSave = useCallback(() => {
     if (!canSave) return;
@@ -149,9 +151,7 @@ export function OcrSettingsModal({
             keyboardShouldPersistTaps="handled"
           >
             <Text style={[styles.statusLine, { color: colors.muted }]}>
-              {usingCustom
-                ? "当前使用自定义服务配置"
-                : "当前使用内置服务配置"}
+              {usingCustom ? "当前使用自定义服务配置" : "当前使用内置服务配置"}
             </Text>
 
             <Text style={[styles.sectionLabel, { color: colors.subtle }]}>
@@ -281,9 +281,16 @@ export function OcrSettingsModal({
             {/* Test result */}
             {test.kind === "ok" ? (
               <View
-                style={[styles.testResult, { backgroundColor: colors.dangerSoft }]}
+                style={[
+                  styles.testResult,
+                  { backgroundColor: colors.dangerSoft },
+                ]}
               >
-                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={[styles.testText, { color: colors.primary }]}>
                   连接成功，配置可用
                 </Text>
@@ -291,7 +298,10 @@ export function OcrSettingsModal({
             ) : null}
             {test.kind === "error" ? (
               <View
-                style={[styles.testResult, { backgroundColor: colors.dangerSoft }]}
+                style={[
+                  styles.testResult,
+                  { backgroundColor: colors.dangerSoft },
+                ]}
               >
                 <Ionicons name="alert-circle" size={16} color={colors.danger} />
                 <Text style={[styles.testText, { color: colors.danger }]}>
@@ -317,7 +327,9 @@ export function OcrSettingsModal({
                 {test.kind === "testing" ? (
                   <ActivityIndicator size="small" color={colors.foreground} />
                 ) : (
-                  <Text style={[styles.testBtnText, { color: colors.foreground }]}>
+                  <Text
+                    style={[styles.testBtnText, { color: colors.foreground }]}
+                  >
                     测试连接
                   </Text>
                 )}
@@ -349,7 +361,9 @@ export function OcrSettingsModal({
               disabled={!canSave}
               activeOpacity={0.7}
             >
-              <Text style={[styles.footerBtnText, { color: colors.background }]}>
+              <Text
+                style={[styles.footerBtnText, { color: colors.background }]}
+              >
                 保存
               </Text>
             </TouchableOpacity>
@@ -396,7 +410,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayZh,
     fontSize: 17,
     fontWeight: "700",
   },
@@ -476,7 +490,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   testBtn: {
-    height: 38,
+    minHeight: 38,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radii.control,
     borderWidth: 1,
     justifyContent: "center",
@@ -494,7 +510,9 @@ const styles = StyleSheet.create({
   },
   footerBtn: {
     flex: 1,
-    height: 44,
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     borderRadius: radii.button,
     justifyContent: "center",
     alignItems: "center",
