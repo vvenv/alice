@@ -15,6 +15,7 @@
     "build:android:local": "eas build --platform android --non-interactive --local --profile preview",
     "build:ios:local": "eas build --platform ios --non-interactive --local --profile preview",
     "release:android": "bash scripts/release.sh",
+    "release:website": "bash scripts/release-website.sh",
     "dict:build": "python3 scripts/build-ecdict-meta.py",
     "lint": "tsc --noEmit"
   },

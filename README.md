@@ -84,6 +84,14 @@ pnpm release:android 0.3.0     # 指定版本号
 
 流程：可选升版 → EAS 本地构建 APK → 暂存到 `website/public/downloads/` → 更新下载链接 → 构建官网 → rsync 部署到 `DEPLOY_SERVER`。详见 [`scripts/release.sh`](scripts/release.sh)。
 
+### 仅发布官网
+
+```bash
+pnpm release:website
+```
+
+构建 `website/` 并用 rsync 部署到 `DEPLOY_SERVER`；会排除 `downloads/`，不会动线上 APK。详见 [`scripts/release-website.sh`](scripts/release-website.sh)。
+
 ### GitHub Actions 发版
 
 首次需在本地 `pnpm exec eas login && pnpm exec eas init`，并在 GitHub → Settings → Secrets → Actions 添加 `EXPO_TOKEN`。之后在 **Actions → CI → Run workflow** 选择 platform / profile 触发。
