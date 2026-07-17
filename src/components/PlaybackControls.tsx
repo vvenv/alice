@@ -55,10 +55,15 @@ export function PlaybackControls({
         </View>
       </View>
 
-      <View style={styles.toggleRow}>
+      <View
+        style={[
+          styles.toggleRow,
+          showPlayButton && onPlayToggle && styles.toggleRowWithPlayButton,
+        ]}
+      >
         <View style={styles.toggleItem}>
           <Text style={[styles.toggleLabel, { color: colors.muted }]}>
-            自动
+            自动播放
           </Text>
           <Switch
             value={autoNext}
@@ -73,12 +78,12 @@ export function PlaybackControls({
         {onShuffleChange !== undefined && (
           <View style={styles.toggleItem}>
             <Text style={[styles.toggleLabel, { color: colors.muted }]}>
-              随机
+              打乱顺序
             </Text>
             <Switch
               value={shuffle}
               onValueChange={onShuffleChange}
-              accessibilityLabel="随机顺序"
+              accessibilityLabel="打乱播放顺序"
               accessibilityRole="switch"
               accessibilityState={{ checked: Boolean(shuffle) }}
               trackColor={{ false: colors.track, true: colors.primarySoft }}
@@ -153,6 +158,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  toggleRowWithPlayButton: {
+    marginBottom: spacing.xs,
   },
   toggleItem: {
     flexDirection: "row",

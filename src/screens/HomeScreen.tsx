@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     width: "100%",
     maxWidth: 720,
     alignSelf: "center",
