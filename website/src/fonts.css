@@ -1,0 +1,25 @@
+/*
+  Self-hosted fonts (no fonts.googleapis.com).
+  Noto SC weights use unicode-range chunks — browser only fetches needed glyphs.
+*/
+
+/* Latin display — true italic available */
+@import "@fontsource/playfair-display/400.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/playfair-display/400-italic.css";
+@import "@fontsource/playfair-display/700-italic.css";
+
+/* Latin serif accents — true italic available */
+@import "@fontsource/cormorant-garamond/400.css";
+@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/cormorant-garamond/400-italic.css";
+@import "@fontsource/cormorant-garamond/500-italic.css";
+
+/* CJK serif for headings — upright only (no italic faces exist) */
+@import "@fontsource/noto-serif-sc/400.css";
+@import "@fontsource/noto-serif-sc/700.css";
+
+/* CJK sans for body */
+@import "@fontsource/noto-sans-sc/400.css";
+@import "@fontsource/noto-sans-sc/500.css";
+@import "@fontsource/noto-sans-sc/700.css";
