@@ -827,7 +827,6 @@ const styles = StyleSheet.create({
   progressCurrent: {
     fontFamily: fonts.display,
     fontSize: 17,
-    fontWeight: "700",
   },
   contentLayout: {
     flex: 1,
@@ -869,7 +868,6 @@ const styles = StyleSheet.create({
   dialCountdown: {
     fontFamily: fonts.display,
     fontSize: 14,
-    fontWeight: "700",
     fontVariant: ["tabular-nums"],
   },
   dialCountdownHidden: {
@@ -883,7 +881,6 @@ const styles = StyleSheet.create({
   wordText: {
     fontFamily: fonts.display,
     fontSize: 36,
-    fontWeight: "700",
     letterSpacing: 1,
     textAlign: "center",
   },
@@ -963,7 +960,6 @@ const styles = StyleSheet.create({
   finishedTitle: {
     fontFamily: fonts.displayZh,
     fontSize: 22,
-    fontWeight: "700",
   },
   statsRow: {
     flexDirection: "row",
@@ -981,7 +977,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: fonts.display,
     fontSize: 22,
-    fontWeight: "700",
     fontVariant: ["tabular-nums"],
   },
   statLabel: {

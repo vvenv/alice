@@ -392,7 +392,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: fonts.displayZh,
     fontSize: 18,
-    fontWeight: "700",
     letterSpacing: 0.3,
   },
   scroll: {

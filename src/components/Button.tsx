@@ -184,9 +184,10 @@ export function Button({
           ) : null)}
         <Text
           style={[
-            styles.label,
-            { fontSize: spec.fontSize, color: palette.text },
-            size === "lg" && styles.labelDisplay,
+            { fontSize: spec.fontSize, color: palette.text, textAlign: "center", flexShrink: 1 },
+            size === "lg"
+              ? styles.labelDisplay
+              : styles.label,
           ]}
         >
           {label}
@@ -305,7 +306,6 @@ const styles = StyleSheet.create({
   },
   labelDisplay: {
     fontFamily: fonts.displayZh,
-    fontWeight: "700",
     letterSpacing: 0.5,
   },
   inactive: {

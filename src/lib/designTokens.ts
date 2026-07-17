@@ -21,14 +21,21 @@ export const spacing = {
   "2xl": 24,
 } as const;
 
-/** Bundled display faces, registered in App.tsx before the splash is hidden. */
+/**
+ * Bundled faces, registered in App.tsx before the splash is hidden.
+ *
+ * Each name is a specific TTF (weight/style baked in). On Android, pairing
+ * these with StyleSheet `fontWeight` / `fontStyle` makes the resolver miss
+ * the face and fall back to the system sans — omit those props.
+ */
 export const fonts = {
-  /** English words, numerals and Latin display copy. */
+  /** English words, numerals and Latin display copy (Bold). */
   display: "PlayfairDisplay_700Bold",
+  /** Latin italic display (Bold Italic). */
   displayItalic: "PlayfairDisplay_700Bold_Italic",
-  /** Chinese display headings. */
-  displayZh: "NotoSerifSC_500Medium",
-  /** Chinese serif body copy. */
+  /** Chinese display headings (Bold). */
+  displayZh: "NotoSerifSC_700Bold",
+  /** Chinese serif body copy (Medium). */
   serif: "NotoSerifSC_500Medium",
   /** System sans (default) — leave undefined to use the platform default. */
   sans: undefined,

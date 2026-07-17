@@ -63,7 +63,10 @@ function AppContent() {
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
+    // Each file is a fixed weight/style — do NOT also set fontWeight/fontStyle
+    // on Text using these names; Android will fall back to the system font.
     NotoSerifSC_500Medium: require("@expo-google-fonts/noto-serif-sc/500Medium/NotoSerifSC_500Medium.ttf"),
+    NotoSerifSC_700Bold: require("@expo-google-fonts/noto-serif-sc/700Bold/NotoSerifSC_700Bold.ttf"),
     PlayfairDisplay_700Bold: require("@expo-google-fonts/playfair-display/700Bold/PlayfairDisplay_700Bold.ttf"),
     PlayfairDisplay_700Bold_Italic: require("@expo-google-fonts/playfair-display/700Bold_Italic/PlayfairDisplay_700Bold_Italic.ttf"),
   });

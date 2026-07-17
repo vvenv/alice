@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.displayZh,
     fontSize: 17,
-    fontWeight: "700",
     textAlign: "center",
   },
   message: {

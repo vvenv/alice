@@ -204,7 +204,6 @@ const styles = StyleSheet.create({
   displayIndex: {
     fontFamily: fonts.serif,
     fontSize: 13,
-    fontWeight: "600",
     fontVariant: ["tabular-nums"],
     minWidth: 24,
   },

@@ -589,15 +589,12 @@ const styles = StyleSheet.create({
   },
   brandAlice: {
     fontFamily: fonts.displayItalic,
-    fontStyle: "italic",
     fontSize: 24,
-    fontWeight: "700",
     letterSpacing: 0.3,
   },
   brandDictation: {
     fontFamily: fonts.displayZh,
     fontSize: 24,
-    fontWeight: "700",
     letterSpacing: 0.3,
   },
   ocrProgressPill: {
@@ -636,7 +633,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: fonts.displayZh,
     fontSize: 17,
-    fontWeight: "700",
     letterSpacing: 0.3,
   },
   sectionTitleRow: {

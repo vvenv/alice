@@ -314,7 +314,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.displayZh,
     fontSize: 12,
-    fontWeight: "600",
     textTransform: "uppercase",
   },
   sectionCount: {
