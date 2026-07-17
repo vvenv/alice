@@ -7,25 +7,12 @@ import {
 } from "react";
 import {
   ActivityIndicator,
-  LayoutAnimation,
-  Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  UIManager,
   View,
 } from "react-native";
 
-// Enable LayoutAnimation on Android
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-import { config } from "../lib/config";
 import {
   takePhoto,
   pickFromAlbum,
@@ -40,9 +27,7 @@ import { useThemeColors } from "../lib/theme";
 import { radii, spacing } from "../lib/designTokens";
 
 interface OcrSectionProps {
-  ocrUnlocked: boolean;
   onOcrResult: (words: string[]) => void;
-  onUnlockOcr: (code: string) => boolean;
   /** When true, hide the inline 拍照/相册 buttons (actions live in header menu). */
   hideActions?: boolean;
   /** In-flight header state: busy + progress message. */
@@ -57,26 +42,13 @@ export type OcrSectionHandle = {
   busy: boolean;
 };
 
-const ALPHANUMERIC = /^[a-zA-Z0-9]*$/;
-
 export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
   function OcrSection(
-    {
-      ocrUnlocked,
-      onOcrResult,
-      onUnlockOcr,
-      hideActions = false,
-      onOcrStateChange,
-      onOcrOutcome,
-    },
+    { onOcrResult, hideActions = false, onOcrStateChange, onOcrOutcome },
     ref,
   ) {
     const colors = useThemeColors();
     const [ocrBusy, setOcrBusy] = useState(false);
-    const [unlockCode, setUnlockCode] = useState("");
-    const [unlockError, setUnlockError] = useState(false);
-    const [showUnlock, setShowUnlock] = useState(false);
-    const [paywallCollapsed, setPaywallCollapsed] = useState(true);
 
     const setUiState = useCallback(
       (state: OcrUiState) => {
@@ -93,27 +65,12 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
       [setUiState],
     );
 
-    const togglePaywall = useCallback(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setPaywallCollapsed((v) => !v);
-    }, []);
-
-    const revealPaywall = useCallback(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowUnlock(false);
-      setPaywallCollapsed(false);
-    }, []);
-
     const runOcr = useCallback(
       async (
         getUri: () => Promise<string | null>,
         preparingPhase: "preparing_photo" | "preparing_album",
       ) => {
         if (ocrBusy) return;
-        if (!ocrUnlocked) {
-          revealPaywall();
-          return;
-        }
         setUiState({ busy: true, message: "" });
         try {
           const uri = await getUri();
@@ -149,15 +106,7 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
           setUiState(OCR_UI_IDLE);
         }
       },
-      [
-        ocrBusy,
-        ocrUnlocked,
-        onOcrOutcome,
-        onOcrResult,
-        revealPaywall,
-        reportProgress,
-        setUiState,
-      ],
+      [ocrBusy, onOcrOutcome, onOcrResult, reportProgress, setUiState],
     );
 
     const processOcr = useCallback(
@@ -180,198 +129,6 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
       [processOcr, processAlbum, ocrBusy],
     );
 
-    const handleUnlockSubmit = useCallback(() => {
-      if (unlockCode.length !== 4) return;
-      setUnlockError(false);
-      const ok = onUnlockOcr(unlockCode);
-      if (ok) {
-        setShowUnlock(false);
-        setUnlockCode("");
-      } else {
-        setUnlockError(true);
-        setUnlockCode("");
-      }
-    }, [unlockCode, onUnlockOcr]);
-
-    // ---- Paywall view (step 1: show WeChat ID) ----
-    if (!ocrUnlocked && !showUnlock) {
-      // Collapsed: a quiet one-line link, not a card competing with the list.
-      if (paywallCollapsed) {
-        return (
-          <TouchableOpacity
-            style={styles.paywallLink}
-            onPress={togglePaywall}
-            activeOpacity={0.6}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Ionicons name="lock-closed" size={12} color={colors.subtle} />
-            <Text style={[styles.paywallLinkText, { color: colors.subtle }]}>
-              拍照识词未解锁 · 查看详情
-            </Text>
-          </TouchableOpacity>
-        );
-      }
-      return (
-        <View
-          style={[
-            styles.container,
-            styles.paywallContainer,
-            { borderColor: colors.border },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.paywallHeader}
-            onPress={togglePaywall}
-            activeOpacity={0.6}
-          >
-            <Ionicons name="lock-closed" size={18} color={colors.muted} />
-            <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-              解锁拍照识词
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color={colors.muted}
-              style={styles.chevron}
-            />
-          </TouchableOpacity>
-          {!paywallCollapsed && (
-            <>
-              <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-                拍照或从相册选取图片，自动识别图片中的单词。
-              </Text>
-              <View style={styles.priceBadge}>
-                <Text
-                  style={[styles.priceAmount, { color: colors.foreground }]}
-                >
-                  ¥9.9
-                </Text>
-                <Text style={[styles.priceLabel, { color: colors.muted }]}>
-                  一次性解锁，永久使用
-                </Text>
-              </View>
-              <View style={styles.wechatRow}>
-                <Ionicons
-                  name="chatbubble-ellipses"
-                  size={16}
-                  color={colors.muted}
-                />
-                <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-                  添加微信号
-                </Text>
-                <Text style={[styles.wechatId, { color: colors.primary }]}>
-                  {config.wechatId}
-                </Text>
-                <Text style={[styles.wechatLabel, { color: colors.muted }]}>
-                  完成支付
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.unlockBtn, { backgroundColor: colors.primary }]}
-                onPress={() => setShowUnlock(true)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.unlockBtnText, { color: colors.background }]}
-                >
-                  我已支付，输入解锁码
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      );
-    }
-
-    // ---- Unlock code input (step 2) ----
-    if (!ocrUnlocked && showUnlock) {
-      return (
-        <View
-          style={[
-            styles.container,
-            styles.paywallContainer,
-            { borderColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.paywallTitle, { color: colors.foreground }]}>
-            输入解锁码
-          </Text>
-          <Text style={[styles.paywallDesc, { color: colors.muted }]}>
-            支付完成后，请输入您收到的 4 位解锁码
-          </Text>
-          <TextInput
-            style={[
-              styles.unlockInput,
-              {
-                borderColor: unlockError ? colors.danger : colors.border,
-                color: colors.foreground,
-                backgroundColor: colors.surface,
-              },
-            ]}
-            autoCapitalize="characters"
-            maxLength={4}
-            value={unlockCode}
-            onChangeText={(text) => {
-              const filtered = text
-                .toUpperCase()
-                .split("")
-                .filter((ch) => ALPHANUMERIC.test(ch))
-                .join("")
-                .slice(0, 4);
-              setUnlockCode(filtered);
-              setUnlockError(false);
-            }}
-            placeholder="••••"
-            placeholderTextColor={colors.subtle}
-            textAlign="center"
-            autoFocus
-          />
-          {unlockError ? (
-            <Text style={[styles.errorText, { color: colors.danger }]}>
-              解锁码无效，请检查后重试
-            </Text>
-          ) : null}
-          <View style={styles.unlockBtnRow}>
-            <TouchableOpacity
-              style={[styles.cancelBtn]}
-              onPress={() => {
-                setShowUnlock(false);
-                setUnlockCode("");
-                setUnlockError(false);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[styles.cancelBtnText, { color: colors.foreground }]}
-              >
-                返回
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.unlockSubmitBtn,
-                { backgroundColor: colors.primary },
-                unlockCode.length !== 4 && styles.btnDisabled,
-              ]}
-              onPress={handleUnlockSubmit}
-              disabled={unlockCode.length !== 4}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.unlockSubmitBtnText,
-                  { color: colors.background },
-                ]}
-              >
-                确认
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-
-    // ---- Normal OCR view (unlocked) ----
     if (hideActions) {
       return null;
     }
@@ -449,120 +206,6 @@ export const OcrSection = forwardRef<OcrSectionHandle, OcrSectionProps>(
 const styles = StyleSheet.create({
   container: {
     gap: spacing.sm,
-  },
-  paywallContainer: {
-    borderWidth: 1,
-    borderRadius: radii.card,
-    padding: spacing.md,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  paywallLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  paywallLinkText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  paywallHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    width: "100%",
-  },
-  paywallTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  chevron: {
-    marginLeft: "auto",
-  },
-  paywallDesc: {
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  wechatRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-  priceBadge: {
-    alignItems: "center",
-    gap: 2,
-    marginVertical: 4,
-  },
-  priceAmount: {
-    fontSize: 26,
-    fontWeight: "800",
-  },
-  priceLabel: {
-    fontSize: 12,
-  },
-  wechatLabel: {
-    fontSize: 13,
-  },
-  wechatId: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  unlockBtn: {
-    marginTop: 4,
-    minHeight: 44,
-    paddingHorizontal: 24,
-    borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  unlockBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  unlockInput: {
-    width: "100%",
-    height: 52,
-    borderWidth: 2,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 28,
-    fontWeight: "600",
-    letterSpacing: 12,
-    textAlign: "center",
-  },
-  errorText: {
-    fontSize: 13,
-  },
-  unlockBtnRow: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-  },
-  cancelBtn: {
-    flex: 1,
-    minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cancelBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  unlockSubmitBtn: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: radii.button,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  unlockSubmitBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
   },
   btnRow: {
     flexDirection: "row",

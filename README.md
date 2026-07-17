@@ -61,33 +61,12 @@ pnpm --filter website dev
 | 环境变量 | 说明 | 必填 |
 |------|------|------|
 | `ZHIPU_API_KEY` | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | OCR 功能需要 |
-| `ALICE_HMAC_SECRET` | 生成/校验解锁码的 HMAC 密钥 | 付费解锁需要 |
 | `DEPLOY_SERVER` | 发布脚本的部署目标（`user@host`） | 仅发版需要 |
 | `DEPLOY_REMOTE_DIR` | 服务器上的站点目录 | 仅发版需要 |
 
-非敏感配置在 `app.json` 的 `expo.extra` 中（`zhipuBaseUrl`、`visionModel`、`wechatId`）。
+非敏感配置在 `app.json` 的 `expo.extra` 中（`zhipuBaseUrl`、`visionModel`）。
 
 云端 CI 构建（GitHub Actions → EAS）不读取本地 `.env`，需在 [EAS 环境变量](https://docs.expo.dev/eas/environment-variables/) 中配置同名变量。
-
-## OCR 付费解锁
-
-OCR 拍照识别为付费功能：
-
-1. **付费墙**：用户看到功能介绍 + 微信号，添加微信完成支付
-2. **输入解锁码**：支付后输入 4 位解锁码即可解锁
-3. **持久化**：解锁状态保存在本地，无需重复输入
-
-解锁码通过 HMAC-SHA256 本地校验（密钥即 `ALICE_HMAC_SECRET`），无需远程 API。
-
-生成解锁码：
-
-```bash
-pnpm code                       # 生成 1 个（密钥读取 .env）
-pnpm code --count 5             # 生成 5 个
-pnpm code --secret "自定义密钥"  # 需与 app 构建时的密钥一致
-```
-
-> **注意**：解锁码与构建 app 时的 `ALICE_HMAC_SECRET` 绑定，换密钥后旧码作废。
 
 ## 发版
 
@@ -112,10 +91,10 @@ pnpm release:android
 ├── src/
 │   ├── screens/            # 页面（首页、听写）
 │   ├── components/         # UI 组件
-│   └── lib/                # 配置、OCR、解锁校验、存储等
+│   └── lib/                # 配置、OCR、存储等
 ├── data/                   # 内置词库（教材单元 / 中高考词表）
 ├── docs/                   # 文档资源（README 截图等）
-├── scripts/                # 发版、解锁码、词典构建脚本
+├── scripts/                # 发版、词典构建脚本
 └── website/                # 官网（Vite + React + Tailwind）
 ```
 

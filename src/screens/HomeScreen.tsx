@@ -25,15 +25,9 @@ import { PlaybackControls } from "../components/PlaybackControls";
 import { Toast } from "../components/Toast";
 import { WordInputSection } from "../components/WordInputSection";
 import { useToast } from "../hooks/useToast";
-import { loadOcrUnlockState, verifyUnlockCode } from "../lib/auth";
 import { parseWords } from "../lib/dictation";
 import { enrichWordListText } from "../lib/dictionary";
 import { fonts, radii, spacing } from "../lib/designTokens";
-import {
-  isCustomOcrConfigSet,
-  loadOcrProviderConfig,
-  type OcrProviderConfig,
-} from "../lib/ocrConfig";
 import { OCR_UI_IDLE, type OcrUiState } from "../lib/ocr";
 import {
   addWordHistory,
@@ -88,10 +82,7 @@ export function HomeScreen() {
   const [startIndex, setStartIndex] = useState(0);
   const [shuffle, setShuffle] = useState(false);
   const [isDisplayMode, setIsDisplayMode] = useState(true);
-  const [ocrUnlocked, setOcrUnlocked] = useState(false);
   const [ocrUi, setOcrUi] = useState<OcrUiState>(OCR_UI_IDLE);
-  const [customOcrConfig, setCustomOcrConfig] =
-    useState<OcrProviderConfig | null>(null);
   const [history, setHistory] = useState<WordHistoryEntry[]>([]);
   const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
   const [libraryDrawerVisible, setLibraryDrawerVisible] = useState(false);
@@ -136,18 +127,13 @@ export function HomeScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [savedInput, , persistedOcrUnlocked, savedHistory, savedOcrConfig] =
-        await Promise.all([
-          loadWordInput(),
-          loadPersistedWrongWords(),
-          loadOcrUnlockState(),
-          loadWordHistory(),
-          loadOcrProviderConfig(),
-        ]);
+      const [savedInput, , savedHistory] = await Promise.all([
+        loadWordInput(),
+        loadPersistedWrongWords(),
+        loadWordHistory(),
+      ]);
       if (cancelled) return;
       if (savedInput) setWordInput(enrichWordListText(savedInput));
-      setOcrUnlocked(persistedOcrUnlocked);
-      setCustomOcrConfig(savedOcrConfig);
       setHistory(savedHistory);
       setReady(true);
     })();
@@ -155,14 +141,6 @@ export function HomeScreen() {
       cancelled = true;
     };
   }, []);
-
-  // Refresh OCR config when returning from Settings (user may have changed it)
-  useEffect(() => {
-    const unsub = navigation.addListener("focus", () => {
-      loadOcrProviderConfig().then((cfg) => setCustomOcrConfig(cfg));
-    });
-    return unsub;
-  }, [navigation]);
 
   // Debounced persistence to avoid writing AsyncStorage on every keystroke
   useEffect(() => {
@@ -190,12 +168,6 @@ export function HomeScreen() {
     // OCR returns bare words; enrich immediately so display mode shows meta.
     setWordInput(enrichWordListText(words.join("\n")));
     setIsDisplayMode(true);
-  }, []);
-
-  const handleUnlockOcr = useCallback((code: string): boolean => {
-    const ok = verifyUnlockCode(code);
-    if (ok) setOcrUnlocked(true);
-    return ok;
   }, []);
 
   const handleToggleDisplayMode = useCallback(() => {
@@ -288,10 +260,6 @@ export function HomeScreen() {
   const canToggleDisplayMode = parsedWordCount > 0;
   const effectiveDisplayMode = isDisplayMode && canToggleDisplayMode;
   const showOcrProgress = ocrUi.busy && Boolean(ocrUi.message);
-  // A user who brings their own OCR key+URL is effectively unlocked — the
-  // paywall only gates the bundled built-in key.
-  const ocrEffectiveUnlocked =
-    ocrUnlocked || isCustomOcrConfigSet(customOcrConfig);
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
   const closeCameraSheet = useCallback(() => setCameraSheetVisible(false), []);
@@ -453,9 +421,7 @@ export function HomeScreen() {
         <View style={styles.main}>
           <OcrSection
             ref={ocrRef}
-            ocrUnlocked={ocrEffectiveUnlocked}
             onOcrResult={handleOcrResult}
-            onUnlockOcr={handleUnlockOcr}
             onOcrStateChange={setOcrUi}
             onOcrOutcome={showToast}
             hideActions

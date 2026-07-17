@@ -32,4 +32,4 @@ pnpm lint   # TypeScript 类型检查
 
 ## 安全
 
-**不要**在代码、提交历史或 Issue 中包含任何密钥（API Key、HMAC 密钥、服务器地址等）。所有敏感配置都应放在 gitignored 的 `.env` 中（见 `.env.example`）。如发现安全问题，请通过 Issue 或私下联系维护者。
+**不要**在代码、提交历史或 Issue 中包含任何密钥（API Key、服务器地址等）。所有敏感配置都应放在 gitignored 的 `.env` 中（见 `.env.example`）。如发现安全问题，请通过 Issue 或私下联系维护者。

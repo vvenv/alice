@@ -22,6 +22,5 @@ module.exports = ({ config }) => ({
   extra: {
     ...config.extra,
     zhipuApiKey: env.ZHIPU_API_KEY ?? "",
-    hmacSecret: env.ALICE_HMAC_SECRET ?? "",
   },
 });
