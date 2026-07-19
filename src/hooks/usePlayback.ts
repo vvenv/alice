@@ -147,6 +147,9 @@ export function usePlayback({
       currentIndexRef.current = s.index;
       setCurrentIndex(s.index);
 
+      // Start/continue loading without blocking playback. speakWord only uses
+      // audio that is already cached and otherwise falls back to system TTS.
+      void prefetchWordAudio(word);
       const nextWord = list[s.index + 1];
       if (nextWord) void prefetchWordAudio(nextWord);
 
@@ -269,6 +272,11 @@ export function usePlayback({
         updatePlayState("idle");
         return;
       }
+
+      // Give the first words the earliest possible head start. Playback still
+      // begins immediately and does not await either request.
+      void prefetchWordAudio(words[0]!);
+      if (words[1]) void prefetchWordAudio(words[1]);
 
       updatePlayState("playing");
       startFrom(0, "speak1");

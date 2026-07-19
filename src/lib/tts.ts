@@ -23,6 +23,7 @@ const DOWNLOAD_HEADERS = {
 let currentAbort: AbortController | null = null;
 let wordPlayer: AudioPlayer | null = null;
 let audioModeReady: Promise<void> | null = null;
+const pendingDownloads = new Map<string, Promise<string | null>>();
 
 // ---------------------------------------------------------------------------
 // Audio session / player
@@ -75,6 +76,10 @@ function cacheFileFor(text: string): File {
     encodeURIComponent(text.trim().toLowerCase()).replace(/%/g, "_") ||
     "unknown";
   return new File(ensureCacheDir(), `${safe}.mp3`);
+}
+
+function cacheKeyFor(text: string): string {
+  return text.trim().toLowerCase();
 }
 
 function youdaoUrls(text: string): string[] {
@@ -138,29 +143,35 @@ async function downloadYoudaoAudio(
   return null;
 }
 
-/**
- * Resolve a playable URI: cached file first, then remote Youdao URL.
- */
-async function resolveYoudaoUri(
-  text: string,
-  signal: AbortSignal,
-): Promise<string | null> {
-  const cached = await downloadYoudaoAudio(text, signal);
-  if (cached) return cached;
-  if (signal.aborted) return null;
-
-  // Web (or download failure): stream the first Youdao URL directly.
-  return youdaoUrls(text)[0] ?? null;
+function getReadyYoudaoUri(text: string): string | null {
+  if (!canUseDiskCache()) return null;
+  const cached = cacheFileFor(text);
+  return isValidCachedFile(cached) ? cached.uri : null;
 }
 
 export async function prefetchWordAudio(word: string): Promise<string | null> {
   const text = speakTextFromEntry(word);
   if (!text || !canUseDiskCache()) return null;
 
+  const ready = getReadyYoudaoUri(text);
+  if (ready) return ready;
+
+  const key = cacheKeyFor(text);
+  const pending = pendingDownloads.get(key);
+  if (pending) return pending;
+
+  const download = downloadYoudaoAudio(
+    text,
+    new AbortController().signal,
+  ).catch(() => null);
+  pendingDownloads.set(key, download);
+
   try {
-    return await downloadYoudaoAudio(text, new AbortController().signal);
-  } catch {
-    return null;
+    return await download;
+  } finally {
+    if (pendingDownloads.get(key) === download) {
+      pendingDownloads.delete(key);
+    }
   }
 }
 
@@ -307,8 +318,9 @@ async function speakWithSystemTts(
 }
 
 /**
- * Prefer free Youdao dictionary audio (cached on native), fall back to
- * system TTS. Entries like `you're = you are` speak the left side only.
+ * Use free Youdao dictionary audio only when it has already been cached.
+ * Never wait for a download when playback starts; fall back to system TTS
+ * immediately instead. Entries like `you're = you are` speak the left side.
  */
 export async function speakWord(word: string): Promise<boolean> {
   if (currentAbort) {
@@ -324,8 +336,7 @@ export async function speakWord(word: string): Promise<boolean> {
   const signal = abortController.signal;
 
   try {
-    const uri = await resolveYoudaoUri(text, signal);
-    if (signal.aborted) return false;
+    const uri = getReadyYoudaoUri(text);
 
     if (uri) {
       const ok = await playAudioUri(uri, signal);
