@@ -17,7 +17,7 @@ export const SITE_KEYWORDS = [
 ].join(",");
 export const GITHUB_URL = "https://github.com/vvenv/alice";
 export const APK_URL =
-  "https://alice.edao.plus/downloads/alice-0.2.1-20260717-2030.apk";
+  "https://alice.edao.plus/downloads/alice-0.2.1-20260719-2111.apk";
 /** Expo Web app (static export), hosted under the marketing site. */
 export const WEB_APP_URL = `${SITE_URL}/app/`;
 export const OG_IMAGE_URL = `${SITE_URL}/og.png`;
