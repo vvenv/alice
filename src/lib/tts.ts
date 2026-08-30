@@ -72,6 +72,7 @@ export function setReadTranslationEnabled(value: boolean): void {
 
 // Eagerly load the TTS source setting so playback picks the right provider.
 void loadTtsSettings().catch(() => {});
+
 let currentAbort: AbortController | null = null;
 let wordPlayer: AudioPlayer | null = null;
 let audioModeReady: Promise<void> | null = null;

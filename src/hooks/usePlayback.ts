@@ -9,7 +9,7 @@ import {
 } from "../lib/tts";
 
 type PlayState = "idle" | "playing" | "paused";
-type WordPhase = "speak1" | "speakMeaning" | "speak2" | "interval";
+type WordPhase = "speak1" | "gap" | "speak2" | "speakMeaning" | "interval";
 
 const REPEAT_GAP_MS = 700;
 
@@ -169,9 +169,10 @@ export function usePlayback({
       void prefetchWordAudio(word);
       const nextWord = list[s.index + 1];
       if (nextWord) void prefetchWordAudio(nextWord);
-      // The meaning gloss rides the same Youdao dict voice as the word
-      // itself, so it prefetches through the same cache.
-      if (meaningSpeech) void prefetchWordAudio(meaningSpeech);
+      if (isReadTranslationEnabled()) {
+        const meaning = parseWordLine(word).meaning;
+        if (meaning) void prefetchWordAudio(meaning);
+      }
 
       const ok = await speakWord(word);
       if (isCancelled(gen)) return;
