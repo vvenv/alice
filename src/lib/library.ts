@@ -448,7 +448,7 @@ plane | n. | 飞机
 knife | n. | (pl.knives) 小刀
 robot | n. | 机器人
 body | n. | 身体
-broke |  | 的过去时) 折断；打破
+broke | v. | (break 的过去时) 折断；打破
 lost | adj. | 丢失的；丢去的
 tell | v. | 告诉；讲述
 round | adj. | 球形的；圆的
@@ -957,7 +957,7 @@ back | n. | 背部,后面
 place | n. | 地点,地方
 twenty-first | num. | 第二十一
 bank | n. | 银行；(海,河,湖的)岸,堤
-theatre | n. | 剧场,戏院（美式拼写: theater）
+theatre | n. | 剧场,戏院(美式拼写: theater)
 toilet | n. | 厕所
 museum | n. | 博物馆
 front | adj. & n. | 前面(的),前部
@@ -988,7 +988,7 @@ lift | n. & v. | 电梯；(云,雾等)消散,(雨)停止
 up and down | phr. | 上上下下,来来回回
 busy | adj. | 忙的,繁忙的
 team | n. | 队,组
-centre |  | )；n. 中心
+centre | n. | 中心
 popular | adj. | 大众的,流行的
 quite | adv. | 很,十分
 month | n. | 月
@@ -1150,7 +1150,7 @@ plate | n. | 盘子,碟子
 candle | n. | 蜡烛
 present | n. | 礼物
 smile | n. & v. | 微笑
-telephone | n. & v. | 电话,电话机（= phone）；打电话给(某人)
+telephone | n. & v. | 电话,电话机(= phone)；打电话给(某人)
 double | n. & adj. | 两倍(的),双倍(的)
 but | prep. | 除了
 take out | phr. | 取出
@@ -1242,7 +1242,7 @@ physics | n. | 物理(学)
 history | n. | 历史(学)
 key | n. | 钥匙
 fix | v. | 修理,安装
-lab |  | )n实验室
+lab | n. | 实验室
 suddenly | adv. | 突然地
 DVD | n. | 光碟,影碟
 in time | phr. | 及时
@@ -1436,7 +1436,7 @@ unusual | adj. | 不寻常的,非凡的
 in the end | phr. | 最后
 work out | phr. | 算出,制定出
 software | n. | (电脑)软件
-program | n. | 程序,项目,节目（英式拼写: programme）
+program | n. | 程序,项目,节目(英式拼写: programme)
 university | n. | 综合性大学
 develop | v. | 发展,研制,开发
 BASIC | n. | (电脑)初学者通用符号指令码
@@ -1619,7 +1619,7 @@ toe | n. | 脚趾`,
       id: "default_初中2182_第三册 常见",
       text: `CD player | phr. | 激光唱机
 several | adj. & pron. | 几个；若干
-shelf |  | )；n. 架子；搁板
+shelf | n. | 架子；搁板
 already | adv. | 已经
 used to | phr. | 过去常常
 on | prep. | 关于
@@ -1628,9 +1628,9 @@ yard | n. | 院子
 put sth down | phr. | 把某物放下来
 step | n. & v. | 脚步；走；踏入；踩
 probably | adv. | 很可能；大概
-pay | v. | 付钱；支付（过去式 paid）
+pay | v. | 付钱；支付(过去式 paid)
 pay for | phr. | 付钱；支付
-come up with | phr. | 找到；提出（答案，办法）
+come up with | phr. | 找到；提出(答案，办法)
 mark | n. | 记号；标记；痕迹
 think of | phr. | 想起
 encourage | v. | 鼓励
@@ -1642,7 +1642,7 @@ copy | v. | 抄写
 as | prep. | 作为
 screen | n. | 屏幕
 wave | n. | 浪；波浪
-beach | n. | 海（河、湖）滩
+beach | n. | 海(河、湖)滩
 have a try | phr. | 尝试；努力；射击
 twice | adv. | 两次；两倍
 none | pron. | 一个人也没有；没有任何东西
@@ -1660,7 +1660,7 @@ since | adv. & conj. | 此后；自..以来；由于，既然
 ever since | phr. | 从那时起；此后一直
 part-time | adj. & n. | 非全日工作的；业余时间
 although | conj. | 虽然；尽管
-fit | adj. & v. | 健康的；适合的；（使）适合
+fit | adj. & v. | 健康的；适合的；(使)适合
 prize | n. | 奖品；奖赏
 competition | n. | 比赛；竞争
 event | n. | 大事；事件
@@ -1679,12 +1679,12 @@ slow down | phr. | 减缓；减速
 journey | n. | 旅程；旅行；路程
 among | prep. | 在……当中
 proud | adj. | 自豪的；骄傲的
-be proud of | phr. | 以……自豪（兴奋）
+be proud of | phr. | 以……自豪(兴奋)
 speak highly of | phr. | 称赞
 not only…but also | phr. | 不但……而且
 pride | n. | 自豪；骄傲
 unless | conj. | 除非；如果不
-shot | n. | 尝试；努力；射击；（球赛中）击，射门，投篮，发射
+shot | n. | 尝试；努力；射击；(球赛中)击，射门，投篮，发射
 truth | n. | 真理，真相，事实
 pour | v. | 倒；灌；倾泻
 waste | adj. & n. | 废弃的；无用的；垃圾；废物
@@ -1716,7 +1716,7 @@ except | prep. | 除…之外
 province | n. | 省
 rush | v. | 冲；奔跑
 rail | n. | 轨道；铁路
-railway | n. | （英）铁路
+railway | n. | (英)铁路
 lively | adj. | 热闹的；有生气的
 all kinds of | phr. | 各种各样的
 comfortable | adj. | 舒适的；舒服的
@@ -1727,10 +1727,10 @@ practise | v. | 实践；练习
 moving | adj. | 活动的；移动的；动的人
 click | n. & v. | 咔哒声；发出咔哒声
 pity | n. | 遗憾的事，可惜的事
-score | n. & v. | （比赛）得分
+score | n. & v. | (比赛)得分
 own | adj. & v. | 自己的；拥有，所有
 least | adj. & n. | 最小的；最少的；最少，最小
-kid | n. | （口语）小伙子
+kid | n. | (口语)小伙子
 Internet | n. | 因特网，互联网络
 search | v. | 搜查，搜索
 double | adj. & v. | 双重的，双倍的
@@ -1742,16 +1742,16 @@ capital | n. | 首都
 population | n. | 人口，人数
 whether | conj. | 是否
 edge | n. | 边，边缘
-cool | adj. | （俚语）了不起
-cost | v. | 价钱为，花费（金钱、时间等）
+cool | adj. | (俚语)了不起
+cost | v. | 价钱为，花费(金钱、时间等)
 one-way | adj. | 单程的，单行的
 flight | n. | 航班，飞行
-book | v. | 预定（戏票、车票等）
+book | v. | 预定(戏票、车票等)
 round-trip | adj. | (车票等)来回的, 往返的
 instruction | n. | 说明，须知
 straight | adv. | 一直地
 go straight along | phr. | 沿着…一直往前走
-whom | pron. | 谁，哪个人（who的宾格）
+whom | pron. | 谁，哪个人(who的宾格)
 think about | phr. | 考虑
 chance | n. | 机会
 sound | v. | 听起来
@@ -1770,7 +1770,7 @@ ocean | n. | 海洋，大洋
 pollute | v. | 污染，弄脏
 group | n. | 组，群，团队
 as long as | phr. | 长达…
-deal | n. | （口语）协议，交易
+deal | n. | (口语)协议，交易
 shark | n. | 鲨鱼
 on earth | phr. | 在地球上
 attack | n. & v. | 攻击，袭击
@@ -1795,7 +1795,7 @@ lifetime | n. | 一生，终生
 graduate | v. | 毕业
 turn down | phr. | 关小，调低
 clearly | adv. | 清楚地
-wonder | v. | 惊奇，惊讶,（对...）感到怀疑；惊奇，惊讶（对. . . . ）感到怀
+wonder | v. | 惊奇，惊讶,(对...)感到怀疑；惊奇，惊讶(对. . . . )感到怀
 worth | adj. | 有…的价值，值得；值得..的，有..的价值
 confidence | n. | 信心，自信
 merry | adj. | 愉快的；欢乐的
@@ -1806,7 +1806,7 @@ pet | n. | 宠爱的动物
 as well | adv. | 又，同样地
 single | adj. | 单个的，只有一个的
 base | v. | 以…作根据，基于
-base on | phr. | 以…（为）根据
+base on | phr. | 以…(为)根据
 real | adj. | 真正的，真实的
 shy | adj. | 害羞的，腼腆的
 hang | v. | 吊着，悬挂
@@ -1815,7 +1815,7 @@ though | conj. | 虽然…，尽管…
 even though | conj. | 即使…
 live on | phr. | 继续存在，继续活着
 relative | n. | 亲属，亲人
-greet | v. | 问候，向（人）打招呼
+greet | v. | 问候，向(人)打招呼
 hug | n. | 拥抱，紧抱
 western | adj. | 西方的，西部的
 traditional | adj. | 传统的，惯例的
@@ -1823,7 +1823,7 @@ once upon a time | phr. | 从前，很早以前
 special | adj. | 特别的，特殊的
 at last | phr. | 终于，最后
 owner | n. | 拥有者，所有者
-give birth to | phr. | 生（孩子）
+give birth to | phr. | 生(孩子)
 be made in | phr. | 在…生产或制造
 be made of | phr. | 由…组成，由…构成
 brush | n. | 刷子，毛笔，画笔
@@ -1843,7 +1843,7 @@ set | n. | 装置，设备
 a TV set | phr. | 一台电视
 Germany | n. | 德国
 cotton | n. | 棉花
-silk | n. | （蚕）丝
+silk | n. | (蚕)丝
 camera | n. | 照相机
 digital | adj. | 数字似的
 ordinary | adj. | 普通的，通常的
@@ -1862,12 +1862,12 @@ disappear | v. | 消失
 discover | v. | 发现，发觉
 found | v. | 成立，建立
 entrance | n. | 入口，进口，入场
-park | v. | （将车）停放
-parking | n. | 停车（处）
+park | v. | (将车)停放
+parking | n. | 停车(处)
 danger | n. | 危险
 pause | v. & n. | 中止，暂停
 bowl | n. | 碗
-serve | v. | 上（酒、菜等），开（饭）；服务
+serve | v. | 上(酒、菜等)，开(饭)；服务
 fill | v. | 装满，填充
 be filled with | phr. | 用…充满
 object | n. | 物体
@@ -1885,7 +1885,7 @@ flood | n. & v. | 洪水，水灾；淹没，泛滥
 prevent | v. | 防止，阻止
 northern | adj. | 北部的，北方的
 wide | adj. | 宽的
-blow | v. | 吹（过去式 blew）
+blow | v. | 吹(过去式 blew)
 sand | n. | 沙，沙子
 towards | prep. | 向，朝
 point | v. | 指，指向…
@@ -1909,10 +1909,10 @@ point at | phr. | 指示，指向
 universe | n. | 宇宙
 man-made | adj. | 人造的，人工的
 space | n. | 空间，太空
-send | v. | 送，寄，派（遣）
+send | v. | 送，寄，派(遣)
 send up | phr. | 发射，把…往上送
 receive | v. | 接受，收到，得到
-shut | v. | 关（门等）
+shut | v. | 关(门等)
 shut down | phr. | 把…关上
 impossible | adj. | 不可能的
 mind | n. & v. | 思想，想法；关心，介意
@@ -1925,11 +1925,11 @@ hour after hour | phr. | 一小时又一小时, 连续地
 challenge | n. | 挑战
 beginning | n. | 开始，开端
 at the beginning of | phr. | 起初，开始
-square | n. | 平方，（方形的）广场
+square | n. | 平方，(方形的)广场
 hardly | adv. | 几乎不
 more and more | phr. | 越来越…
-prefer | v. | 宁愿（选择），更喜欢
-prefer to | phr. | 宁愿（选择），更喜欢
+prefer | v. | 宁愿(选择)，更喜欢
+prefer to | phr. | 宁愿(选择)，更喜欢
 rather than | phr. | 宁可,是..而不是
 used | adj. | 用过的，半旧的
 discussion | n. | 讨论
@@ -1942,7 +1942,7 @@ excited | adj. | 兴奋的，激动的
 be excited about | phr. | 对…感到兴奋
 leather | n. | 皮革
 wear out | phr. | 把…穿旧，磨坏
-try on | phr. | 试穿（衣服,鞋）,试戴（帽子）
+try on | phr. | 试穿(衣服,鞋),试戴(帽子)
 online | adj. & adv. | 在线，上网
 ad | n. | 广告
 shape | n. | 形状，外形
@@ -1955,11 +1955,11 @@ successfully | adv. | 圆满地,顺利地,成功地
 interest | n. | 兴趣
 a place of interest | phr. | 名胜
 forever | adv. | 永远，总是
-lend | v. | 把…借给，借给（过去式 lent）
+lend | v. | 把…借给，借给(过去式 lent)
 go over | phr. | 过一遍，仔细检查
 make a mistake | phr. | 犯错误
 suit | n. | 一套衣服
-drop off | phr. | 放下（某物），下车
+drop off | phr. | 放下(某物)，下车
 opera | n. | 歌剧
 the Great Hall of the people | n. | 人民大会堂
 huge | adj. | 巨大的
@@ -1986,22 +1986,22 @@ earthquake | n. | 地震
 rock | v. | 震动，摇动
 as if | conj. | 好像,似乎
 at sea | phr. | 在大海上
-story | n. | （房屋的）层
+story | n. | (房屋的)层
 two-story | n. | 两层
 grab | v. | 抓取…，夺取
 crash | v. | 坠落，冲撞
 mobile | adj. | 可移动的
 mobile phone | n. | 可移动电话
-at all | phr. | （用否定句）一点也不
+at all | phr. | (用否定句)一点也不
 at least | phr. | 至少，起码
 beat | v. | 打败，敲打
-goal | n. | （足球）球门，得分
+goal | n. | (足球)球门，得分
 by the time | phr. | 到…的时候
-check-out | n. | （购货时的）结帐台, 收银台
+check-out | n. | (购货时的)结帐台, 收银台
 realize | v. | 察觉，领悟，了解
 train | v. | 训练，培养
 training | n. | 训练，培养
-captain | n. | （足球队等）队长
+captain | n. | (足球队等)队长
 deserve | v. | 应得，值得…
 confident | adj. | 有自信的，确信的
 excellent | adj. | 极好的，优秀的
@@ -2021,9 +2021,9 @@ rule | n. | 规则，规定
 against | prep. | 与…对抗，对着
 expect | v. | 期望，预期
 rough | adj. | 粗鲁的，激烈的
-steal | v. | 偷，窃取（过去式 stole）
+steal | v. | 偷，窃取(过去式 stole)
 hands up | phr. | 举手
-shoot | v. | 射击，射死（过去式 shot）
+shoot | v. | 射击，射死(过去式 shot)
 detective | n. | 侦探
 inspector | n. | 警官，监督员
 come down | phr. | 下来，落
@@ -2036,7 +2036,7 @@ British | adj. | 英国人的
 club | n. | 俱乐部，社团
 expert | n. | 专家，内行
 tent | n. | 帐篷
-freeze |  | )；v. 结冰，凝结
+freeze | v. | 结冰，凝结
 alive | adj. | 活着的
 progress | v. | 进步，提高，前进
 self-respect | n. | 自尊，自重
@@ -2053,22 +2053,22 @@ essential | adj. | 本质的，主要的，必需的`,
 librarian | n. | 图书管理员
 sadly | adv. | 难过地；悲哀地
 bookmark | n. | 书签
-spoil | v. | 糟蹋,损坏（过去式与过去分词: spoilt）
+spoil | v. | 糟蹋,损坏(过去式与过去分词: spoilt)
 surf | v. | 冲浪
 surfing | n. | 冲浪运动
 surfer | n. | 冲浪者
 canoe | v. | 乘独木舟
 large numbers of | phr. | 许多
 mainland | n. | 大陆；本土
-wherever | conj. & adv. | 无论在（到）哪里；在任何地方
+wherever | conj. & adv. | 无论在(到)哪里；在任何地方
 neighbourhood | n. | 四邻；街坊；邻近
-spit | v. | 吐痰；吐唾沫（过去式 spat）
+spit | v. | 吐痰；吐唾沫(过去式 spat)
 dustbin | n. | 垃圾箱
 riddle | n. | 谜语
-headmaster | n. | （英)中小学校长
+headmaster | n. | (英)中小学校长
 enjoyable | adj. | 愉快的；有趣的
 scenery | n. | 风景；景色
-scuba | n. | 水肺（潜水者用的水下呼吸器）
+scuba | n. | 水肺(潜水者用的水下呼吸器)
 icon | n. | 图象符号，图标
 ridge | n. | 山脉
 tomb | n. | 坟墓
@@ -2083,8 +2083,8 @@ undersea | adj. | 海底的
 amaze | v. | 使…大为惊讶，使惊
 be amazed at | phr. | 对…感到惊讶
 colourful | adj. | 颜色艳丽的
-terrific | adj. | （口语）很棒的，极好的
-sometime | adv. | （未来的）某时
+terrific | adj. | (口语)很棒的，极好的
+sometime | adv. | (未来的)某时
 alike | adj. | 相似的，相像的
 watchtower | n. | 监视塔，瞭望塔
 neatly | adv. | 整洁地
@@ -2097,7 +2097,7 @@ frustrate | v. | 使沮丧，使失败
 frustrated | adj. | 感到灰心丧气的
 decorate | v. | 装饰，修饰
 angel | n. | 天使，守护神
-eve | n. | （节日或重大事件发生的）前夕
+eve | n. | (节日或重大事件发生的)前夕
 kind-hearted | adj. | 好心的
 chimney | n. | 烟囱，烟筒
 Turkey | n. | 土耳其
@@ -2120,30 +2120,30 @@ drought | n. | 旱灾，干旱
 farmland | n. | 农田
 slipper | n. | (常用复数)拖鞋,便鞋
 beeper | n. | 袖珍无线电传呼机,电话呼叫机
-someday | adv. | （今后）有一天
+someday | adv. | (今后)有一天
 printer | n. | 打印机
 modem | n. | 调制解调器
 spaceship | n. | 宇宙飞船
 woolen | adj. | 羊毛的，毛织的
 worm | n. | 虫，蠕虫
-multiply | v. | （将…）乘…
+multiply | v. | (将…)乘…
 multiply…by… | phr. | 乘以…
 beg | v. | 恳求，乞求
 beg one's pardon | phr. | 请原谅，对不起
 secondhand | adj. | 二手的，用过的
 diagram | n. | 图表
 yen | n. | 元，日元
-Canon | n. | 佳能（照相机牌名）
+Canon | n. | 佳能(照相机牌名)
 Peking opera | n. | 京剧
-wag | v. | 摆动，摇动（尾巴等）
-vet | n. | （口语）兽医
-heal | v. | 使（伤、病）痊愈
+wag | v. | 摆动，摇动(尾巴等)
+vet | n. | (口语)兽医
+heal | v. | 使(伤、病)痊愈
 injection | n. | 注射，打针
 painful | adj. | 疼痛的，痛苦的
-striker | n. | （足球）前锋
+striker | n. | (足球)前锋
 midfield | n. | 中场
 midfield player | n. | 中场球员
-spill | v. | 溢出，溅出，洒出（过去式 spilt）
+spill | v. | 溢出，溅出，洒出(过去式 spilt)
 necklace | n. | 项链
 thief | n. | 贼
 robber | n. | 强盗，盗贼
@@ -2732,7 +2732,6 @@ bus
 bush
 business
 businessman
-businessman
 businesswoman
 busy
 but
@@ -2842,7 +2841,6 @@ certainly
 certificate
 chain
 chair
-chairman
 chairman
 chairwoman
 chalk

@@ -8,6 +8,7 @@
 import {
   POS_PREFIX_RE,
   entryToLine,
+  normalizePos,
   parseWordLine,
   parseWords,
   speakTextFromEntry,
@@ -36,7 +37,7 @@ function normalizeMeaning(raw: string): string {
  * 返回的每行自带词性前缀（主词性组使用 mainPos）；无词性前缀的义项归入主词性组。
  */
 export function splitSenses(meaning: string, mainPos?: string): string[] {
-  const mainKey = (mainPos ?? "").toLowerCase();
+  const mainKey = normalizePos(mainPos ?? "");
   const groups = new Map<string, string[]>();
   for (const raw of meaning.split(/[；;]/)) {
     const seg = raw.trim();
@@ -45,8 +46,7 @@ export function splitSenses(meaning: string, mainPos?: string): string[] {
     let key = mainKey;
     let text = seg;
     if (m) {
-      key = m[1]!.toLowerCase();
-      if (key === "a.") key = "adj.";
+      key = normalizePos(m[1]!);
       text = seg.slice(m[0].length).trim();
     }
     if (!text) continue;
@@ -62,7 +62,7 @@ export function splitSenses(meaning: string, mainPos?: string): string[] {
       : keys;
   return ordered.map((key) => {
     const parts = groups.get(key)!.join("；");
-    if (key === mainKey) return mainPos ? `${mainPos} ${parts}` : parts;
+    if (key === mainKey) return mainPos ? `${normalizePos(mainPos)} ${parts}` : parts;
     return `${key} ${parts}`;
   });
 }
@@ -97,8 +97,7 @@ function splitPosMeaning(raw: string): WordMeta | null {
   let pos: string | undefined;
   const posMatch = text.match(POS_PREFIX_RE);
   if (posMatch) {
-    pos = posMatch[1]!.toLowerCase();
-    if (pos === "a.") pos = "adj.";
+    pos = normalizePos(posMatch[1]!);
     text = text.slice(posMatch[0].length).trim();
   }
 

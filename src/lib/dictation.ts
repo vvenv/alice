@@ -19,8 +19,31 @@ export interface WordEntry {
 
 /** 词性前缀（ECDICT 与用户词表通用），如 "n." "vt." "adj."。 */
 export const POS_PREFIX_RE =
-  /^(n\.|v\.|vt\.|vi\.|adj\.|adv\.|prep\.|conj\.|pron\.|num\.|art\.|int\.|aux\.|abbr\.|contr\.|a\.)\s*/i;
+  /^(n\.|v\.|vt\.|vi\.|adj\.|adv\.|prep\.|conj\.|pron\.|num\.|art\.|int\.|interj\.|aux\.|abbr\.|contr\.|pl\.|a\.|na\.|un\.|vbl\.|pp\.|pn\.|exclam\.|pref\.|suf\.|suff\.|comb\.|quant\.|phr\.|ph\.|st\.|pr\.|ind\.|pers\.|col\.|ing\.|pla\.|stuff\.)\s*/i;
 
+/**
+ * 归一化词性缩写（ECDICT 原文与教材习惯的差异，构建脚本同款映射）：
+ * interj./exclam.→int.，na./un./pla./pn.→n.，vbl./pp.→v.，
+ * pref./suf./suff./comb./stuff.→abbr.，a.→adj.，pl.→n.
+ */
+export function normalizePos(pos: string): string {
+  const key = pos.trim().toLowerCase();
+  if (key === "a.") return "adj.";
+  if (key === "pl.") return "n.";
+  if (key === "interj." || key === "exclam.") return "int.";
+  if (key === "na." || key === "un." || key === "pla." || key === "pn.")
+    return "n.";
+  if (key === "vbl." || key === "pp.") return "v.";
+  if (
+    key === "pref." ||
+    key === "suf." ||
+    key === "suff." ||
+    key === "comb." ||
+    key === "stuff."
+  )
+    return "abbr.";
+  return key;
+}
 const PIPE = "|";
 const FULLWIDTH_PIPE = "｜";
 

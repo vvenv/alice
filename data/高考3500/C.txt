@@ -89,7 +89,6 @@ certificate
 chain
 chair
 chairman
-chairman
 chairwoman
 chalk
 challenge

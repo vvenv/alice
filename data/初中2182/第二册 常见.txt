@@ -180,7 +180,7 @@ lift | n. & v. | 电梯；(云,雾等)消散,(雨)停止
 up and down | phr. | 上上下下,来来回回
 busy | adj. | 忙的,繁忙的
 team | n. | 队,组
-centre | n. 中心
+centre | n. | 中心
 popular | adj. | 大众的,流行的
 quite | adv. | 很,十分
 month | n. | 月
