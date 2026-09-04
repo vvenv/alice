@@ -1,0 +1,724 @@
+{
+  "parseWords": [
+    {
+      "input": "apple\nbanana\ncat",
+      "output": [
+        "apple",
+        "banana",
+        "cat"
+      ]
+    },
+    {
+      "input": "apple | n. | 苹果\n\nbanana | n. | 香蕉\r\ncat",
+      "output": [
+        "apple | n. | 苹果",
+        "banana | n. | 香蕉",
+        "cat"
+      ]
+    },
+    {
+      "input": "  \n \n",
+      "output": []
+    },
+    {
+      "input": "you're = you are\nactor / actress\nice cream",
+      "output": [
+        "you're = you are",
+        "actor / actress",
+        "ice cream"
+      ]
+    },
+    {
+      "input": "hello\nworld\nhello",
+      "output": [
+        "hello",
+        "world",
+        "hello"
+      ]
+    }
+  ],
+  "parseWordLine": [
+    {
+      "input": "apple",
+      "word": "apple",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "  banana  ",
+      "word": "banana",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "apple | n. | 苹果",
+      "word": "apple",
+      "pos": "n.",
+      "meaning": "苹果"
+    },
+    {
+      "input": "cat|n.|猫",
+      "word": "cat",
+      "pos": "n.",
+      "meaning": "猫"
+    },
+    {
+      "input": "actor / actress",
+      "word": "actor / actress",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "you're = you are",
+      "word": "you're = you are",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "you're＝you are",
+      "word": "you're＝you are",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "look forward to | | 期待",
+      "word": "look forward to",
+      "pos": null,
+      "meaning": "期待"
+    },
+    {
+      "input": "ice cream | n.",
+      "word": "ice cream",
+      "pos": "n.",
+      "meaning": null
+    },
+    {
+      "input": "全角｜pos｜释义",
+      "word": "全角",
+      "pos": "pos",
+      "meaning": "释义"
+    },
+    {
+      "input": "",
+      "word": "",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "   ",
+      "word": "",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "a/an",
+      "word": "a/an",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "X-ray",
+      "word": "X-ray",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "well-known | adj. | 著名的",
+      "word": "well-known",
+      "pos": "adj.",
+      "meaning": "著名的"
+    },
+    {
+      "input": "run | v. | 跑；经营；运转",
+      "word": "run",
+      "pos": "v.",
+      "meaning": "跑；经营；运转"
+    },
+    {
+      "input": "set = set up",
+      "word": "set = set up",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "abc | n. | ",
+      "word": "abc",
+      "pos": "n.",
+      "meaning": null
+    }
+  ],
+  "entryToLine": [
+    {
+      "input": "apple",
+      "output": "apple"
+    },
+    {
+      "input": "  banana  ",
+      "output": "banana"
+    },
+    {
+      "input": "apple | n. | 苹果",
+      "output": "apple | n. | 苹果"
+    },
+    {
+      "input": "cat|n.|猫",
+      "output": "cat | n. | 猫"
+    },
+    {
+      "input": "actor / actress",
+      "output": "actor / actress"
+    },
+    {
+      "input": "you're = you are",
+      "output": "you're = you are"
+    },
+    {
+      "input": "you're＝you are",
+      "output": "you're＝you are"
+    },
+    {
+      "input": "look forward to | | 期待",
+      "output": "look forward to |  | 期待"
+    },
+    {
+      "input": "ice cream | n.",
+      "output": "ice cream | n. | "
+    },
+    {
+      "input": "全角｜pos｜释义",
+      "output": "全角 | pos | 释义"
+    },
+    {
+      "input": "",
+      "output": ""
+    },
+    {
+      "input": "   ",
+      "output": ""
+    },
+    {
+      "input": "a/an",
+      "output": "a/an"
+    },
+    {
+      "input": "X-ray",
+      "output": "X-ray"
+    },
+    {
+      "input": "well-known | adj. | 著名的",
+      "output": "well-known | adj. | 著名的"
+    },
+    {
+      "input": "run | v. | 跑；经营；运转",
+      "output": "run | v. | 跑；经营；运转"
+    },
+    {
+      "input": "set = set up",
+      "output": "set = set up"
+    },
+    {
+      "input": "abc | n. | ",
+      "output": "abc | n. | "
+    }
+  ],
+  "speakTextFromEntry": [
+    {
+      "input": "apple",
+      "output": "apple"
+    },
+    {
+      "input": "  banana  ",
+      "output": "banana"
+    },
+    {
+      "input": "apple | n. | 苹果",
+      "output": "apple"
+    },
+    {
+      "input": "cat|n.|猫",
+      "output": "cat"
+    },
+    {
+      "input": "actor / actress",
+      "output": "actor / actress"
+    },
+    {
+      "input": "you're = you are",
+      "output": "you're"
+    },
+    {
+      "input": "you're＝you are",
+      "output": "you're"
+    },
+    {
+      "input": "look forward to | | 期待",
+      "output": "look forward to"
+    },
+    {
+      "input": "ice cream | n.",
+      "output": "ice cream"
+    },
+    {
+      "input": "全角｜pos｜释义",
+      "output": "全角｜pos｜释义"
+    },
+    {
+      "input": "",
+      "output": ""
+    },
+    {
+      "input": "   ",
+      "output": ""
+    },
+    {
+      "input": "a/an",
+      "output": "a/an"
+    },
+    {
+      "input": "X-ray",
+      "output": "X-ray"
+    },
+    {
+      "input": "well-known | adj. | 著名的",
+      "output": "well-known"
+    },
+    {
+      "input": "run | v. | 跑；经营；运转",
+      "output": "run"
+    },
+    {
+      "input": "set = set up",
+      "output": "set"
+    },
+    {
+      "input": "abc | n. | ",
+      "output": "abc"
+    }
+  ],
+  "parseWordEntries": [
+    {
+      "input": "apple\nbanana\ncat",
+      "output": [
+        {
+          "word": "apple",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "banana",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "cat",
+          "pos": null,
+          "meaning": null
+        }
+      ]
+    },
+    {
+      "input": "apple | n. | 苹果\n\nbanana | n. | 香蕉\r\ncat",
+      "output": [
+        {
+          "word": "apple",
+          "pos": "n.",
+          "meaning": "苹果"
+        },
+        {
+          "word": "banana",
+          "pos": "n.",
+          "meaning": "香蕉"
+        },
+        {
+          "word": "cat",
+          "pos": null,
+          "meaning": null
+        }
+      ]
+    },
+    {
+      "input": "  \n \n",
+      "output": []
+    },
+    {
+      "input": "you're = you are\nactor / actress\nice cream",
+      "output": [
+        {
+          "word": "you're = you are",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "actor / actress",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "ice cream",
+          "pos": null,
+          "meaning": null
+        }
+      ]
+    },
+    {
+      "input": "hello\nworld\nhello",
+      "output": [
+        {
+          "word": "hello",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "world",
+          "pos": null,
+          "meaning": null
+        },
+        {
+          "word": "hello",
+          "pos": null,
+          "meaning": null
+        }
+      ]
+    }
+  ],
+  "splitSenses": [
+    {
+      "meaning": "苹果",
+      "pos": "n.",
+      "output": [
+        "n. 苹果"
+      ]
+    },
+    {
+      "meaning": "n. 苹果；v. 摘苹果",
+      "pos": "n.",
+      "output": [
+        "n. 苹果",
+        "v. 摘苹果"
+      ]
+    },
+    {
+      "meaning": "跑；经营；运转",
+      "pos": "v.",
+      "output": [
+        "v. 跑；经营；运转"
+      ]
+    },
+    {
+      "meaning": "adj. 著名的；adv. 很好地",
+      "pos": "adj.",
+      "output": [
+        "adj. 著名的",
+        "adv. 很好地"
+      ]
+    },
+    {
+      "meaning": "著名的",
+      "pos": null,
+      "output": [
+        "著名的"
+      ]
+    },
+    {
+      "meaning": "a. 好的；n. 好处",
+      "pos": "adj.",
+      "output": [
+        "adj. 好的",
+        "n. 好处"
+      ]
+    },
+    {
+      "meaning": "vt. 打开；vi. 开始；n. 空地",
+      "pos": "n.",
+      "output": [
+        "n. 空地",
+        "vt. 打开",
+        "vi. 开始"
+      ]
+    },
+    {
+      "meaning": "",
+      "pos": "n.",
+      "output": []
+    },
+    {
+      "meaning": "；；",
+      "pos": "v.",
+      "output": []
+    },
+    {
+      "meaning": "【计】计算机术语",
+      "pos": "n.",
+      "output": [
+        "n. 【计】计算机术语"
+      ]
+    }
+  ],
+  "sensesClamped": [
+    {
+      "senses": [
+        "n. 苹果"
+      ],
+      "collapsedLines": 2,
+      "charsPerLine": 14,
+      "output": false
+    },
+    {
+      "senses": [
+        "n. 苹果；香蕉；橘子；葡萄；西瓜；草莓"
+      ],
+      "collapsedLines": 2,
+      "charsPerLine": 14,
+      "output": false
+    },
+    {
+      "senses": [
+        "n. 苹果",
+        "v. 摘苹果",
+        "adj. 苹果的"
+      ],
+      "collapsedLines": 2,
+      "charsPerLine": 20,
+      "output": true
+    },
+    {
+      "senses": [],
+      "collapsedLines": 2,
+      "charsPerLine": 14,
+      "output": false
+    },
+    {
+      "senses": [
+        "a very long english meaning that goes on and on and on"
+      ],
+      "collapsedLines": 2,
+      "charsPerLine": 14,
+      "output": false
+    }
+  ],
+  "extractWordsFromOcrText": [
+    {
+      "input": "apple\nbanana\ncat",
+      "output": [
+        "apple",
+        "banana",
+        "cat"
+      ]
+    },
+    {
+      "input": "1. apple\n2. banana\n3. cat",
+      "output": [
+        "apple",
+        "banana",
+        "cat"
+      ]
+    },
+    {
+      "input": "apple, banana, cat, dog",
+      "output": [
+        "apple",
+        "banana",
+        "cat",
+        "dog"
+      ]
+    },
+    {
+      "input": "apple | n. | 苹果\nbanana | n. | 香蕉",
+      "output": [
+        "apple | n. | 苹果",
+        "banana | n. | 香蕉"
+      ]
+    },
+    {
+      "input": "```\napple\nbanana\n```",
+      "output": [
+        "apple",
+        "banana"
+      ]
+    },
+    {
+      "input": "apple banana cat dog elephant fish grape",
+      "output": [
+        "apple",
+        "banana",
+        "cat",
+        "dog",
+        "elephant",
+        "fish",
+        "grape"
+      ]
+    },
+    {
+      "input": "actor / actress\nice cream\nlook forward to",
+      "output": [
+        "actor / actress",
+        "ice cream",
+        "look forward to"
+      ]
+    },
+    {
+      "input": "“apple”\n‘banana’\ncat.",
+      "output": [
+        "apple",
+        "banana",
+        "cat"
+      ]
+    },
+    {
+      "input": "APPLE\napple\nApple",
+      "output": [
+        "APPLE"
+      ]
+    },
+    {
+      "input": "苹果\nbanana\n123\napple2",
+      "output": [
+        "banana"
+      ]
+    },
+    {
+      "input": "- apple\n• banana\n* cat",
+      "output": [
+        "apple",
+        "banana",
+        "cat"
+      ]
+    },
+    {
+      "input": "apple，banana；cat、dog",
+      "output": [
+        "apple",
+        "banana",
+        "cat",
+        "dog"
+      ]
+    },
+    {
+      "input": "",
+      "output": []
+    },
+    {
+      "input": "the quick brown fox jumps over the lazy dog and keeps running forever",
+      "output": [
+        "the",
+        "quick",
+        "brown",
+        "fox",
+        "jumps",
+        "over",
+        "lazy",
+        "dog",
+        "and",
+        "keeps",
+        "running",
+        "forever"
+      ]
+    },
+    {
+      "input": "apple |  | \nbanana | n. |  | extra",
+      "output": [
+        "apple",
+        "banana | n. | extra"
+      ]
+    }
+  ],
+  "lookupWordMeta": [
+    {
+      "input": "apple",
+      "pos": "n.",
+      "meaning": "苹果, 家伙；苹果"
+    },
+    {
+      "input": "Apple",
+      "pos": "n.",
+      "meaning": "苹果, 家伙；苹果"
+    },
+    {
+      "input": "APPLE",
+      "pos": "n.",
+      "meaning": "苹果, 家伙；苹果"
+    },
+    {
+      "input": "banana",
+      "pos": "n.",
+      "meaning": "香蕉"
+    },
+    {
+      "input": "run",
+      "pos": "n.",
+      "meaning": "跑, 赛跑, 奔跑, 奔跑的路程, 趋向, 流出, 运转时间, 连续；vi. 跑, 奔跑, 跑步, 赛跑, 竞赛, 行驶, 运转, 进行, 蔓延；vt. 使跑, 参赛, 追究, 驾驶, 开动, 管理, 经营, 使流出, 运行；adj. 熔化的, 融化的, 浇铸的；运行"
+    },
+    {
+      "input": "well-known",
+      "pos": "adj.",
+      "meaning": "众所周知的, 有名的"
+    },
+    {
+      "input": "a/an",
+      "pos": "art.",
+      "meaning": "一个"
+    },
+    {
+      "input": "ice cream",
+      "pos": null,
+      "meaning": "冰淇淋；冰淇淋"
+    },
+    {
+      "input": "actor / actress",
+      "pos": "n.",
+      "meaning": "男演员, 行动者；作用物, 反应物"
+    },
+    {
+      "input": "apple.",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "zzzznotaword",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "",
+      "pos": null,
+      "meaning": null
+    },
+    {
+      "input": "  cat  ",
+      "pos": "n.",
+      "meaning": "猫, 恶妇；vi. 呕吐；计算机辅助教育, 计算机辅助测试, 计算机辅助翻译, 计算机辅助排版；计算机辅助教学, 计算机辅助翻译, 计算机辅助排字, 计算机辅助测试"
+    },
+    {
+      "input": "X-ray",
+      "pos": "adj.",
+      "meaning": "X射线的；vt. 用X光检查, 照X光；vi. 使用X光"
+    },
+    {
+      "input": "you're",
+      "pos": "abbr.",
+      "meaning": "you are 你（你们）是"
+    }
+  ],
+  "enrichWordListText": [
+    {
+      "input": "apple\nbanana\ncat",
+      "output": "apple | n. | 苹果, 家伙；苹果\nbanana | n. | 香蕉\ncat | n. | 猫, 恶妇；vi. 呕吐；计算机辅助教育, 计算机辅助测试, 计算机辅助翻译, 计算机辅助排版；计算机辅助教学, 计算机辅助翻译, 计算机辅助排字, 计算机辅助测试"
+    },
+    {
+      "input": "apple | n. | 已有释义\nbanana",
+      "output": "apple | n. | 已有释义\nbanana | n. | 香蕉"
+    },
+    {
+      "input": "you're = you are\nactor / actress",
+      "output": "you're = you are | abbr. | you are 你（你们）是\nactor / actress | n. | 男演员, 行动者；作用物, 反应物"
+    },
+    {
+      "input": "zzzznotaword\napple",
+      "output": "zzzznotaword\napple | n. | 苹果, 家伙；苹果"
+    },
+    {
+      "input": "",
+      "output": ""
+    }
+  ]
+}
