@@ -31,7 +31,19 @@ step() { echo "==> $*"; }
 command -v flutter >/dev/null 2>&1 || error "找不到 flutter，请先安装 Flutter SDK"
 
 step "生成平台目录"
+# flutter create 会重写它认为属于脚手架的文件（.gitignore、analysis_options.yaml），
+# 先备份再还原 —— 我们这两份是手工调过的。
+BACKUP="$(mktemp -d)"
+for f in .gitignore analysis_options.yaml; do
+  [ -f "$f" ] && cp "$f" "$BACKUP/"
+done
+
 flutter create . --org com.vvenv --project-name alice_dictation --platforms=android,ios,web
+
+for f in .gitignore analysis_options.yaml; do
+  [ -f "$BACKUP/$f" ] && cp "$BACKUP/$f" "$f"
+done
+rm -rf "$BACKUP"
 
 step "拉取依赖"
 flutter pub get
