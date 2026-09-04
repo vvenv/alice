@@ -192,8 +192,7 @@ class _ToggleItem extends StatelessWidget {
                   ? colors.primarySoft
                   : colors.track,
             ),
-            trackOutlineColor:
-                WidgetStateProperty.all(colors.borderSubtle),
+            trackOutlineColor: WidgetStateProperty.all(colors.borderSubtle),
           ),
         ),
       ],

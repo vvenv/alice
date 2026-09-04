@@ -64,6 +64,10 @@ void main() {
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('外观'), findsOneWidget);
       expect(find.text('识别服务'), findsOneWidget);
+
+      // 「数据」分组在首屏之下，ListView 还没构建到 —— 滚过去，
+      // 顺带验证整条滚动路径不会因为约束问题炸掉。
+      await tester.scrollUntilVisible(find.text('清空发音缓存'), 300);
       expect(find.text('清空发音缓存'), findsOneWidget);
     });
 
@@ -122,6 +126,10 @@ void main() {
     await tester.tap(find.text('示例'));
     await tester.pumpAndSettle();
 
-    expect(find.text('7 词'), findsOneWidget);
+    // 词数在两处显示：「单词列表」右侧的徽标，和「开始听写」按钮里的徽标。
+    expect(find.text('7 词'), findsNWidgets(2));
+
+    // 有词之后才允许切换展示模式，「编辑」按钮出现。
+    expect(find.text('编辑'), findsOneWidget);
   });
 }

@@ -95,7 +95,7 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   final Set<String> _expandedCategories = <String>{};
-  late Set<String> _favorites = widget.initialFavorites.toSet();
+  late final Set<String> _favorites = widget.initialFavorites.toSet();
 
   @override
   void dispose() {
@@ -127,8 +127,7 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final filteredGroups = _filterLibraryGroups(widget.groups, _query);
-    final totalCount =
-        widget.groups.fold<int>(0, (n, g) => n + g.items.length);
+    final totalCount = widget.groups.fold<int>(0, (n, g) => n + g.items.length);
     final filteredCount =
         filteredGroups.fold<int>(0, (n, g) => n + g.items.length);
 

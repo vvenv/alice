@@ -53,8 +53,8 @@ void main() {
     test('parseWordEntries', () {
       for (final c in cases('parseWordEntries')) {
         final entries = parseWordEntries(c['input'] as String);
-        final expected = (c['output'] as List<dynamic>)
-            .cast<Map<String, dynamic>>();
+        final expected =
+            (c['output'] as List<dynamic>).cast<Map<String, dynamic>>();
         final reason = 'input=${describe(c['input'])}';
 
         expect(entries.length, equals(expected.length), reason: reason);

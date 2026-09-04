@@ -53,8 +53,7 @@ class WordHistoryEntry {
       id: id,
       text: text,
       timestamp: timestamp.toInt(),
-      enrichedText:
-          enriched is String && enriched.isNotEmpty ? enriched : null,
+      enrichedText: enriched is String && enriched.isNotEmpty ? enriched : null,
     );
   }
 }

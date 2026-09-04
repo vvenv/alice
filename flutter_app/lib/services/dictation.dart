@@ -41,12 +41,10 @@ WordEntry parseWordLine(String line) {
 
   final parts = trimmed.split(RegExp('[$_pipe$_fullwidthPipe]'));
   final word = parts.isNotEmpty ? parts[0].trim() : '';
-  final pos = parts.length > 1 && parts[1].trim().isNotEmpty
-      ? parts[1].trim()
-      : null;
-  final meaning = parts.length > 2 && parts[2].trim().isNotEmpty
-      ? parts[2].trim()
-      : null;
+  final pos =
+      parts.length > 1 && parts[1].trim().isNotEmpty ? parts[1].trim() : null;
+  final meaning =
+      parts.length > 2 && parts[2].trim().isNotEmpty ? parts[2].trim() : null;
 
   return WordEntry(word: word, pos: pos, meaning: meaning);
 }

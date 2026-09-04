@@ -54,9 +54,8 @@ class _AppBottomSheet extends StatelessWidget {
     final media = MediaQuery.of(context);
 
     final sheetMaxHeight = media.size.height * maxHeightRatio;
-    final bottomPad = media.padding.bottom > Spacing.xl
-        ? media.padding.bottom
-        : Spacing.xl;
+    final bottomPad =
+        media.padding.bottom > Spacing.xl ? media.padding.bottom : Spacing.xl;
 
     // chrome = paddingTop + 抓手 + 标题行 + 底部安全区
     final chromeHeight = Spacing.lg +
@@ -64,7 +63,8 @@ class _AppBottomSheet extends StatelessWidget {
         Spacing.md +
         (title != null ? 28 + Spacing.sm : 0) +
         bottomPad;
-    final bodyMaxHeight = (sheetMaxHeight - chromeHeight).clamp(160.0, double.infinity);
+    final bodyMaxHeight =
+        (sheetMaxHeight - chromeHeight).clamp(160.0, double.infinity);
 
     return Align(
       alignment: Alignment.bottomCenter,

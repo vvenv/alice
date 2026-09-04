@@ -57,7 +57,7 @@ class _HistoryDrawerBody extends StatefulWidget {
 }
 
 class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
-  late Set<String> _favorites = widget.initialFavorites.toSet();
+  late final Set<String> _favorites = widget.initialFavorites.toSet();
 
   void _toggleFavorite(String id) {
     setState(() {
@@ -191,7 +191,8 @@ class _HistoryRow extends StatelessWidget {
           Expanded(
             child: Semantics(
               button: true,
-              label: '载入历史记录 ${preview.length > 20 ? preview.substring(0, 20) : preview}',
+              label:
+                  '载入历史记录 ${preview.length > 20 ? preview.substring(0, 20) : preview}',
               child: GestureDetector(
                 onTap: onApply,
                 behavior: HitTestBehavior.opaque,

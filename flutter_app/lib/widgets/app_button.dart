@@ -122,8 +122,8 @@ class _AppButtonState extends State<AppButton>
     reverseDuration: const Duration(milliseconds: 260),
   );
 
-  late final Animation<double> _scale = Tween<double>(begin: 1, end: 0.96)
-      .animate(CurvedAnimation(
+  late final Animation<double> _scale =
+      Tween<double>(begin: 1, end: 0.96).animate(CurvedAnimation(
     parent: _controller,
     curve: Curves.easeOut,
     reverseCurve: Curves.elasticOut,
@@ -303,8 +303,8 @@ class _AppIconButtonState extends State<AppIconButton>
     reverseDuration: const Duration(milliseconds: 260),
   );
 
-  late final Animation<double> _scale = Tween<double>(begin: 1, end: 0.96)
-      .animate(CurvedAnimation(
+  late final Animation<double> _scale =
+      Tween<double>(begin: 1, end: 0.96).animate(CurvedAnimation(
     parent: _controller,
     curve: Curves.easeOut,
     reverseCurve: Curves.elasticOut,

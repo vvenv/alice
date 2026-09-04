@@ -78,7 +78,8 @@ class _ConfirmDialog extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, height: 20 / 14, color: colors.muted),
+              style:
+                  TextStyle(fontSize: 14, height: 20 / 14, color: colors.muted),
             ),
             const SizedBox(height: Spacing.md + Spacing.sm),
             Row(

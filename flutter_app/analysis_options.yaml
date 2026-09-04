@@ -10,3 +10,8 @@ analyzer:
   errors:
     # 迁移期允许 TODO 注释存在
     todo: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**

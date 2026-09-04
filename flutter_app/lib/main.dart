@@ -98,13 +98,13 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
     if (!_themeLoaded) {
       // 主题定下来之前先铺一块中性底色，避免闪一下反色。
-      return ColoredBox(color: colors.background, child: const SizedBox.expand());
+      return ColoredBox(
+          color: colors.background, child: const SizedBox.expand());
     }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: theme.isDark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+      value:
+          theme.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: MaterialApp(
         title: 'Alice 听写',
         debugShowCheckedModeBanner: false,

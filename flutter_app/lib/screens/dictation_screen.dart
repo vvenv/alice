@@ -213,8 +213,7 @@ class _DictationScreenState extends State<DictationScreen>
   }
 
   bool get _markEnabled =>
-      _playback.isActive &&
-      _playback.currentIndex < _playback.wordList.length;
+      _playback.isActive && _playback.currentIndex < _playback.wordList.length;
 
   bool get _skipEnabled => _markEnabled;
 
@@ -222,8 +221,7 @@ class _DictationScreenState extends State<DictationScreen>
 
   void _handleMarkWrong() {
     if (!_markEnabled) return;
-    final word =
-        speakTextFromEntry(_playback.wordList[_playback.currentIndex]);
+    final word = speakTextFromEntry(_playback.wordList[_playback.currentIndex]);
     Haptics.notifyWarning();
     _wrong.markWrong(word);
   }
@@ -315,16 +313,18 @@ class _DictationScreenState extends State<DictationScreen>
     final useDualPane = width >= 768 || (width >= 700 && width > height);
     final useCompactLayout = !useDualPane && height < 900;
 
-    final dialSize = math.max(
-      useCompactLayout ? 200.0 : 220.0,
-      math.min(
-        useCompactLayout ? 260.0 : 300.0,
-        math.min(
-          width * (useDualPane ? 0.36 : 0.8),
-          height * (useCompactLayout ? 0.38 : 0.48),
-        ),
-      ),
-    ).roundToDouble();
+    final dialSize = math
+        .max(
+          useCompactLayout ? 200.0 : 220.0,
+          math.min(
+            useCompactLayout ? 260.0 : 300.0,
+            math.min(
+              width * (useDualPane ? 0.36 : 0.8),
+              height * (useCompactLayout ? 0.38 : 0.48),
+            ),
+          ),
+        )
+        .roundToDouble();
 
     final isFinished =
         _playback.playState == PlayState.idle && _playback.wordList.isNotEmpty;
@@ -400,7 +400,8 @@ class _DictationScreenState extends State<DictationScreen>
       height: 4,
       child: Semantics(
         label: '听写进度',
-        value: '${math.min(_playback.currentIndex + 1, _playback.wordList.length)}'
+        value:
+            '${math.min(_playback.currentIndex + 1, _playback.wordList.length)}'
             ' / ${_playback.wordList.length}',
         child: Container(
           color: colors.track,
@@ -595,7 +596,8 @@ class _DictationScreenState extends State<DictationScreen>
 
   Widget _buildDial(AppColors colors, double dialInner) {
     final hasWord = _playback.currentIndex < _playback.wordList.length;
-    final currentLine = hasWord ? _playback.wordList[_playback.currentIndex] : '';
+    final currentLine =
+        hasWord ? _playback.wordList[_playback.currentIndex] : '';
     final entry = parseWordLine(currentLine);
     final senses = entry.meaning != null
         ? splitSenses(entry.meaning!, entry.pos)
@@ -605,9 +607,8 @@ class _DictationScreenState extends State<DictationScreen>
     final countdownLabel = _playback.remainingMs != null
         ? '${(_playback.remainingMs! / 1000).toStringAsFixed(1)}s'
         : '—';
-    final countdownVisible = _playback.isActive &&
-        _autoNext &&
-        _playback.remainingMs != null;
+    final countdownVisible =
+        _playback.isActive && _autoNext && _playback.remainingMs != null;
 
     return GestureDetector(
       // 表盘左滑标记错词，右滑跳过 —— 与 RN 版的 PanResponder 一致。
@@ -630,7 +631,8 @@ class _DictationScreenState extends State<DictationScreen>
           height: dialInner,
           padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
           decoration: BoxDecoration(
-            color: _wrong.markedFlash ? colors.dangerSoft : colors.surfaceRaised,
+            color:
+                _wrong.markedFlash ? colors.dangerSoft : colors.surfaceRaised,
             shape: BoxShape.circle,
             border: Border.all(
               color: _wrong.markedFlash ? colors.danger : colors.borderSubtle,
@@ -770,7 +772,8 @@ class _DictationScreenState extends State<DictationScreen>
     return AnimatedBuilder(
       animation: _finishAnim,
       builder: (context, child) {
-        final t = Curves.elasticOut.transform(_finishAnim.value.clamp(0.0, 1.0));
+        final t =
+            Curves.elasticOut.transform(_finishAnim.value.clamp(0.0, 1.0));
         return Opacity(
           opacity: _finishAnim.value.clamp(0.0, 1.0),
           child: Transform.scale(scale: 0.85 + 0.15 * t, child: child),

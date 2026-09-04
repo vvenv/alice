@@ -63,7 +63,8 @@ class ThemeController extends ChangeNotifier {
     if (next == _mode && _hasExplicitChoice) return;
     _mode = next;
     _hasExplicitChoice = true;
-    Prefs.setString(_themeKey, next == ThemeModeSetting.dark ? 'dark' : 'light');
+    Prefs.setString(
+        _themeKey, next == ThemeModeSetting.dark ? 'dark' : 'light');
     notifyListeners();
   }
 }

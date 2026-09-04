@@ -161,13 +161,15 @@ class _WordInputSectionState extends State<WordInputSection> {
         expands: true,
         textAlignVertical: TextAlignVertical.top,
         keyboardType: TextInputType.multiline,
-        style: TextStyle(fontSize: 16, height: 22 / 16, color: colors.foreground),
+        style:
+            TextStyle(fontSize: 16, height: 22 / 16, color: colors.foreground),
         decoration: InputDecoration(
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,
           hintText: '每行一个单词或词组\n例：apple\nactor / actress',
-          hintStyle: TextStyle(fontSize: 16, height: 22 / 16, color: colors.subtle),
+          hintStyle:
+              TextStyle(fontSize: 16, height: 22 / 16, color: colors.subtle),
         ),
       ),
     );

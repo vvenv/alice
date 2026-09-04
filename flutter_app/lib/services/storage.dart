@@ -94,9 +94,8 @@ Future<List<String>> loadPersistedWrongWords() async {
       return _cachedWrongWords;
     }
     final parsed = json.decode(data);
-    _cachedWrongWords = parsed is List
-        ? parsed.whereType<String>().toList()
-        : <String>[];
+    _cachedWrongWords =
+        parsed is List ? parsed.whereType<String>().toList() : <String>[];
   } catch (_) {
     _cachedWrongWords = <String>[];
   }
@@ -162,8 +161,8 @@ final Random _random = Random();
 
 String _generateEntryId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  final suffix = List.generate(6, (_) => chars[_random.nextInt(chars.length)])
-      .join();
+  final suffix =
+      List.generate(6, (_) => chars[_random.nextInt(chars.length)]).join();
   return '${DateTime.now().millisecondsSinceEpoch}_$suffix';
 }
 

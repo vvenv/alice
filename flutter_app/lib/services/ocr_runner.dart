@@ -90,7 +90,8 @@ class OcrRunner {
     return text.isNotEmpty ? text : OcrOutcomeMessages.failed;
   }
 
-  Future<void> processPhoto() => _run(takePhoto, OcrProgressPhase.preparingPhoto);
+  Future<void> processPhoto() =>
+      _run(takePhoto, OcrProgressPhase.preparingPhoto);
 
   Future<void> processAlbum() =>
       _run(pickFromAlbum, OcrProgressPhase.preparingAlbum);

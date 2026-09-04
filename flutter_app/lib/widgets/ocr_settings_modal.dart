@@ -417,8 +417,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
         spacing: Spacing.xs,
         runSpacing: Spacing.xs,
         children: [
-          for (final preset in kOcrProviderPresets)
-            _presetChip(preset, colors),
+          for (final preset in kOcrProviderPresets) _presetChip(preset, colors),
         ],
       ),
       _fieldLabel('接口地址 (Base URL)', colors),
@@ -706,9 +705,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
               backgroundColor: colors.primary,
               onTap: () => Navigator.of(context).pop(
                 OcrSettingsSelectModel(
-                  _view == _ViewMode.premium
-                      ? _premiumModel.id
-                      : _freeModel.id,
+                  _view == _ViewMode.premium ? _premiumModel.id : _freeModel.id,
                 ),
               ),
             ),

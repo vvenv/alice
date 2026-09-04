@@ -175,7 +175,8 @@ class _RechargeModalState extends State<_RechargeModal> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(top: 2, bottom: Spacing.sm),
+                      padding:
+                          const EdgeInsets.only(top: 2, bottom: Spacing.sm),
                       child: Text(
                         '演示版充值无需付费；正式版将接入应用内购买。',
                         style: TextStyle(fontSize: 11, color: colors.subtle),

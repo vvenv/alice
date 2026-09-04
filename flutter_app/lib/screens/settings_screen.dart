@@ -246,8 +246,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ? colors.primarySoft
                                           : colors.track,
                                 ),
-                                trackOutlineColor:
-                                    WidgetStateProperty.all(colors.borderSubtle),
+                                trackOutlineColor: WidgetStateProperty.all(
+                                    colors.borderSubtle),
                               ),
                             ),
                             _divider(colors),
@@ -525,7 +525,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16, color: active ? colors.primary : colors.muted),
+              Icon(icon,
+                  size: 16, color: active ? colors.primary : colors.muted),
               const SizedBox(width: Spacing.xs),
               Text(
                 label,

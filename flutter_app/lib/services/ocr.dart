@@ -31,7 +31,12 @@ class InsufficientCreditsError implements Exception {
 }
 
 /// 进行中的阶段（顶栏）。终态文案在 OcrOutcomeMessages。
-enum OcrProgressPhase { preparingPhoto, preparingAlbum, compressing, recognizing }
+enum OcrProgressPhase {
+  preparingPhoto,
+  preparingAlbum,
+  compressing,
+  recognizing
+}
 
 const Map<OcrProgressPhase, String> kOcrProgressMessages = {
   OcrProgressPhase.preparingPhoto: '已拍摄，准备识别…',
@@ -164,8 +169,7 @@ class OcrResult {
   final String rawText;
 }
 
-const String _ocrPrompt =
-    '这是一张包含英文单词列表的图片。'
+const String _ocrPrompt = '这是一张包含英文单词列表的图片。'
     '请识别图中所有英文单词或词组。'
     '如果单词旁边标注了词性和中文释义，请一并提取，每行格式：单词 | 词性 | 中文释义'
     '如果图中没有词性或释义信息，只输出单词本身。'
@@ -335,10 +339,8 @@ List<String> extractWordsFromOcrText(String rawText) {
       .replaceAll(RegExp(r'\r\n?'), '\n');
 
   // 先按换行切，保住带释义的整行条目
-  final lines = cleaned
-      .split('\n')
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty);
+  final lines =
+      cleaned.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
 
   final seen = <String>{};
   final words = <String>[];

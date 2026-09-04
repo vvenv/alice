@@ -37,8 +37,7 @@ class OcrQuotaController extends ChangeNotifier {
     ]);
     _credits = results[0] as int;
     _modelId = results[1] as String;
-    _hasCustomConfig =
-        isCustomOcrConfigSet(results[2] as OcrProviderConfig?);
+    _hasCustomConfig = isCustomOcrConfigSet(results[2] as OcrProviderConfig?);
     _ready = true;
     _notify();
   }

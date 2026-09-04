@@ -21,13 +21,14 @@ class _Scheduler {
     required this.gen,
     required this.index,
     required this.phase,
-    this.speaking = false,
   });
 
   final int gen;
   int index;
   _WordPhase phase;
-  bool speaking;
+
+  /// 本词是否正在朗读中 —— 防止调度器重入。
+  bool speaking = false;
 }
 
 class PlaybackController extends ChangeNotifier {
@@ -141,7 +142,7 @@ class PlaybackController extends ChangeNotifier {
 
     _countdownTimer = ticker;
     return completer.future;
-}
+  }
 
   Future<void> _runScheduler() async {
     final s = _scheduler;

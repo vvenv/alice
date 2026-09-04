@@ -93,9 +93,8 @@ Future<String?> prefetchWordAudio(String word) async {
   final pending = _pendingDownloads[key];
   if (pending != null) return pending;
 
-  final download = _cache
-      .download(text, AbortSignal())
-      .catchError((Object _) => null);
+  final download =
+      _cache.download(text, AbortSignal()).catchError((Object _) => null);
   _pendingDownloads[key] = download;
 
   try {
@@ -199,9 +198,9 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
     await player.setFilePath(path);
     if (signal.aborted) {
       finish(false);
-      return completer.future;
+    } else {
+      player.play();
     }
-    player.play();
   } catch (e) {
     _log.warn('音频播放失败: $e');
     finish(false);

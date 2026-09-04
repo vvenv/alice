@@ -144,8 +144,9 @@ WordMeta? lookupWordMeta(String word) {
   if (direct != null) return _decodeStored(direct);
 
   // 去掉 OCR 常留下的尾部标点 / 软连字符
-  final stripped =
-      key.replaceAll(RegExp(r"[^a-z0-9\s'\-./]", caseSensitive: false), '').trim();
+  final stripped = key
+      .replaceAll(RegExp(r"[^a-z0-9\s'\-./]", caseSensitive: false), '')
+      .trim();
   if (stripped.isNotEmpty && stripped != key) {
     final again = _meta[stripped];
     if (again != null) return _decodeStored(again);
