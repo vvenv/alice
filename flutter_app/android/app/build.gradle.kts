@@ -7,7 +7,11 @@ plugins {
 android {
     namespace = "com.vvenv.alice"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // flutter.ndkVersion 是 28.2.13676358（即 r28c），本机那份是残缺的空目录，
+    // AGP 因此每次都要重下约 1GB —— 在这里的网络下必然挂死。
+    // 改用本机完整安装的 27.1.12297006（唯一需要 NDK 的模块是 path_provider_android
+    // 传递依赖的 jni，27.x 足够编译它）。
+    ndkVersion = "27.1.12297006"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

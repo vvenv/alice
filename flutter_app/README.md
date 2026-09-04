@@ -4,20 +4,48 @@
 
 ## 当前状态
 
-**代码已完成，尚未编译验证。** 迁移是在本机还没装 Flutter SDK 的情况下写的
-（`brew install --cask flutter` 仍在下载），所以下面这几步还没跑过。
+代码迁移完成并已验证：
+
+| 检查 | 结果 |
+| --- | --- |
+| `flutter analyze` | 干净，0 issue |
+| `flutter test` | 18/18 通过（含 114 个 RN 等价性用例） |
+| `flutter build web --release` | ✅ 成功 |
+| `flutter build apk --release` | ⚠️ 未完成 —— 卡在本机网络，见下 |
 
 ```bash
 cd flutter_app
 bash scripts/bootstrap.sh   # flutter create + pub get + 平台配置（幂等）
-flutter analyze             # 预期会有需要修的静态错误
-dart format .
+flutter analyze
+flutter test
 flutter run
 ```
 
-`bootstrap.sh` 会生成 `android/ ios/ web/`（保留现有 `lib/`、`assets/`、
-`pubspec.yaml`），并把 RN 版 `app.json` 里的包名、应用名、权限、iOS 用途说明
-和后台音频配置一并写好。
+### APK 为什么没构建出来
+
+不是代码问题，是这台机器的网络：到 Maven / dl.google.com 的连接会「建立成功但零字节」地挂死
+（同一批包用 curl 走 maven.aliyun.com 有 1.9 MB/s，走 repo.maven.apache.org 只有 17 KB/s）。
+Gradle 的依赖解析因此停在半路，多次重试都停在不同的包上。
+
+已经做的缓解（都在仓库里）：
+
+- `android/build.gradle.kts` / `android/settings.gradle.kts`：阿里云镜像优先，官方源兜底
+- `android/gradle.properties`：显式 HTTP 连接/读取超时，让挂死的连接快速失败重试
+- `android/app/build.gradle.kts` + 根 `build.gradle.kts`：NDK 钉到本机已装的 27.1.12297006
+  （`flutter.ndkVersion` 指向的 28.2.13676358 在本机是个残缺空目录，会触发反复重下 1GB）
+
+还需要在 Flutter SDK 里做一处改动（**不在本仓库内**），已改并留了备份：
+
+```
+/opt/homebrew/share/flutter/packages/flutter_tools/gradle/settings.gradle.kts
+# 还原：cp settings.gradle.kts.orig settings.gradle.kts
+```
+
+Flutter 自带的 gradle composite build 把仓库硬写成 `google()` + `mavenCentral()`，
+并设了 `FAIL_ON_PROJECT_REPOS`，项目侧覆盖不了，只能改 SDK 里这个文件。
+
+**在网络正常的环境下（或换个代理节点）重跑 `flutter build apk --release` 即可。**
+Gradle 缓存是增量的，之前几轮已经拉下来不少依赖，重跑不会从零开始。
 
 ## 目录对照
 
