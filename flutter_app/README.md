@@ -4,48 +4,57 @@
 
 ## 当前状态
 
-代码迁移完成并已验证：
+迁移完成，四个目标全部构建通过。
 
 | 检查 | 结果 |
 | --- | --- |
 | `flutter analyze` | 干净，0 issue |
 | `flutter test` | 18/18 通过（含 114 个 RN 等价性用例） |
-| `flutter build web --release` | ✅ 成功 |
-| `flutter build apk --release` | ⚠️ 未完成 —— 卡在本机网络，见下 |
+| `flutter build web --release` | ✅ |
+| `flutter build apk --release` | ✅ 68 MB（RN 版 109 MB，小 38%） |
 
 ```bash
 cd flutter_app
 bash scripts/bootstrap.sh   # flutter create + pub get + 平台配置（幂等）
 flutter analyze
 flutter test
-flutter run
+flutter build apk --release --dart-define=ZHIPU_API_KEY=xxx
 ```
 
-### APK 为什么没构建出来
+APK 校验结果：包名 `com.vvenv.alice`（与 RN 版一致，老数据迁移依赖这一点）、
+应用名「Alice 听写」、版本 0.6.2，`app.json` 里的六个权限齐全，
+词典 / 词库 / 字体 / 音效资源全部打进了 `flutter_assets`。
 
-不是代码问题，是这台机器的网络：到 Maven / dl.google.com 的连接会「建立成功但零字节」地挂死
-（同一批包用 curl 走 maven.aliyun.com 有 1.9 MB/s，走 repo.maven.apache.org 只有 17 KB/s）。
-Gradle 的依赖解析因此停在半路，多次重试都停在不同的包上。
+体积构成里最大的两块是两个思源宋体（各 14.1 MB，Flutter 只对图标字体做
+tree-shaking，正文字体不裁剪）和三个架构的原生库（约 50 MB）。
+按架构分包能显著减小单设备体积：
 
-已经做的缓解（都在仓库里）：
-
-- `android/build.gradle.kts` / `android/settings.gradle.kts`：阿里云镜像优先，官方源兜底
-- `android/gradle.properties`：显式 HTTP 连接/读取超时，让挂死的连接快速失败重试
-- `android/app/build.gradle.kts` + 根 `build.gradle.kts`：NDK 钉到本机已装的 27.1.12297006
-  （`flutter.ndkVersion` 指向的 28.2.13676358 在本机是个残缺空目录，会触发反复重下 1GB）
-
-还需要在 Flutter SDK 里做一处改动（**不在本仓库内**），已改并留了备份：
-
-```
-/opt/homebrew/share/flutter/packages/flutter_tools/gradle/settings.gradle.kts
-# 还原：cp settings.gradle.kts.orig settings.gradle.kts
+```bash
+flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 ```
 
-Flutter 自带的 gradle composite build 把仓库硬写成 `google()` + `mavenCentral()`，
-并设了 `FAIL_ON_PROJECT_REPOS`，项目侧覆盖不了，只能改 SDK 里这个文件。
+### 环境相关的坑（本机踩过，换机器不一定有）
 
-**在网络正常的环境下（或换个代理节点）重跑 `flutter build apk --release` 即可。**
-Gradle 缓存是增量的，之前几轮已经拉下来不少依赖，重跑不会从零开始。
+这些与迁移代码无关，但值得记下来：
+
+1. **Gradle 依赖拉不动**。到 Maven Central / dl.google.com 的连接会「建立成功但
+   零字节」地挂死。已在 `android/build.gradle.kts`、`android/settings.gradle.kts`
+   配好阿里云镜像（官方源兜底），`android/gradle.properties` 里加了 HTTP 超时
+   让挂死连接快速失败重试。Flutter SDK 自带的 gradle composite build 把仓库硬写死
+   且设了 `FAIL_ON_PROJECT_REPOS`，项目侧覆盖不了，只能改 SDK 里的
+   `flutter_tools/gradle/settings.gradle.kts`（同目录留了 `.orig` 备份）。
+
+2. **NDK 反复重下 1 GB**。`flutter.ndkVersion` 指向 28.2.13676358，而本机那份是
+   中断下载留下的空目录，AGP 每次判定未安装。已把 ndkVersion 钉到本机完整安装的
+   27.1.12297006 —— app 模块和所有插件子模块都要钉（`jni` 这类插件自己声明
+   `ndkVersion flutter.ndkVersion`），根 `build.gradle.kts` 里的 hook 必须注册在
+   `evaluationDependsOn(":app")` **之前**，否则抛 already evaluated。
+
+3. **`gen_snapshot` 被 macOS 杀掉并删除**。手动 curl 下载 SDK zip 会让整个 SDK 带上
+   `com.apple.quarantine`，Gatekeeper 对未签名可执行文件先 SIGKILL（表现为
+   `AOT snapshotter exited with code -9`）再移除文件。解法：
+   `xattr -dr com.apple.quarantine <flutter-sdk>` 然后 `flutter precache --force --android`
+   把被删的产物补回来。用 `brew install --cask flutter` 正常安装不会有这问题。
 
 ## 目录对照
 
