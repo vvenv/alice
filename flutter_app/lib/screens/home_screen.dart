@@ -72,9 +72,16 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ToastController _toast = ToastController();
   late final OcrRunner _ocr = OcrRunner(
     onResult: _handleOcrResult,
-    onStateChange: (state) => setState(() => _ocrUi = state),
-    onOutcome: (message) => _toast.show(message),
-    onInsufficientCredits: _openRecharge,
+    // 识别是异步的，用户可能中途离开首页 —— 回调都要挡一道 mounted。
+    onStateChange: (state) {
+      if (mounted) setState(() => _ocrUi = state);
+    },
+    onOutcome: (message) {
+      if (mounted) _toast.show(message);
+    },
+    onInsufficientCredits: () {
+      if (mounted) _openRecharge();
+    },
   );
 
   OcrQuotaController get _quota => context.read<OcrQuotaController>();
@@ -158,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- 各类回调 -----------------------------------------------------------
 
   void _handleOcrResult(List<String> words) {
+    if (!mounted) return;
     setState(() {
       // OCR 返回的是纯单词；立刻补全，好让展示模式有释义。
       _wordInput = enrichWordListText(words.join('\n'));

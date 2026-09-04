@@ -13,13 +13,13 @@ class Haptics {
   /// 普通按钮点击的轻微震动。
   static void tapLight() {
     if (!_enabled) return;
-    HapticFeedback.lightImpact().catchError((_) {});
+    HapticFeedback.lightImpact().catchError((Object _) {});
   }
 
   /// 主操作（开始听写）的稍重反馈。
   static void tapMedium() {
     if (!_enabled) return;
-    HapticFeedback.mediumImpact().catchError((_) {});
+    HapticFeedback.mediumImpact().catchError((Object _) {});
   }
 
   /// 听写完成时的庆祝反馈。
@@ -28,12 +28,12 @@ class Haptics {
   /// 用 heavyImpact 作为最接近的等价物。
   static void notifySuccess() {
     if (!_enabled) return;
-    HapticFeedback.heavyImpact().catchError((_) {});
+    HapticFeedback.heavyImpact().catchError((Object _) {});
   }
 
   /// 标记错词时的反馈。
   static void notifyWarning() {
     if (!_enabled) return;
-    HapticFeedback.mediumImpact().catchError((_) {});
+    HapticFeedback.mediumImpact().catchError((Object _) {});
   }
 }

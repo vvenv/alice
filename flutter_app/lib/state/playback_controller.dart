@@ -168,10 +168,10 @@ class PlaybackController extends ChangeNotifier {
 
       // 后台继续预取，但不阻塞播放。speakWord 只用已经缓存好的音频，
       // 否则立即回落到系统 TTS。
-      unawaited(prefetchWordAudio(word).catchError((_) => null as String?));
+      unawaited(prefetchWordAudio(word).catchError((Object _) => null));
       if (s.index + 1 < list.length) {
         unawaited(
-          prefetchWordAudio(list[s.index + 1]).catchError((_) => null as String?),
+          prefetchWordAudio(list[s.index + 1]).catchError((Object _) => null),
         );
       }
 
@@ -280,9 +280,9 @@ class PlaybackController extends ChangeNotifier {
     }
 
     // 给前两个词最早的预取机会。播放本身不等待这两个请求。
-    unawaited(prefetchWordAudio(words[0]).catchError((_) => null as String?));
+    unawaited(prefetchWordAudio(words[0]).catchError((Object _) => null));
     if (words.length > 1) {
-      unawaited(prefetchWordAudio(words[1]).catchError((_) => null as String?));
+      unawaited(prefetchWordAudio(words[1]).catchError((Object _) => null));
     }
 
     _updatePlayState(PlayState.playing);

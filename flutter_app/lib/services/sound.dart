@@ -26,7 +26,7 @@ Future<bool> loadSoundEnabled() async {
 
 void setSoundEnabled(bool value) {
   _enabled = value;
-  Prefs.setString(_soundKey, value ? 'on' : 'off').catchError((_) {});
+  Prefs.setString(_soundKey, value ? 'on' : 'off').catchError((Object _) {});
 }
 
 AudioPlayer? _tickPlayer;
