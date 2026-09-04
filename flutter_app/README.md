@@ -5,19 +5,19 @@
 ## 当前状态
 
 **代码已完成，尚未编译验证。** 迁移是在本机还没装 Flutter SDK 的情况下写的
-（`brew install --cask flutter` 正在后台下载），所以下面这几步还没跑过：
+（`brew install --cask flutter` 仍在下载），所以下面这几步还没跑过。
 
 ```bash
 cd flutter_app
-flutter create .          # 生成 android/ ios/ web/ macos/ 平台目录
-flutter pub get
-flutter analyze           # 预期会有需要修的静态错误
+bash scripts/bootstrap.sh   # flutter create + pub get + 平台配置（幂等）
+flutter analyze             # 预期会有需要修的静态错误
 dart format .
 flutter run
 ```
 
-`flutter create .` 会在保留现有 `lib/`、`assets/`、`pubspec.yaml` 的前提下补出
-平台目录。补完之后还要手工做的事见下面「平台配置」。
+`bootstrap.sh` 会生成 `android/ ios/ web/`（保留现有 `lib/`、`assets/`、
+`pubspec.yaml`），并把 RN 版 `app.json` 里的包名、应用名、权限、iOS 用途说明
+和后台音频配置一并写好。
 
 ## 目录对照
 
@@ -49,10 +49,10 @@ flutter run
 | --- | --- |
 | `@react-native-async-storage/async-storage` | `shared_preferences` |
 | `expo-speech` | `flutter_tts` |
-| `expo-audio` | `just_audio` |
+| `expo-audio` | `just_audio` + `audio_session` |
 | `expo-image-picker` | `image_picker` |
 | `expo-image-manipulator` | `flutter_image_compress` |
-| `expo-file-system` | `path_provider` + `dart:io` |
+| `expo-file-system` | `path_provider` + `dart:io`（按平台条件导入） |
 | `expo-haptics` | `flutter/services` 的 `HapticFeedback` |
 | `expo-clipboard` | `flutter/services` 的 `Clipboard` |
 | `expo-linear-gradient` | `LinearGradient`（内置） |
@@ -64,55 +64,44 @@ flutter run
 
 ## 已知缺口
 
-按重要性排序，这些是**还没解决**的问题，不是「稍后优化」：
+按重要性排序。
 
-### 1. Web 端跑不起来
+### 1. 全部未经编译验证 ⚠️
 
-`services/tts.dart` 直接 import 了 `dart:io`（`File` / `Directory` / `Platform`），
-`flutter build web` 会直接编译失败。RN 版通过 `Platform.OS !== "web"` 在运行时
-关掉磁盘缓存，Dart 需要在编译期解决。
+Flutter SDK 还在下载，`flutter analyze` 一次都没跑过。这是目前唯一的大风险 ——
+代码是照 Dart 语义写的，但没过编译器的东西不能算能跑。
 
-修法：把文件缓存抽成条件导入 —— `file_cache_stub.dart` / `file_cache_io.dart` /
-`file_cache_web.dart`，`tts.dart` 用
-`import 'file_cache_stub.dart' if (dart.library.io) 'file_cache_io.dart';`。
-
-在这之前 Flutter 版只能出 Android / iOS。这正是迁移前评估里说的那条代价。
-
-### 2. 老用户数据不会自动迁移
-
-存储 key 与 RN 版逐字一致（`dictation_wrong_words`、`alice_ocr_credits` …），
-但 **AsyncStorage 和 shared_preferences 是两套底层存储**：
-
-- Android：AsyncStorage → SQLite `RKStorage`；shared_preferences → `SharedPreferences` XML
-- iOS：AsyncStorage → `RCTAsyncLocalStorage_V1` 目录；shared_preferences → `NSUserDefaults`
-
-同一台设备上升级到 Flutter 版，用户的错词本、历史记录、收藏、Credits 余额
-**会全部丢失**。上线前必须写一次性迁移（原生侧读旧存储 → 写进
-shared_preferences），或者接受这次数据断层并提前公告。
-
-### 3. TTS 语速需要真机校准
+### 2. TTS 语速需要真机校准
 
 `services/tts.dart` 的 `_normalizedRate()` 把用户的 0.5–1.5 区间映射到各平台：
 iOS 走 `AVSpeechUtterance` 的 0..1，Android 走 `TextToSpeech.setSpeechRate` 的
-1.0 = 正常。这组映射是按文档推的，没在真机上听过，需要实测调整。
+1.0 = 正常。这组映射是按文档推的，没在真机上听过。
 
-### 4. 平台配置还没做
+### 3. 包名不能改
 
-`flutter create .` 之后需要补：
+`scripts/bootstrap.sh` 会把 applicationId / bundleIdentifier 固定成
+`com.vvenv.alice`，和 RN 版一致。**改了包名就是另一个沙箱**，下面的老数据迁移
+会读不到任何东西，老用户的错词本 / 历史 / 收藏 / Credits 全部丢失。
 
-- **Android**：`AndroidManifest.xml` 加 `CAMERA`、`INTERNET` 权限；应用名、包名、
-  图标（`assets/images/icon.png`）、启动图
-- **iOS**：`Info.plist` 加 `NSCameraUsageDescription`、`NSPhotoLibraryUsageDescription`；
-  后台音频（RN 版 `setAudioModeAsync` 开了 `shouldPlayInBackground`）
-- **签名与发版**：RN 版靠 `eas build` + `scripts/release.sh`，Flutter 侧没有等价物，
-  证书和 CI 要重搭
+### 4. 发版流程要重搭
 
-### 5. 音频会话
+RN 版靠 `eas build` + `scripts/release.sh` 管证书和云端构建，Flutter 侧没有
+等价物，签名与 CI 需要重做。
 
-RN 版 `tts.ts` 里的 `setAudioModeAsync({ playsInSilentMode: true,
-shouldPlayInBackground: true, interruptionMode: "doNotMix" })` 没有对应实现。
-`just_audio` 需要配合 `audio_session` 包做同样的事，目前是默认行为
-（iOS 静音键按下时可能不发声）。
+## 已解决
+
+- **Web 构建**：`dart:io` 已从 `tts.dart` 移出，改成按平台条件导入
+  （`tts_cache.dart` → `tts_cache_io.dart` / `tts_cache_noop.dart`）。
+  Web 上磁盘缓存为空实现，发音直接走系统 TTS —— 与 RN 版 web 的行为一致。
+- **老数据迁移**：`services/legacy_migration_io.dart` 在首次启动时把 RN 版
+  AsyncStorage 的数据搬进 shared_preferences。Android 读私有目录里的 SQLite
+  库 `RKStorage`（表 `catalystLocalStorage`），iOS 读
+  `Documents/RCTAsyncLocalStorage_V1/manifest.json`（大值在以 key 的 MD5
+  命名的独立文件里）。只跑一次、不覆盖新值、失败不阻塞启动。
+- **音频会话**：`audio_session` 已接入，对应 RN 版 `setAudioModeAsync` 的
+  静音键仍出声 / 后台播放 / 不混音。
+- **平台配置**：`scripts/bootstrap.sh` 生成平台目录并写入权限、用途说明、
+  后台音频、应用名与包名。
 
 ## 资源
 

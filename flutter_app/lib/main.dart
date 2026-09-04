@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'services/dictionary.dart';
+import 'services/legacy_migration.dart';
 import 'services/library_data.dart';
 import 'services/prefs.dart';
 import 'services/storage.dart';
@@ -20,6 +21,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Prefs.init();
+
+  // 从 RN 版 AsyncStorage 搬运老数据（错词本、历史、收藏、Credits…）。
+  // 只在首次启动时真正做事，失败不阻塞启动。
+  await migrateLegacyAsyncStorage();
+
   await Future.wait([
     loadDictionary(),
     loadLibrary(),

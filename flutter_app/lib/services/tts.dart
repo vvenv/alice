@@ -1,43 +1,65 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'abort.dart';
 import 'dictation.dart';
 import 'logger.dart';
 import 'storage.dart';
+import 'tts_cache.dart';
 
 /// 单词发音。优先播放已缓存的有道词典音频，否则回落到系统 TTS。
 ///
 /// 对应 RN 版 src/lib/tts.ts：
 /// - expo-speech       → flutter_tts
-/// - expo-audio        → just_audio
-/// - expo-file-system  → path_provider + dart:io
+/// - expo-audio        → just_audio (+ audio_session 管音频会话)
+/// - expo-file-system  → tts_cache.dart（按平台条件导入，Web 上是空实现）
 const _log = Logger('TTS');
 
-const int _minAudioBytes = 256;
-const String _cacheDirName = 'tts';
-const Map<String, String> _downloadHeaders = {
-  'User-Agent':
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-};
+const TtsCacheApi _cache = TtsCache();
 
 double _currentSpeechRate = kDefaultSpeechRate;
 
 AbortSignal? _currentAbort;
 AudioPlayer? _wordPlayer;
 FlutterTts? _tts;
-Directory? _cacheDir;
+Future<void>? _audioSessionReady;
 final Map<String, Future<String?>> _pendingDownloads = {};
 
 // ---------------------------------------------------------------------------
-// 播放器 / TTS 引擎
+// 音频会话 / 播放器 / TTS 引擎
 // ---------------------------------------------------------------------------
+
+/// 配置音频会话。对应 RN 版的 setAudioModeAsync：
+/// 静音键按下时也要出声、可后台播放、与其他音频不混音。
+Future<void> _ensureAudioSession() {
+  return _audioSessionReady ??= () async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(
+        const AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playback,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.duckOthers,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+          androidAudioAttributes: AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.media,
+          ),
+          androidAudioFocusGainType:
+              AndroidAudioFocusGainType.gainTransientMayDuck,
+          androidWillPauseWhenDucked: false,
+        ),
+      );
+      await session.setActive(true);
+    } catch (e) {
+      _log.warn('配置音频会话失败: $e');
+    }
+  }();
+}
 
 AudioPlayer _getPlayer() => _wordPlayer ??= AudioPlayer();
 
@@ -53,112 +75,27 @@ Future<FlutterTts> _getTts() async {
   return tts;
 }
 
-/// 新的 FileSystem API 在 Web 上是空壳，存不下音频文件。
-bool _canUseDiskCache() => !kIsWeb;
-
 // ---------------------------------------------------------------------------
 // 有道下载 + 本地缓存
 // ---------------------------------------------------------------------------
 
-Future<Directory> _ensureCacheDir() async {
-  final cached = _cacheDir;
-  if (cached != null && cached.existsSync()) return cached;
-
-  final tmp = await getTemporaryDirectory();
-  final dir = Directory('${tmp.path}/$_cacheDirName');
-  if (!dir.existsSync()) {
-    dir.createSync(recursive: true);
-  }
-  _cacheDir = dir;
-  return dir;
-}
-
 String _cacheKeyFor(String text) => text.trim().toLowerCase();
-
-String _cacheFileName(String text) {
-  final safe = Uri.encodeComponent(_cacheKeyFor(text)).replaceAll('%', '_');
-  return '${safe.isEmpty ? 'unknown' : safe}.mp3';
-}
-
-Future<File> _cacheFileFor(String text) async {
-  final dir = await _ensureCacheDir();
-  return File('${dir.path}/${_cacheFileName(text)}');
-}
-
-List<String> _youdaoUrls(String text) {
-  final q = Uri.encodeComponent(text);
-  // 优先美音 (type=2)，其次英音 (type=1)
-  return [
-    'https://dict.youdao.com/dictvoice?audio=$q&type=2',
-    'https://dict.youdao.com/dictvoice?audio=$q&type=1',
-  ];
-}
-
-bool _isValidCachedFile(File file) {
-  if (!file.existsSync()) return false;
-  return file.lengthSync() >= _minAudioBytes;
-}
-
-Future<String?> _downloadYoudaoAudio(String text, AbortSignal signal) async {
-  if (!_canUseDiskCache()) return null;
-
-  final dest = await _cacheFileFor(text);
-  if (_isValidCachedFile(dest)) return dest.path;
-
-  for (final url in _youdaoUrls(text)) {
-    if (signal.aborted) return null;
-
-    final client = http.Client();
-    void closeOnAbort() => client.close();
-    signal.addListener(closeOnAbort);
-
-    try {
-      if (dest.existsSync()) {
-        try {
-          dest.deleteSync();
-        } catch (_) {}
-      }
-
-      final response = await client.get(Uri.parse(url), headers: _downloadHeaders);
-      if (signal.aborted) return null;
-
-      if (response.statusCode == 200 &&
-          response.bodyBytes.length >= _minAudioBytes) {
-        dest.writeAsBytesSync(response.bodyBytes);
-        return dest.path;
-      }
-    } catch (e) {
-      if (signal.aborted) return null;
-      _log.debug('有道音频下载失败: $url $e');
-    } finally {
-      signal.removeListener(closeOnAbort);
-      client.close();
-    }
-  }
-
-  return null;
-}
-
-Future<String?> _getReadyYoudaoPath(String text) async {
-  if (!_canUseDiskCache()) return null;
-  final cached = await _cacheFileFor(text);
-  return _isValidCachedFile(cached) ? cached.path : null;
-}
 
 /// 预取单词音频（不阻塞播放）。返回本地文件路径或 null。
 Future<String?> prefetchWordAudio(String word) async {
   final text = speakTextFromEntry(word);
-  if (text.isEmpty || !_canUseDiskCache()) return null;
+  if (text.isEmpty || !_cache.canUseDiskCache) return null;
 
-  final ready = await _getReadyYoudaoPath(text);
+  final ready = await _cache.readyPath(text);
   if (ready != null) return ready;
 
   final key = _cacheKeyFor(text);
   final pending = _pendingDownloads[key];
   if (pending != null) return pending;
 
-  final download = _downloadYoudaoAudio(text, AbortSignal())
-      .catchError((_) => null as String?);
+  final download = _cache
+      .download(text, AbortSignal())
+      .catchError((Object _) => null);
   _pendingDownloads[key] = download;
 
   try {
@@ -171,26 +108,7 @@ Future<String?> prefetchWordAudio(String word) async {
 }
 
 /// 清空发音缓存，返回删除的文件数。
-Future<int> clearTtsCache() async {
-  if (!_canUseDiskCache()) return 0;
-
-  final tmp = await getTemporaryDirectory();
-  final dir = Directory('${tmp.path}/$_cacheDirName');
-  if (!dir.existsSync()) return 0;
-
-  var count = 0;
-  try {
-    for (final entry in dir.listSync()) {
-      if (entry is File) count += 1;
-    }
-    dir.deleteSync(recursive: true);
-    _cacheDir = null;
-  } catch (e) {
-    _log.warn('clearTtsCache 失败: $e');
-    rethrow;
-  }
-  return count;
-}
+Future<int> clearTtsCache() => _cache.clear();
 
 // ---------------------------------------------------------------------------
 // 播放
@@ -213,6 +131,7 @@ Future<void> stopSpeech() async {
 
 /// 播放一个本地音频文件，返回是否播放完成。
 Future<bool> _playAudioFile(String path, AbortSignal signal) async {
+  await _ensureAudioSession();
   if (signal.aborted) return false;
 
   try {
@@ -251,6 +170,7 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
   };
   signal.addListener(onAbort);
 
+  // 兜底：15 秒还没结束就按「是否真的播过」判定。
   hardCap = Timer(const Duration(seconds: 15), () => finish(seenPlaying));
 
   stateSub = player.playerStateStream.listen((state) {
@@ -292,6 +212,7 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
 
 /// 用系统 TTS 朗读，返回是否正常读完。
 Future<bool> _speakWithSystemTts(String text, AbortSignal signal) async {
+  await _ensureAudioSession();
   final tts = await _getTts();
   await tts.stop();
   if (signal.aborted) return false;
@@ -301,7 +222,7 @@ Future<bool> _speakWithSystemTts(String text, AbortSignal signal) async {
   late void Function() onAbort;
 
   // 兜底超时：与 RN 版一致，按文本长度估算上限。
-  final maxMs = (text.length * 250).clamp(4000, 1 << 30);
+  final maxMs = (text.length * 250).clamp(4000, 60000);
   Timer? timer;
 
   void finish(bool ok) {
@@ -331,17 +252,24 @@ Future<bool> _speakWithSystemTts(String text, AbortSignal signal) async {
   return completer.future;
 }
 
-/// expo-speech 的 rate 是「1.0 = 正常语速」；flutter_tts 在 Android 上
-/// 0.5 才是正常语速，iOS 用的是 AVSpeechUtterance 的 0..1 区间。
+/// expo-speech 的 rate 是「1.0 = 正常语速」；flutter_tts 各平台的取值区间不同。
 /// 这里把 0.5–1.5 的用户区间映射到各平台的实际取值。
+///
+/// 用 defaultTargetPlatform 而不是 dart:io 的 Platform —— 后者会让 web 构建失败。
 double _normalizedRate(double rate) {
   if (kIsWeb) return rate;
-  if (Platform.isIOS || Platform.isMacOS) {
-    // AVSpeechUtteranceDefaultSpeechRate ≈ 0.5
-    return (rate * 0.5).clamp(0.0, 1.0);
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.iOS:
+    case TargetPlatform.macOS:
+      // AVSpeechUtteranceDefaultSpeechRate ≈ 0.5
+      return (rate * 0.5).clamp(0.0, 1.0);
+    case TargetPlatform.android:
+    case TargetPlatform.fuchsia:
+    case TargetPlatform.linux:
+    case TargetPlatform.windows:
+      // Android: TextToSpeech.setSpeechRate，1.0 为正常语速
+      return rate.clamp(0.1, 3.0);
   }
-  // Android: TextToSpeech.setSpeechRate，1.0 为正常语速
-  return rate.clamp(0.1, 3.0);
 }
 
 /// 只在已缓存时使用有道免费发音；播放开始时绝不等待下载，
@@ -357,7 +285,7 @@ Future<bool> speakWord(String word) async {
   _currentAbort = signal;
 
   try {
-    final path = await _getReadyYoudaoPath(text);
+    final path = await _cache.readyPath(text);
 
     if (path != null) {
       final ok = await _playAudioFile(path, signal);

@@ -22,6 +22,16 @@ dependencies:
   # 音频播放（有道发音 mp3 + 提示音）— 对应 expo-audio
   just_audio: ^0.9.42
 
+  # 音频会话（静音键仍出声、后台播放、不混音）
+  # — 对应 expo-audio 的 setAudioModeAsync
+  audio_session: ^0.1.21
+
+  # 老数据迁移：读 RN 版 AsyncStorage 在 Android 上的 SQLite 库（RKStorage）
+  sqflite: ^2.4.1
+
+  # 老数据迁移：iOS 侧 AsyncStorage 大值文件按 key 的 MD5 命名
+  crypto: ^3.0.6
+
   # 拍照 / 相册 — 对应 expo-image-picker
   image_picker: ^1.1.2
 
