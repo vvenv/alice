@@ -1,0 +1,12 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # 项目里大量使用「不 await 的后台任务」（预取发音、写存储），
+    # 显式 unawaited() 已经标注，这里不再强制。
+    unawaited_futures: false
+
+analyzer:
+  errors:
+    # 迁移期允许 TODO 注释存在
+    todo: ignore

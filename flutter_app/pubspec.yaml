@@ -1,0 +1,70 @@
+name: alice_dictation
+description: Alice 听写 — 英文单词听写应用（Flutter 版）
+publish_to: "none"
+version: 0.6.2+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 状态管理 — 对应 RN 的 Context + hooks
+  provider: ^6.1.2
+
+  # 持久化 — 对应 AsyncStorage
+  shared_preferences: ^2.3.3
+
+  # 系统 TTS — 对应 expo-speech
+  flutter_tts: ^4.2.0
+
+  # 音频播放（有道发音 mp3 + 提示音）— 对应 expo-audio
+  just_audio: ^0.9.42
+
+  # 拍照 / 相册 — 对应 expo-image-picker
+  image_picker: ^1.1.2
+
+  # 图片压缩 — 对应 expo-image-manipulator
+  flutter_image_compress: ^2.3.0
+
+  # 缓存目录 — 对应 expo-file-system 的 Paths.cache
+  path_provider: ^2.1.5
+
+  # OCR / 发音下载
+  http: ^1.2.2
+
+  # 触感反馈 — 对应 expo-haptics（Flutter 内置 HapticFeedback 之外的补充）
+  # 使用 flutter/services 的 HapticFeedback，无需额外依赖
+
+  # 应用版本号 — 对应 Constants.expoConfig.version
+  package_info_plus: ^8.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/data/
+    - assets/sounds/
+    - assets/images/
+
+  fonts:
+    # 每个文件是固定的字重/字形 —— 使用时不要再叠加 fontWeight/fontStyle，
+    # 否则 Android 上字体解析会落回系统默认字体（与 RN 版同样的坑）。
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay_700Bold.ttf
+    - family: PlayfairDisplayItalic
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay_700Bold_Italic.ttf
+    - family: NotoSerifSCBold
+      fonts:
+        - asset: assets/fonts/NotoSerifSC_700Bold.ttf
+    - family: NotoSerifSC
+      fonts:
+        - asset: assets/fonts/NotoSerifSC_500Medium.ttf

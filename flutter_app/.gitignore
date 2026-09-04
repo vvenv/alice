@@ -1,0 +1,16 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# 平台目录由 `flutter create .` 生成，生成后应改为纳入版本管理
+# （届时删掉下面这几行）
+android/
+ios/
+web/
+macos/
+linux/
+windows/

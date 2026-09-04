@@ -1,0 +1,571 @@
+import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
+
+import '../services/credits.dart';
+import '../services/ocr.dart';
+import '../services/ocr_config.dart';
+import '../services/sound.dart';
+import '../services/storage.dart';
+import '../services/tts.dart';
+import '../state/ocr_quota_controller.dart';
+import '../state/toast_controller.dart';
+import '../theme/app_colors.dart';
+import '../theme/theme_controller.dart';
+import '../theme/tokens.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_icons.dart';
+import '../widgets/app_toast.dart';
+import '../widgets/confirm_dialog.dart';
+import '../widgets/app_slider.dart';
+import '../widgets/ocr_settings_modal.dart';
+import '../widgets/recharge_modal.dart';
+
+/// 设置页。对应 RN 版 src/screens/SettingsScreen.tsx。
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _soundOn = true;
+  double _speechRate = kDefaultSpeechRate;
+  double _intervalSec = kDefaultIntervalSec;
+  OcrProviderConfig? _customOcrConfig;
+  String _appVersion = '—';
+
+  late final ToastController _toast = ToastController();
+
+  OcrQuotaController get _quota => context.read<OcrQuotaController>();
+
+  @override
+  void initState() {
+    super.initState();
+    _toast.addListener(_onToastChanged);
+    _bootstrap();
+  }
+
+  void _onToastChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _bootstrap() async {
+    final soundOn = await loadSoundEnabled();
+    final rate = await loadSpeechRate();
+    final interval = await loadIntervalSec();
+    final custom = await loadOcrProviderConfig();
+    final info = await PackageInfo.fromPlatform();
+
+    setSpeechRate(rate);
+    if (!mounted) return;
+    setState(() {
+      _soundOn = soundOn;
+      _speechRate = rate;
+      _intervalSec = interval;
+      _customOcrConfig = custom;
+      _appVersion = info.version;
+    });
+  }
+
+  @override
+  void dispose() {
+    _toast.removeListener(_onToastChanged);
+    _toast.dispose();
+    super.dispose();
+  }
+
+  // --- 操作 ---------------------------------------------------------------
+
+  void _handleToggleSound(bool value) {
+    setState(() => _soundOn = value);
+    setSoundEnabled(value);
+  }
+
+  void _handleSpeechRateChanged(double value) {
+    final rounded = (value * 10).round() / 10;
+    setState(() => _speechRate = rounded);
+    setSpeechRate(rounded);
+    saveSpeechRate(rounded);
+  }
+
+  void _handleIntervalChanged(double value) {
+    setState(() => _intervalSec = value);
+    saveIntervalSec(value);
+  }
+
+  Future<void> _openOcrSettings() async {
+    final result = await showOcrSettingsModal(
+      context,
+      value: _customOcrConfig,
+      credits: _quota.credits,
+    );
+    if (!mounted || result == null) return;
+
+    switch (result) {
+      case OcrSettingsSaveCustom(config: final cfg):
+        setState(() => _customOcrConfig = cfg);
+        await saveOcrProviderConfig(cfg);
+        if (cfg != null) {
+          _toast.show('已保存自定义 OCR 服务配置');
+        } else if (requiresCustomOcrConfig()) {
+          _toast.show('已清除 OCR 服务配置');
+        } else {
+          _toast.show('已恢复默认 OCR 服务配置');
+        }
+        await _quota.refresh();
+
+      // 选内置模型时清掉自定义配置，好让内置服务（免费/高级）真正生效。
+      case OcrSettingsSelectModel(modelId: final id):
+        await saveSelectedModelId(id);
+        setState(() => _customOcrConfig = null);
+        await saveOcrProviderConfig(null);
+        _toast.show('已切换到 ${getBuiltinModel(id).label}');
+        await _quota.refresh();
+
+      case OcrSettingsOpenRecharge():
+        await _openRecharge();
+    }
+  }
+
+  Future<void> _openRecharge() async {
+    await showRechargeModal(
+      context,
+      credits: _quota.credits,
+      onPurchase: (pack) async {
+        await _quota.recharge(pack);
+        _toast.show('充值成功 +${pack.total} credits');
+      },
+    );
+  }
+
+  Future<void> _handleClearTtsCache() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: '清空发音缓存',
+      message: '确定要删除本地缓存的有道发音文件吗？\n下次听写会重新下载。',
+      confirmLabel: '清空',
+      destructive: true,
+    );
+    if (!confirmed) return;
+
+    try {
+      final count = await clearTtsCache();
+      _toast.show(count > 0 ? '已清空 $count 个发音缓存' : '暂无发音缓存');
+    } catch (_) {
+      _toast.show('清空发音缓存失败');
+    }
+  }
+
+  // --- 渲染 ---------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final quota = context.watch<OcrQuotaController>();
+    final themeController = context.watch<ThemeController>();
+
+    final usingCustom = isCustomOcrConfigSet(_customOcrConfig);
+    final ocrDetail = usingCustom
+        ? _customOcrConfig!.model
+        : requiresCustomOcrConfig()
+            ? '未配置'
+            : quota.model.label;
+
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                _buildHeader(colors),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: ListView(
+                        padding: const EdgeInsets.only(
+                          left: Spacing.lg,
+                          right: Spacing.lg,
+                          top: Spacing.md,
+                          bottom: Spacing.xxl,
+                        ),
+                        children: [
+                          // 外观
+                          _sectionLabel('外观', colors),
+                          _card(colors, [
+                            Padding(
+                              padding: const EdgeInsets.all(Spacing.md),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _themeChip(
+                                      colors,
+                                      themeController,
+                                      ThemeModeSetting.light,
+                                      '浅色',
+                                      AppIcons.sunny,
+                                    ),
+                                  ),
+                                  const SizedBox(width: Spacing.sm),
+                                  Expanded(
+                                    child: _themeChip(
+                                      colors,
+                                      themeController,
+                                      ThemeModeSetting.dark,
+                                      '深色',
+                                      AppIcons.moon,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ]),
+
+                          // 声音
+                          _sectionLabel('声音', colors),
+                          _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.musicalNotes,
+                              label: '提示音',
+                              trailing: Switch(
+                                value: _soundOn,
+                                onChanged: _handleToggleSound,
+                                thumbColor: WidgetStateProperty.resolveWith(
+                                  (states) =>
+                                      states.contains(WidgetState.selected)
+                                          ? colors.primary
+                                          : colors.background,
+                                ),
+                                trackColor: WidgetStateProperty.resolveWith(
+                                  (states) =>
+                                      states.contains(WidgetState.selected)
+                                          ? colors.primarySoft
+                                          : colors.track,
+                                ),
+                                trackOutlineColor:
+                                    WidgetStateProperty.all(colors.borderSubtle),
+                              ),
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.speedometer,
+                              label: '语速',
+                              detail: '${_speechRate.toStringAsFixed(1)}x',
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: Spacing.lg,
+                                right: Spacing.lg,
+                                bottom: Spacing.md,
+                              ),
+                              child: AppSlider(
+                                min: kMinSpeechRate,
+                                max: kMaxSpeechRate,
+                                step: 0.1,
+                                value: _speechRate,
+                                onChanged: _handleSpeechRateChanged,
+                              ),
+                            ),
+                          ]),
+
+                          // 听写
+                          _sectionLabel('听写', colors),
+                          _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.timer,
+                              label: '默认间隔',
+                              detail: '${_intervalSec.toStringAsFixed(1)}s',
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: Spacing.lg,
+                                right: Spacing.lg,
+                                bottom: Spacing.md,
+                              ),
+                              child: AppSlider(
+                                min: kMinIntervalSec,
+                                max: kMaxIntervalSec,
+                                step: kIntervalStep,
+                                value: _intervalSec,
+                                onChanged: _handleIntervalChanged,
+                              ),
+                            ),
+                          ]),
+
+                          // 识别服务
+                          _sectionLabel('识别服务', colors),
+                          _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.scan,
+                              label: '识别模型',
+                              detail: ocrDetail,
+                              onTap: _openOcrSettings,
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.wallet,
+                              label: 'Credits 余额',
+                              detail: '${quota.credits}',
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.card,
+                              label: '充值',
+                              onTap: _openRecharge,
+                            ),
+                          ]),
+                          _disclaimer(colors),
+
+                          // 数据
+                          _sectionLabel('数据', colors),
+                          _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.trash,
+                              label: '清空发音缓存',
+                              destructive: true,
+                              onTap: _handleClearTtsCache,
+                            ),
+                          ]),
+
+                          // 关于
+                          _sectionLabel('关于', colors),
+                          _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.infoOutline,
+                              label: '版本',
+                              detail: _appVersion,
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            AppToast(toast: _toast.toast, onActionPressed: _toast.hide),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: Spacing.lg,
+        right: Spacing.lg,
+        top: Spacing.sm,
+        bottom: Spacing.xs,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          AppIconButton(
+            icon: AppIcons.arrowBack,
+            onPressed: () => Navigator.of(context).pop(),
+            semanticLabel: '返回',
+          ),
+          Text(
+            '设置',
+            style: TextStyle(
+              fontFamily: AppFonts.displayZh,
+              fontSize: 18,
+              letterSpacing: 0.3,
+              color: colors.foreground,
+            ),
+          ),
+          // 占位，让标题保持居中
+          const SizedBox(width: 36, height: 36),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text, AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: Spacing.lg,
+        bottom: Spacing.xs,
+        left: Spacing.xs,
+        right: Spacing.xs,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: colors.subtle,
+        ),
+      ),
+    );
+  }
+
+  Widget _card(AppColors colors, List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(Radii.card),
+        border: Border.all(color: colors.borderSubtle),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _divider(AppColors colors) =>
+      Divider(height: 0.5, thickness: 0.5, color: colors.borderSubtle);
+
+  Widget _row(
+    AppColors colors, {
+    required IconData icon,
+    required String label,
+    String? detail,
+    Widget? trailing,
+    VoidCallback? onTap,
+    bool destructive = false,
+  }) {
+    final content = Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.lg,
+        vertical: Spacing.md + 2,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: destructive ? colors.danger : colors.secondary,
+          ),
+          const SizedBox(width: Spacing.md),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: destructive ? colors.danger : colors.foreground,
+              ),
+            ),
+          ),
+          if (detail != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: colors.muted,
+                ),
+              ),
+            ),
+          if (trailing != null) ...[
+            const SizedBox(width: Spacing.md),
+            trailing,
+          ],
+          if (onTap != null) ...[
+            const SizedBox(width: Spacing.md),
+            Icon(AppIcons.chevronForward, size: 16, color: colors.subtle),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
+    );
+  }
+
+  Widget _themeChip(
+    AppColors colors,
+    ThemeController controller,
+    ThemeModeSetting mode,
+    String label,
+    IconData icon,
+  ) {
+    final active = controller.mode == mode;
+
+    return Semantics(
+      selected: active,
+      label: '$label主题',
+      child: GestureDetector(
+        onTap: () => controller.setMode(mode),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+          decoration: BoxDecoration(
+            color: active ? colors.primarySoft : colors.surface,
+            borderRadius: BorderRadius.circular(Radii.control),
+            border: Border.all(
+              color: active ? colors.primary : colors.border,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: active ? colors.primary : colors.muted),
+              const SizedBox(width: Spacing.xs),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: active ? colors.primary : colors.foreground,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _disclaimer(AppColors colors) {
+    return Container(
+      margin: const EdgeInsets.only(top: Spacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.md,
+        vertical: Spacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(Radii.control),
+        border: Border.all(color: colors.borderSubtle, width: 0.5),
+      ),
+      child: Row(
+        children: [
+          Icon(AppIcons.infoOutline, size: 13, color: colors.subtle),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              kOcrDisclaimer,
+              style: TextStyle(fontSize: 11, color: colors.subtle),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
