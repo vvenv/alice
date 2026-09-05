@@ -12,6 +12,9 @@
 # extractWordsFromOcrText（ocr.ts 顶层 import 了 expo 模块，没法直接在 node 里
 # 跑，只切出 MAX_PHRASE_TOKENS 之后那段纯函数）。
 #
+# gen.ts 由下面这份临时 tsconfig 单独编译（CommonJS + 相对导入），不参与仓库的
+# `pnpm lint`（tsconfig.scripts.json 里排除了这个目录）。
+#
 # ⚠️ main 上没有 Expo 代码之后，这个脚本就跑不动了。到那时语料变成一份冻结的
 #    行为基线：仍然拦得住 Dart 侧漂移，但不能再重新生成 —— 把这个目录删掉即可。
 set -euo pipefail

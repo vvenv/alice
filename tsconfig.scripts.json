@@ -6,8 +6,15 @@
     "target": "ESNext",
     "module": "node16",
     "moduleResolution": "node16",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "noEmit": true
   },
-  "include": ["scripts/**/*.ts"]
+  "include": [
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "scripts/rn-golden"
+  ]
 }

@@ -122,4 +122,4 @@ Flutter 版沿用它才算同一个 app 的升级，才读得到老沙箱里的�
 |            | APK   |
 | ---------- | ----- |
 | Expo 版    | 109 MB |
-| Flutter 版 | 72.7 MB |
+| Flutter 版 | 72.8 MB |

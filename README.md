@@ -23,6 +23,8 @@
 ## 功能
 
 - 粘贴英文单词列表 / 拍照 OCR 识别（内置智谱 GLM-4V 双档模型；支持自定义 OCR 服务商；Web 版需自备 API Key）
+- 发音源可选：有道词典发音（默认，免费）或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
+- 可选在两遍单词之间朗读中文释义（单词 → 释义 → 单词）
 - 识别模型分档：免费档（GLM-4V Flash）无限使用，高级档（GLM-4V Plus）消耗 Credits
 - Credits 充值：购买充值包，余额本地持久化，仅成功识别才扣减
 - AI 识图可能存在误差，识别入口均有提示
@@ -36,7 +38,7 @@
 ## 技术栈
 
 - **Flutter** — 跨平台应用，仓库根目录就是 Flutter 工程
-- **系统 en-US TTS** — 英文单词发音（`flutter_tts`），有道发音 mp3 兜底并本地缓存
+- **有道发音 mp3 / OpenAI 兼容大模型 TTS / 系统 TTS** — 三级发音源，逐级兜底并本地缓存
 - **智谱 GLM-4V** — 视觉 OCR 识别
 - **Vite + React + Tailwind CSS** — 官网（`website/` 子包）
 
@@ -63,7 +65,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 18 个用例
+flutter test                 # 21 个用例（含 198 个行为基线断言）
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```
@@ -75,6 +77,9 @@ pnpm --filter website check
 | 环境变量            | 说明                                                                | 必填                                |
 | ------------------- | ------------------------------------------------------------------- | ----------------------------------- |
 | `ZHIPU_API_KEY`     | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | Android / iOS OCR 需要；Web 不注入 |
+
+自定义发音服务的接口地址与密钥由用户在应用内填写（设置 → 声音 → 发音源），
+存在设备本地，不进构建产物。
 | `DEPLOY_SERVER`     | 发布脚本的部署目标（`user@host`）                                   | 仅发版需要                          |
 | `DEPLOY_REMOTE_DIR` | 服务器上的站点目录                                                  | 仅发版需要                          |
 | `R2_*` / `CLOUDFLARE_*` | APK 上传用的 Cloudflare R2 配置                                 | 仅发版需要                          |
@@ -95,9 +100,9 @@ Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里
 
 ```bash
 pnpm release:android           # 保持当前版本发版
-pnpm release:android patch     # 0.6.3 → 0.6.4
-pnpm release:android minor     # 0.6.3 → 0.7.0
-pnpm release:android major     # 0.6.3 → 1.0.0
+pnpm release:android patch     # 0.7.0 → 0.7.1
+pnpm release:android minor     # 0.7.0 → 0.8.0
+pnpm release:android major     # 0.7.0 → 1.0.0
 pnpm release:android 0.7.0     # 指定版本号
 ```
 
@@ -105,7 +110,7 @@ pnpm release:android 0.7.0     # 指定版本号
 → 上传到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
 详见 [`scripts/release.sh`](scripts/release.sh)。
 
-版本号只有 `pubspec.yaml` 里 `version: 0.6.3+11` 这一处，
+版本号只有 `pubspec.yaml` 里 `version: 0.7.0+12` 这一处，
 `versionName` / `versionCode` 与 iOS 的 `MARKETING_VERSION` /
 `CURRENT_PROJECT_VERSION` 都由 Flutter 从它派生。versionCode 只增不减 ——
 Android 拒绝安装比机器上现有版本低的 versionCode。
@@ -201,30 +206,39 @@ bash scripts/bootstrap.sh   # 幂等
 
 按重要性排序。
 
-### 1. iOS 从没跑过；Android 只验到「能启动」⚠️
+### 1. iOS 从没跑过；音频链路只在真机上能验 ⚠️
 
 Web 产物在浏览器里手动走过完整流程（首页 → 设置 → 听写 → 完成，深浅色都看
-了）。Android 装到真机上过，第一版一启动就闪退，修完重新出包。
+了）。Android 装到真机上过：0.6.2 一启动就闪退（启动 Activity 被 R8 删了），
+0.6.3 起动得来，但两遍发音的第一遍会被截掉尾音（`playerStateStream` 会把上一次
+的 `completed` 重放给新订阅者）。两个都修了。
 **iOS 一次都没构建、更没装过。**
 
-原生侧还没有人真的用过的：TTS 发音与语速、音频会话（静音键 / 后台播放）、
-拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现要么走不到。
+原生侧仍然只能靠真机验证的：TTS 发音与语速、自定义发音服务、音频会话
+（静音键 / 后台播放）、拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现
+要么走不到，测试环境里插件直接抛 MissingPluginException。
 
-### 2. TTS 语速需要真机校准
+### 2. 自定义发音服务只在 Web 上不可用
+
+`lib/services/tts_config.dart` 配的 OpenAI 兼容 TTS 需要把生成的音频落盘，
+而 Web 端的缓存实现是空操作，所以 Web 一律走系统 TTS。Expo 版在 Web 上用
+blob URL 顶了一下，这边没跟 —— 为一个次要目标改缓存接口形状不划算。
+
+### 3. TTS 语速需要真机校准
 
 `lib/services/tts.dart` 的 `_normalizedRate()` 把用户的 0.5–1.5 区间映射到各
 平台：iOS 走 `AVSpeechUtterance` 的 0..1，Android 走
 `TextToSpeech.setSpeechRate` 的 1.0 = 正常。这组映射是按文档推的，没在真机上
 听过。
 
-### 3. 包名不能改
+### 4. 包名不能改
 
 `scripts/bootstrap.sh` 把 applicationId / bundleIdentifier 固定成
 `com.vvenv.alice`，与 Expo 版一致。**改了包名就是另一个沙箱**，
 `lib/services/legacy_migration_io.dart` 会读不到任何东西，从老版本升上来的
 用户，错词本 / 历史 / 收藏 / Credits 全部丢失。
 
-### 4. 签名还是 debug key
+### 5. 签名还是 debug key
 
 `android/app/build.gradle.kts` 的 release buildType 目前用 debug 签名
 （`flutter create` 的默认）。上架应用商店之前需要配真正的 keystore。
