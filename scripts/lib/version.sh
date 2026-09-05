@@ -6,6 +6,12 @@
 #   - app.json                              expo.version + android.versionCode
 #   - android/app/build.gradle              versionName + versionCode
 #   - ios/Alice.xcodeproj/project.pbxproj   MARKETING_VERSION + CURRENT_PROJECT_VERSION
+#   - flutter_app/pubspec.yaml              version: <version>+<versionCode>
+#
+# Flutter 版的 versionName / versionCode 全部来自 pubspec.yaml 那一行，
+# android/app/build.gradle.kts 里读的是 flutter.versionName / flutter.versionCode。
+# 漏掉它，Flutter 包会一直停在旧版本号 —— versionCode 比装在机器上的 RN 版低，
+# 覆盖安装会被系统按降级拒掉。
 
 if [ -z "${VERSION_ROOT:-}" ]; then
   VERSION_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -91,6 +97,7 @@ sync_versions() {
     const appPath = path.join(root, 'app.json');
     const gradlePath = path.join(root, 'android/app/build.gradle');
     const pbxPath = path.join(root, 'ios/Alice.xcodeproj/project.pbxproj');
+    const pubspecPath = path.join(root, 'flutter_app/pubspec.yaml');
 
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     pkg.version = version;
@@ -119,6 +126,16 @@ sync_versions() {
         'CURRENT_PROJECT_VERSION = ' + versionCode + ';'
       );
       fs.writeFileSync(pbxPath, pbx);
+    }
+
+    if (fs.existsSync(pubspecPath)) {
+      let pubspec = fs.readFileSync(pubspecPath, 'utf8');
+      const next = 'version: ' + version + '+' + versionCode;
+      if (!/^version:.*$/m.test(pubspec)) {
+        throw new Error('flutter_app/pubspec.yaml 里找不到 version:');
+      }
+      pubspec = pubspec.replace(/^version:.*$/m, next);
+      fs.writeFileSync(pubspecPath, pubspec);
     }
 
     process.stdout.write(String(versionCode));
