@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _autoNext = true;
   int _startIndex = 0;
   bool _shuffle = false;
-  bool _isDisplayMode = true;
+  bool _isDisplayMode = false;
   OcrUiState _ocrUi = OcrUiState.idle;
 
   List<WordHistoryEntry> _history = <WordHistoryEntry>[];
@@ -111,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       if (savedInput != null && savedInput.isNotEmpty) {
         _wordInput = enrichWordListText(savedInput);
+        _isDisplayMode = parseWords(_wordInput).isNotEmpty;
       }
       _history = results[2] as List<WordHistoryEntry>;
       _favorites = results[3] as List<String>;
@@ -134,9 +135,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- 输入框持久化（防抖，避免每次按键都写存储）-------------------------
 
-  void _onWordInputChanged(String value) {
+  void _onWordInputChanged(String value, {bool preferDisplay = false}) {
     setState(() {
+      final wasEmpty = parseWords(_wordInput).isEmpty;
       _wordInput = value;
+      final empty = parseWords(_wordInput).isEmpty;
+      if (empty) {
+        // 空列表只该停在编辑态；否则 _isDisplayMode 仍是 true，
+        // 用户敲出第一个词就会立刻切到展示。
+        _isDisplayMode = false;
+      } else if (preferDisplay) {
+        _isDisplayMode = true;
+      } else if (wasEmpty) {
+        _isDisplayMode = false;
+      }
       _clampStartIndex();
     });
     if (!_ready) return;
@@ -568,6 +580,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final effectiveDisplayMode = _isDisplayMode && canToggleDisplayMode;
     final showOcrProgress = _ocrUi.busy && _ocrUi.message.isNotEmpty;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    // 拍照识词在打字时也留着 —— 「正在敲词表，想拍张照片导进来」恰恰是它最该
+    // 出现的时候。只是键盘把列表压扁了，按钮跟着小一号，别盖住仅剩的输入区。
+    final cameraSize = keyboardOpen ? 44.0 : 56.0;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -613,45 +628,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           right: Spacing.lg,
                           bottom: Spacing.sm,
                         ),
-                        child: Stack(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildSectionHeader(
-                                  parsedWordCount,
-                                  canToggleDisplayMode,
-                                  effectiveDisplayMode,
-                                ),
-                                Expanded(
-                                  child: WordInputSection(
-                                    value: _wordInput,
-                                    onChanged: _onWordInputChanged,
-                                    onSetSample: () =>
-                                        _onWordInputChanged(_sampleWords),
-                                    onClear: () => _onWordInputChanged(''),
-                                    startIndex: _startIndex,
-                                    onStartIndexChanged: (i) =>
-                                        setState(() => _startIndex = i),
-                                    isDisplayMode: _isDisplayMode,
-                                  ),
-                                ),
-                              ],
+                            _buildSectionHeader(
+                              parsedWordCount,
+                              canToggleDisplayMode,
+                              effectiveDisplayMode,
                             ),
-                            if (!keyboardOpen)
-                              Positioned(
-                                right: 0,
-                                bottom: effectiveDisplayMode
-                                    ? Spacing.md
-                                    : Spacing.md + 40,
-                                child: AppIconButton(
+                            Expanded(
+                              child: WordInputSection(
+                                value: _wordInput,
+                                onChanged: _onWordInputChanged,
+                                onSetSample: () => _onWordInputChanged(
+                                  _sampleWords,
+                                  preferDisplay: true,
+                                ),
+                                onClear: () => _onWordInputChanged(''),
+                                startIndex: _startIndex,
+                                onStartIndexChanged: (i) =>
+                                    setState(() => _startIndex = i),
+                                isDisplayMode: _isDisplayMode,
+                                overlayActionSize: cameraSize,
+                                overlayAction: AppIconButton(
                                   icon: AppIcons.camera,
-                                  size: 56,
+                                  size: cameraSize,
                                   variant: IconButtonVariant.gold,
                                   onPressed: _openCameraSheet,
                                   semanticLabel: '拍照识词',
                                 ),
                               ),
+                            ),
                           ],
                         ),
                       ),
@@ -812,8 +819,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ],
           ),
-          if (canToggleDisplayMode)
-            AppButton(
+          // 空列表没有切换按钮，但仍占住 sm 按钮的高度，避免标题行跟着跳。
+          Visibility(
+            visible: canToggleDisplayMode,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: AppButton(
               label: effectiveDisplayMode ? '编辑' : '完成',
               icon: effectiveDisplayMode
                   ? AppIcons.createOutline
@@ -822,6 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
               active: !effectiveDisplayMode,
               onPressed: _handleToggleDisplayMode,
             ),
+          ),
         ],
       ),
     );

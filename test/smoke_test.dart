@@ -211,4 +211,41 @@ void main() {
     // 有词之后才允许切换展示模式，「编辑」按钮出现。
     expect(find.text('编辑'), findsOneWidget);
   });
+
+  testWidgets('首页：空列表输入后仍保持编辑态', (tester) async {
+    await saveWordInput('');
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pump();
+
+    // 还在编辑：底部「示例 / 清空」还在，标题行是「完成」而不是「编辑」。
+    expect(find.text('示例'), findsOneWidget);
+    expect(find.text('清空'), findsOneWidget);
+    expect(find.text('完成'), findsOneWidget);
+    expect(find.text('编辑'), findsNothing);
+    expect(find.text('共 1 个单词'), findsOneWidget);
+  });
+
+  testWidgets('首页：单词列表标题行高度不随按钮显隐变化', (tester) async {
+    await saveWordInput('');
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    final header = find.ancestor(
+      of: find.text('单词列表'),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Row &&
+            w.mainAxisAlignment == MainAxisAlignment.spaceBetween,
+      ),
+    );
+    final emptyHeight = tester.getSize(header).height;
+
+    await tester.tap(find.text('示例'));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(header).height, emptyHeight);
+  });
 }
