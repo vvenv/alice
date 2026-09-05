@@ -15,11 +15,10 @@ class WordInputSection extends StatefulWidget {
     super.key,
     required this.value,
     required this.onChanged,
-    required this.onSetSample,
-    required this.onClear,
     required this.startIndex,
     required this.onStartIndexChanged,
     required this.isDisplayMode,
+    this.onToggleDisplayMode,
     this.overlayAction,
     this.overlayActionSize = 0,
     this.overlayAlignment = Alignment.bottomRight,
@@ -31,16 +30,14 @@ class WordInputSection extends StatefulWidget {
 
   final String value;
   final ValueChanged<String> onChanged;
-  final VoidCallback onSetSample;
-  final VoidCallback onClear;
   final int startIndex;
   final ValueChanged<int> onStartIndexChanged;
   final bool isDisplayMode;
 
-  /// 浮在卡片右下角的操作按钮（首页放的是拍照识词）。
-  ///
-  /// 挂在卡片上而不是挂在整个区域上：编辑模式下方还有「示例 / 清空」那一行，
-  /// 按卡片定位才不用去猜那行有多高。
+  /// 有词之后卡片自己带「完成 / 编辑」。空卡片不出现，避免先看见一条空工具栏。
+  final VoidCallback? onToggleDisplayMode;
+
+  /// 浮在卡片上的操作按钮（首页放的是拍照识词）。
   final Widget? overlayAction;
 
   /// [overlayAction] 的边长，列表照它让出底部空间。
@@ -197,61 +194,104 @@ class _WordInputSectionState extends State<WordInputSection> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final parsedWords = parseWords(widget.value);
     final wordCount = parsedWords.length;
     final effectiveDisplayMode = widget.isDisplayMode && wordCount > 0;
 
     final overlayAction = widget.overlayAction;
-    final card = effectiveDisplayMode
-        ? _buildDisplayList(context, parsedWords)
-        : _buildTextArea(context);
+    final card = _buildCard(
+      context,
+      wordCount: wordCount,
+      raised: effectiveDisplayMode,
+      child: effectiveDisplayMode
+          ? _buildDisplayList(context, parsedWords)
+          : _buildTextArea(context),
+    );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    if (overlayAction == null) return card;
+    return Stack(
       children: [
-        Expanded(
-          child: overlayAction == null
-              ? card
-              : Stack(
-                  children: [
-                    Positioned.fill(child: card),
-                    Positioned.fill(child: _buildOverlay(overlayAction)),
-                  ],
+        Positioned.fill(child: card),
+        Positioned.fill(child: _buildOverlay(overlayAction)),
+      ],
+    );
+  }
+
+  /// 词数和「完成 / 编辑」属于这张卡片，不另占页面上一行。
+  Widget _buildCard(
+    BuildContext context, {
+    required int wordCount,
+    required bool raised,
+    required Widget child,
+  }) {
+    final colors = context.colors;
+    final showChrome = wordCount > 0 && widget.onToggleDisplayMode != null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: raised ? colors.surfaceRaised : colors.surfaceSunken,
+        borderRadius: BorderRadius.circular(Radii.card),
+        border: Border.all(color: raised ? colors.borderSubtle : colors.border),
+        boxShadow: raised
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
-        ),
-        if (!effectiveDisplayMode) ...[
-          const SizedBox(height: Spacing.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppButton(
-                label: '示例',
-                size: ButtonSize.sm,
-                onPressed: widget.onSetSample,
+              ]
+            : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showChrome) _buildCardChrome(context, wordCount: wordCount, display: raised),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardChrome(
+    BuildContext context, {
+    required int wordCount,
+    required bool display,
+  }) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.sm, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$wordCount 个单词',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colors.muted,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-              const SizedBox(width: Spacing.sm),
-              AppButton(
-                label: '清空',
-                size: ButtonSize.sm,
-                onPressed: widget.onClear,
-              ),
-            ],
+            ),
+          ),
+          AppButton(
+            label: display ? '编辑' : '完成',
+            icon: display ? AppIcons.createOutline : AppIcons.checkmark,
+            size: ButtonSize.sm,
+            active: !display,
+            onPressed: widget.onToggleDisplayMode,
           ),
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildTextArea(BuildContext context) {
     final colors = context.colors;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(Radii.card),
-        border: Border.all(color: colors.border),
-      ),
+    return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: Spacing.lg,
         vertical: Spacing.md,
@@ -280,21 +320,7 @@ class _WordInputSectionState extends State<WordInputSection> {
   Widget _buildDisplayList(BuildContext context, List<String> parsedWords) {
     final colors = context.colors;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surfaceRaised,
-        borderRadius: BorderRadius.circular(Radii.card),
-        border: Border.all(color: colors.borderSubtle),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ListView.builder(
+    return ListView.builder(
         padding: EdgeInsets.only(
           top: Spacing.sm,
           bottom: Spacing.sm + _overlayBand,
@@ -403,7 +429,6 @@ class _WordInputSectionState extends State<WordInputSection> {
             ),
           );
         },
-      ),
     );
   }
 }

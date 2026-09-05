@@ -31,7 +31,6 @@ import '../widgets/word_input_section.dart';
 import 'dictation_screen.dart';
 import 'settings_screen.dart';
 
-const String _sampleWords = 'apple\nbanana\ncat\ndog\nelephant\nfish\ngrape';
 const Duration _wordInputSaveDebounce = Duration(milliseconds: 500);
 
 List<T> _shuffleList<T>(List<T> items) {
@@ -146,18 +145,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- 输入框持久化（防抖，避免每次按键都写存储）-------------------------
 
-  void _onWordInputChanged(String value, {bool preferDisplay = false}) {
+  void _onWordInputChanged(String value) {
     setState(() {
       final wasEmpty = parseWords(_wordInput).isEmpty;
       _wordInput = value;
       final empty = parseWords(_wordInput).isEmpty;
-      if (empty) {
+      if (empty || wasEmpty) {
         // 空列表只该停在编辑态；否则 _isDisplayMode 仍是 true，
         // 用户敲出第一个词就会立刻切到展示。
-        _isDisplayMode = false;
-      } else if (preferDisplay) {
-        _isDisplayMode = true;
-      } else if (wasEmpty) {
         _isDisplayMode = false;
       }
       _clampStartIndex();
@@ -593,8 +588,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final parsedWordCount = parseWords(_wordInput).length;
-    final canToggleDisplayMode = parsedWordCount > 0;
-    final effectiveDisplayMode = _isDisplayMode && canToggleDisplayMode;
     final showOcrProgress = _ocrUi.busy && _ocrUi.message.isNotEmpty;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     // 拍照识词在打字时也留着 —— 「正在敲词表，想拍张照片导进来」恰恰是它最该
@@ -648,24 +641,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _buildSectionHeader(
-                              parsedWordCount,
-                              canToggleDisplayMode,
-                              effectiveDisplayMode,
-                            ),
                             Expanded(
                               child: WordInputSection(
                                 value: _wordInput,
                                 onChanged: _onWordInputChanged,
-                                onSetSample: () => _onWordInputChanged(
-                                  _sampleWords,
-                                  preferDisplay: true,
-                                ),
-                                onClear: () => _onWordInputChanged(''),
                                 startIndex: _startIndex,
                                 onStartIndexChanged: (i) =>
                                     setState(() => _startIndex = i),
                                 isDisplayMode: _isDisplayMode,
+                                onToggleDisplayMode: _handleToggleDisplayMode,
                                 overlayActionSize: cameraSize,
                                 overlayAlignment: _cameraAlignment,
                                 onOverlayAlignmentChanged: _handleCameraMoved,
@@ -786,97 +770,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// 标题行不再写「单词列表」——输入框 placeholder 已经说明用途。
-  /// 空着不占文案；编辑中报词数；展示态改成「从 xx 开始」，把点选起点说清楚。
-  String? _sectionTitle(int parsedWordCount, bool effectiveDisplayMode) {
-    if (parsedWordCount == 0) return null;
-    if (!effectiveDisplayMode) return '$parsedWordCount 个单词';
-    final words = parseWords(_wordInput);
-    if (_startIndex < 0 || _startIndex >= words.length) {
-      return '$parsedWordCount 个单词';
-    }
-    return '从 ${parseWordLine(words[_startIndex]).word} 开始';
-  }
-
-  Widget _buildSectionHeader(
-    int parsedWordCount,
-    bool canToggleDisplayMode,
-    bool effectiveDisplayMode,
-  ) {
-    final colors = context.colors;
-    final title = _sectionTitle(parsedWordCount, effectiveDisplayMode);
-    final showCountBadge = effectiveDisplayMode && parsedWordCount > 0;
-
-    return Padding(
-      key: const Key('word-list-header'),
-      padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-      child: Row(
-        children: [
-          Expanded(
-            child: title == null
-                ? const SizedBox.shrink()
-                : Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppFonts.displayZh,
-                            fontSize: 17,
-                            letterSpacing: 0.3,
-                            color: colors.foreground,
-                          ),
-                        ),
-                      ),
-                      if (showCountBadge) ...[
-                        const SizedBox(width: Spacing.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.sm,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(Radii.full),
-                            border: Border.all(color: colors.border),
-                          ),
-                          child: Text(
-                            '$parsedWordCount 词',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: colors.muted,
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-          ),
-          // 空列表没有切换按钮，但仍占住 sm 按钮的高度，避免标题行跟着跳。
-          Visibility(
-            visible: canToggleDisplayMode,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: AppButton(
-              label: effectiveDisplayMode ? '编辑' : '完成',
-              icon: effectiveDisplayMode
-                  ? AppIcons.createOutline
-                  : AppIcons.checkmark,
-              size: ButtonSize.sm,
-              active: !effectiveDisplayMode,
-              onPressed: _handleToggleDisplayMode,
-            ),
-          ),
-        ],
       ),
     );
   }

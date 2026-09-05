@@ -163,22 +163,14 @@ export function HomeScreenMock() {
         <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border border-gold border-t-transparent" />
         已识别 44 个单词
       </div>
-      {/* 列表头 */}
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="font-display text-xs font-bold text-ink">
-            从 rule 开始
-          </span>
-          <span className="rounded-full border border-ink/10 px-1.5 py-px text-[9px] text-ink/50">
-            44 词
-          </span>
-        </span>
-        <span className="rounded-lg border border-ink/15 px-2 py-0.5 text-[10px] text-ink/60">
-          ✎ 编辑
-        </span>
-      </div>
       {/* 单词列表 */}
       <div className="overflow-hidden rounded-2xl border border-ink/8 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-3 pt-2">
+          <span className="text-[10px] font-semibold text-ink/45">44 个单词</span>
+          <span className="rounded-lg border border-ink/15 px-2 py-0.5 text-[10px] text-ink/60">
+            ✎ 编辑
+          </span>
+        </div>
         {words.map((item, i) => (
           <div
             key={item.n}

@@ -197,19 +197,21 @@ void main() {
     expect(find.text('n. 苹果'), findsOneWidget);
   });
 
-  testWidgets('首页：示例按钮填入单词并显示词数', (tester) async {
+  testWidgets('首页：输入单词后点完成显示词数', (tester) async {
+    await saveWordInput('');
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    // 空列表时是编辑模式，底部有「示例」「清空」
-    await tester.tap(find.text('示例'));
+    await tester.enterText(
+      find.byType(TextField),
+      'apple\nbanana\ncat\ndog\nelephant\nfish\ngrape',
+    );
+    await tester.pump();
+    await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
 
-    // 展示态标题改成起点，词数仍在徽标和「开始听写」按钮里各出现一次。
-    expect(find.text('从 apple 开始'), findsOneWidget);
-    expect(find.text('7 词'), findsNWidgets(2));
-
-    // 有词之后才允许切换展示模式，「编辑」按钮出现。
+    expect(find.text('7 个单词'), findsOneWidget);
+    expect(find.text('7 词'), findsOneWidget);
     expect(find.text('编辑'), findsOneWidget);
   });
 
@@ -221,9 +223,6 @@ void main() {
     await tester.enterText(find.byType(TextField), 'hello');
     await tester.pump();
 
-    // 还在编辑：底部「示例 / 清空」还在，标题行是「完成」而不是「编辑」。
-    expect(find.text('示例'), findsOneWidget);
-    expect(find.text('清空'), findsOneWidget);
     expect(find.text('完成'), findsOneWidget);
     expect(find.text('编辑'), findsNothing);
     expect(find.text('1 个单词'), findsOneWidget);
@@ -241,25 +240,25 @@ void main() {
     await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
 
-    expect(find.text('从 apple 开始'), findsOneWidget);
-    // 词数在标题徽标和「开始听写」按钮里各出现一次。
-    expect(find.text('2 词'), findsNWidgets(2));
+    expect(find.text('2 个单词'), findsOneWidget);
+    expect(find.text('2 词'), findsOneWidget);
     expect(find.text('apple'), findsOneWidget);
     expect(find.text('banana'), findsOneWidget);
     expect(find.text('Apple'), findsNothing);
   });
 
-  testWidgets('首页：单词列表标题行高度不随按钮显隐变化', (tester) async {
+  testWidgets('首页：空卡片没有完成按钮，输入后出现在卡片里', (tester) async {
     await saveWordInput('');
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    final header = find.byKey(const Key('word-list-header'));
-    final emptyHeight = tester.getSize(header).height;
+    expect(find.text('完成'), findsNothing);
+    expect(find.text('编辑'), findsNothing);
 
-    await tester.tap(find.text('示例'));
-    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pump();
 
-    expect(tester.getSize(header).height, emptyHeight);
+    expect(find.text('完成'), findsOneWidget);
+    expect(find.text('1 个单词'), findsOneWidget);
   });
 }

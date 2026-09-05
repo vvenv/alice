@@ -15,8 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 拍照识词按钮浮在单词卡片上：默认停右下角、可以拖，且不压住卡片里的东西。
 ///
-/// 之前它挂在整个区域上、编辑模式还硬编码了一个 40 去躲「示例 / 清空」那一行；
-/// 展示模式下列表滚到底时，最后一词的删除按钮正好被按钮盖住，永远点不到。
+/// 之前它挂在整个区域上；展示模式下列表滚到底时，最后一词的删除按钮
+/// 正好被按钮盖住，永远点不到。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -75,11 +75,10 @@ void main() {
         child: WordInputSection(
           value: value,
           onChanged: (_) {},
-          onSetSample: () {},
-          onClear: () {},
           startIndex: 0,
           onStartIndexChanged: (_) {},
           isDisplayMode: displayMode,
+          onToggleDisplayMode: () {},
           overlayActionSize: cameraSize,
           overlayAlignment: alignment,
           onOverlayAlignmentChanged: onMoved,
@@ -122,7 +121,6 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // 展示模式下卡片就是整个 SizedBox（下面没有「示例 / 清空」那一行）。
       final card = tester.getRect(find.byType(WordInputSection));
       final camera = tester.getRect(cameraButton());
 
@@ -151,20 +149,15 @@ void main() {
       );
     });
 
-    testWidgets('编辑模式：不压住「示例 / 清空」那一行', (tester) async {
+    testWidgets('编辑模式：拍照按钮仍在卡片内', (tester) async {
       await tester.pumpWidget(wrap(
         section(value: 'apple\nbanana', displayMode: false),
       ));
       await tester.pumpAndSettle();
 
+      final card = tester.getRect(find.byType(WordInputSection));
       final camera = tester.getRect(cameraButton());
-      for (final label in ['示例', '清空']) {
-        expect(
-          camera.overlaps(tester.getRect(find.text(label))),
-          isFalse,
-          reason: '「$label」被拍照按钮盖住了',
-        );
-      }
+      expect(card.contains(camera.center), isTrue);
     });
 
     testWidgets('按钮拖到上面之后，列表底部不再留空白', (tester) async {
