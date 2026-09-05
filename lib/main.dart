@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,6 +46,11 @@ Future<void> main() async {
 
   // 语速要在第一次朗读之前灌进 TTS 引擎。
   setSpeechRate(await loadSpeechRate());
+
+  // 系统 TTS 引擎是异步初始化的，第一次朗读撞上这个窗口会被整段吃掉
+  // （见 tts.dart 的 _getTts）。启动就把它拉起来，但不等它 —— 预热失败
+  // 不该挡住首帧。
+  unawaited(warmUpTts());
 
   runApp(const AliceApp());
 }

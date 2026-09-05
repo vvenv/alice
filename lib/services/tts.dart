@@ -75,6 +75,7 @@ void setReadTranslationEnabled(bool value) {
 AbortSignal? _currentAbort;
 AudioPlayer? _wordPlayer;
 FlutterTts? _tts;
+Future<FlutterTts>? _ttsReady;
 Future<void>? _audioSessionReady;
 final Map<String, Future<String?>> _pendingDownloads = {};
 
@@ -112,16 +113,57 @@ Future<void> _ensureAudioSession() {
 
 AudioPlayer _getPlayer() => _wordPlayer ??= AudioPlayer();
 
-Future<FlutterTts> _getTts() async {
-  final existing = _tts;
-  if (existing != null) return existing;
+/// 拉起系统 TTS 引擎，并保证第一次 `speak` 不会撞上引擎的初始化。
+///
+/// Android 的 TextToSpeech 是异步初始化的，flutter_tts 把 `onInit` 之前收到的
+/// 每一个方法调用都排进 `pendingMethodCalls`，然后在 `onInit` 里**先重放队列、
+/// 再挂** `setOnUtteranceProgressListener`。所以只要 `speak` 落在这个窗口里，
+/// 这一遍朗读就没有任何进度回调：`onDone` 不会来，插件里的 `speaking` 标志
+/// 一直举着，而它对之后每一次 `speak` 都直接 `result.success(0)` 丢弃 ——
+/// 表现就是「进听写后一个词都不响，暂停再继续才好」（暂停会走 `stop()`，
+/// 那是唯一能把这个标志放下来的地方）。
+///
+/// 所以第一个调用只用来把队列排空：它返回时 `onInit` 已经跑完、监听器已经挂上。
+/// 语言必须排在它后面 —— `onInit` 重放完队列后会把语言重置成设备默认音
+/// （`tts.language = defaultVoice.locale`），排在前面会被盖掉。
+///
+/// 整个过程缓存成一个 Future，并发调用共用同一次初始化：flutter_tts 的多个
+/// Dart 实例背后是同一个原生插件，各初始化各的会互相打架。
+Future<FlutterTts> _getTts() => _ttsReady ??= _initTts();
 
-  final tts = FlutterTts();
-  await tts.setLanguage(kLangEn);
-  // 让 speak() 等到朗读结束才返回 —— 调度器依赖这个语义。
-  await tts.awaitSpeakCompletion(true);
-  _tts = tts;
-  return tts;
+Future<FlutterTts> _initTts() async {
+  try {
+    final tts = FlutterTts();
+    // 排空 pendingMethodCalls。顺带打开「speak() 等到读完才返回」——
+    // 调度器依赖这个语义。
+    await tts.awaitSpeakCompletion(true);
+    await tts.setLanguage(kLangEn);
+    _tts = tts;
+    return tts;
+  } catch (_) {
+    // 初始化失败就丢掉缓存，下一次朗读还能重来。
+    _ttsReady = null;
+    rethrow;
+  }
+}
+
+/// 启动时提前把 TTS 引擎拉起来，别让第一次朗读去撞引擎初始化。见 [_getTts]。
+///
+/// 只预热引擎，不碰音频会话 —— `setActive(true)` 会立刻抢音频焦点，
+/// 开个 App 就把用户正在听的东西压下去。会话留到真正要出声时再配置。
+Future<void> warmUpTts() async {
+  try {
+    await _getTts();
+  } catch (e) {
+    _log.warn('预热系统 TTS 失败: $e');
+  }
+}
+
+/// 停掉一段朗读，同时把插件里的 `speaking` 标志放下来。见 [_getTts]。
+Future<void> _resetTts(FlutterTts tts) async {
+  try {
+    await tts.stop();
+  } catch (_) {}
 }
 
 // ---------------------------------------------------------------------------
@@ -529,15 +571,32 @@ Future<bool> _speakWithSystemTts(
     finish(false);
   };
   signal.addListener(onAbort);
-  timer = Timer(Duration(milliseconds: maxMs), () => finish(true));
+  timer = Timer(Duration(milliseconds: maxMs), () {
+    // 回调一个没回来。可能真读完了只是事件丢了，也可能引擎把这一遍吃掉了 ——
+    // 无论哪种，插件里的 `speaking` 标志都还举着，只有 stop() 能放下来。
+    // 不放下来的话，后面每一个词都会被静默丢弃（见 [_getTts]）。
+    _log.warn('系统 TTS 超时未回调，重置引擎状态: $text');
+    unawaited(_resetTts(tts));
+    finish(true);
+  });
 
   try {
     // 语言逐句设置：同一段听写里英文单词和中文释义会交替出现。
     await tts.setLanguage(lang);
     await tts.setSpeechRate(_normalizedRate(_currentSpeechRate));
     // awaitSpeakCompletion(true) 让这里等到读完才返回。
-    await tts.speak(text);
-    finish(!signal.aborted);
+    final res = await tts.speak(text);
+    // 0 = 这一遍没读出来：要么插件的 `speaking` 标志还举着、这次 speak 被直接
+    // 丢弃，要么中途被 stop() 掐了。当成成功会让整段听写一路静音下去，
+    // 所以明确 stop() 一次把标志放下来，并按失败返回 —— 调度器会跳过重复
+    // 间隙推进到下一阶段，而不是死循环重试。
+    if (res == 0 && !signal.aborted) {
+      _log.warn('系统 TTS 丢弃了这次朗读，重置引擎状态: $text');
+      await _resetTts(tts);
+      finish(false);
+    } else {
+      finish(!signal.aborted);
+    }
   } catch (_) {
     finish(false);
   }
