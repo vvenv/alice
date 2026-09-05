@@ -11,7 +11,7 @@
 | `flutter analyze` | 干净，0 issue |
 | `flutter test` | 18/18 通过（含 114 个 RN 等价性用例） |
 | `flutter build web --release` | ✅ |
-| `flutter build apk --release` | ✅ 68 MB（RN 版 109 MB，小 38%） |
+| `flutter build apk --release` | ✅ 72.7 MB（RN 版 109 MB，小 33%） |
 
 ```bash
 cd flutter_app
@@ -22,11 +22,22 @@ flutter build apk --release --dart-define=ZHIPU_API_KEY=xxx
 ```
 
 APK 校验结果：包名 `com.vvenv.alice`（与 RN 版一致，老数据迁移依赖这一点）、
-应用名「Alice 听写」、版本 0.6.2，`app.json` 里的六个权限齐全，
-词典 / 词库 / 字体 / 音效资源全部打进了 `flutter_assets`。
+应用名「Alice 听写」、版本 0.6.3（versionCode 11）、启动 Activity
+`com.vvenv.alice.MainActivity` 确实在 `classes.dex` 里、`app.json` 里的六个权限
+齐全，五个密度的应用图标与自适应图标都是 Alice 的怀表，词典 / 词库 / 字体 /
+音效资源全部打进了 `flutter_assets`。
+
+> 出包之后请照着上面这几项核一遍，尤其是启动 Activity —— 少了它编译期毫无
+> 征兆，装到手机上必然闪退。参考命令：
+>
+> ```bash
+> aapt2 dump badging build/app/outputs/flutter-apk/app-release.apk | head
+> ```
 
 体积构成里最大的两块是两个思源宋体（各 14.1 MB，Flutter 只对图标字体做
 tree-shaking，正文字体不裁剪）和三个架构的原生库（约 50 MB）。
+（比之前记的 68 MB 大了约 4.7 MB：那一版的 `classes.dex` 只有 354 KB，R8 把
+MainActivity 连同大半个 Java 侧当死代码删了 —— 见下面「真机闪退」。）
 按架构分包能显著减小单设备体积：
 
 ```bash
@@ -103,12 +114,14 @@ flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 
 按重要性排序。
 
-### 1. 只在 Web 上真跑过 ⚠️
+### 1. iOS 从没跑过；Android 只验到「能启动」⚠️
 
-`flutter analyze` / `flutter test` / web 与 Android 的 release 构建都是绿的，
-Web 产物也在浏览器里手动走过一遍完整流程（首页 → 设置 → 听写 → 完成，深浅色
-都看了）。但 **Android / iOS 真机一次都没启动过** —— 装上 APK 之前，原生侧的
-TTS、音频会话、拍照 OCR、老数据迁移都还只是「编译得过」。
+Web 产物在浏览器里手动走过完整流程（首页 → 设置 → 听写 → 完成，深浅色都看
+了）。Android 装到真机上过一次，第一版一启动就闪退（原因见下面「已解决」的
+「真机闪退」），修完重新出包。**iOS 一次都没构建、更没装过。**
+
+原生侧还没有人真的用过的：TTS 发音与语速、音频会话（静音键 / 后台播放）、
+拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现要么走不到。
 
 ### 2. TTS 语速需要真机校准
 
@@ -137,6 +150,29 @@ RN 版靠 `eas build` + `scripts/release.sh` 管证书和云端构建，Flutter 
   库 `RKStorage`（表 `catalystLocalStorage`），iOS 读
   `Documents/RCTAsyncLocalStorage_V1/manifest.json`（大值在以 key 的 MD5
   命名的独立文件里）。只跑一次、不覆盖新值、失败不阻塞启动。
+- **真机闪退**：manifest 里的 `android:name=".MainActivity"` 按 gradle 的
+  namespace 解析成 `com.vvenv.alice.MainActivity`，而 `flutter create --org
+  com.vvenv --project-name alice_dictation` 把类生成在
+  `com.vvenv.alice_dictation` 下 —— bootstrap 只改了 gradle 与 manifest 的包名，
+  没搬 Kotlin 源码。编译期没有任何征兆（manifest 不校验类存不存在），R8 还因为
+  没有 keep 规则指向真实类，把 MainActivity 连同 FlutterActivity 一起当死代码
+  删了：`classes.dex` 里一个 `com/vvenv/*` 都不剩，装上去必然
+  ClassNotFoundException。现在源码在 `com/vvenv/alice/` 下，
+  `scripts/bootstrap.sh` 会一并搬包名，末尾还会核对 manifest 声明的 Activity
+  在 Kotlin 源码里确实存在。
+- **应用图标**：`flutter create` 铺的是 Flutter 自带的蓝色 F。
+  `scripts/gen-icons.py` 从 `assets/images/` 的两张源图生成三个平台的整套图标
+  （Android 五个密度的传统 / 圆形 / 自适应前景 + `mipmap-anydpi-v26` 的自适应
+  XML 与 `iconBackground` 颜色、iOS 的 appiconset、Web 的 favicon 与 PWA 图标），
+  与 RN 版逐像素一致。产物提交进仓库，bootstrap 只负责删掉 `flutter create`
+  重新铺回来的默认 `ic_launcher.png`（和我们的 `.webp` 同名会撞 duplicate
+  resource）。
+- **版本号**：Flutter 的 versionName / versionCode 只认 `pubspec.yaml` 的
+  `version: x.y.z+code`（`build.gradle.kts` 读的是 `flutter.versionName`）。
+  它原先不在 `../scripts/lib/version.sh` 的同步范围里，一直停在 `0.6.2+1` ——
+  versionCode 1 比装在机器上的 RN 版（10）还低，覆盖安装会被系统按降级拒掉。
+  现在 `sync_versions()` 一并改写它，`pnpm release:android patch` 之类的命令
+  会把五处版本号一起推上去。
 - **Web 上的中文字体**：CanvasKit 够不着系统字体，默认字族只有 Roboto，
   中文原本全渲染成豆腐块 —— 引擎「缺字就去 fonts.gstatic.com 下 Noto」的兜底
   被应用自己注册的思源宋体骗过了，判定已覆盖便不下载，而它又不在默认字族的
@@ -159,6 +195,13 @@ node scripts/export-library-json.mjs
 
 `assets/data/ecdict-meta.json` 直接复制自 `../src/lib/ecdict-meta.json`，
 上游由 `pnpm dict:build` 生成。
+
+`assets/images/icon.png`、`adaptive-icon.png` 是 RN 版 `../assets/` 的副本，
+应用图标由它们生成。图标本身改了之后重新跑一遍，再把产物一起提交：
+
+```bash
+python3 scripts/gen-icons.py   # 需要 Pillow
+```
 
 ## 配置
 

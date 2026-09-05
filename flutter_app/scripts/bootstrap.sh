@@ -61,6 +61,23 @@ perl -0pi -e "s/com\.vvenv\.alice_dictation/$APP_ID/g" "$GRADLE"
 perl -0pi -e "s/com\.vvenv\.alice_dictation/$APP_ID/g" \
   android/app/src/main/AndroidManifest.xml 2>/dev/null || true
 
+step "Android: MainActivity 包名 → $APP_ID"
+# 光改 gradle 的 namespace 不够。manifest 里写的是相对类名 .MainActivity，
+# 按 namespace 解析成 com.vvenv.alice.MainActivity，而 flutter create 把类生成
+# 在 com.vvenv.alice_dictation 下 —— 两边对不上。编译期没人管，R8 还会因为
+# 没有 keep 规则指向真实类而把它连同 FlutterActivity 一起删掉，于是 release
+# 包一启动就 ClassNotFoundException 闪退。Kotlin 的包名和目录必须一起搬。
+KOTLIN_ROOT="android/app/src/main/kotlin"
+OLD_PKG_DIR="$KOTLIN_ROOT/$(echo "$APP_ID" | tr . /)_dictation"
+NEW_PKG_DIR="$KOTLIN_ROOT/$(echo "$APP_ID" | tr . /)"
+if [ -f "$OLD_PKG_DIR/MainActivity.kt" ]; then
+  mkdir -p "$NEW_PKG_DIR"
+  mv "$OLD_PKG_DIR/MainActivity.kt" "$NEW_PKG_DIR/MainActivity.kt"
+  rmdir "$OLD_PKG_DIR" 2>/dev/null || true
+fi
+[ -f "$NEW_PKG_DIR/MainActivity.kt" ] || error "找不到 MainActivity.kt"
+perl -0pi -e "s/^package .*\$/package $APP_ID/m" "$NEW_PKG_DIR/MainActivity.kt"
+
 MANIFEST="android/app/src/main/AndroidManifest.xml"
 step "Android: 权限与应用名"
 python3 - "$MANIFEST" "$APP_NAME" <<'PY'
@@ -91,9 +108,28 @@ src = re.sub(
     r'android:label="[^"]*"', f'android:label="{app_name}"', src, count=1
 )
 
+# Android 7.1 的圆形图标槽位。flutter create 不写这一条。
+if "android:roundIcon" not in src:
+    src = src.replace(
+        'android:icon="@mipmap/ic_launcher"',
+        'android:icon="@mipmap/ic_launcher"\n'
+        '        android:roundIcon="@mipmap/ic_launcher_round"',
+        1,
+    )
+
 open(path, "w", encoding="utf-8").write(src)
 print(f"  权限补齐: {missing or '（已齐全）'}")
 PY
+
+step "Android: 清掉 Flutter 默认图标"
+# 真正的图标是 scripts/gen-icons.py 生成、提交在仓库里的 ic_launcher.webp。
+# flutter create 会把自己那套蓝色 F 的 ic_launcher.png 重新铺进同一批 mipmap
+# 目录 —— 同名不同扩展名，AGP 会报 duplicate resource，不删就编不过。
+for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+  rm -f "android/app/src/main/res/mipmap-$d/ic_launcher.png"
+  [ -f "android/app/src/main/res/mipmap-$d/ic_launcher.webp" ] || \
+    error "缺 mipmap-$d/ic_launcher.webp，跑一次 python3 scripts/gen-icons.py"
+done
 
 # --- iOS ------------------------------------------------------------------
 
@@ -127,6 +163,37 @@ fi
 if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST" | grep -q audio; then
   /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string audio" "$PLIST"
 fi
+
+# --- 收尾自检 --------------------------------------------------------------
+
+# manifest 声明的启动 Activity 必须真的存在。这一条错了在编译期毫无征兆，
+# 只有真机启动时闪退，所以在这里挡住。
+step "自检：manifest 的启动 Activity 与 Kotlin 源码对得上"
+python3 - "$MANIFEST" "$APP_ID" "$KOTLIN_ROOT" <<'PY'
+import os
+import re
+import sys
+
+manifest, app_id, kotlin_root = sys.argv[1], sys.argv[2], sys.argv[3]
+src = open(manifest, encoding="utf-8").read()
+
+m = re.search(r'<activity[^>]*android:name="([^"]+)"', src, re.S)
+if not m:
+    sys.exit("ERROR: manifest 里找不到 <activity>")
+
+name = m.group(1)
+fqcn = app_id + name if name.startswith(".") else name
+path = os.path.join(kotlin_root, *fqcn.split(".")) + ".kt"
+
+if not os.path.exists(path):
+    sys.exit(f"ERROR: manifest 声明 {fqcn}，但 {path} 不存在 —— 装到真机上会闪退")
+
+pkg = fqcn.rsplit(".", 1)[0]
+if f"package {pkg}" not in open(path, encoding="utf-8").read():
+    sys.exit(f"ERROR: {path} 的 package 声明不是 {pkg}")
+
+print(f"  {fqcn} ✓")
+PY
 
 step "完成。接下来："
 echo "  flutter analyze"

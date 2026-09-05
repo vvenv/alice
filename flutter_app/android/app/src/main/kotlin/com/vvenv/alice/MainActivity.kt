@@ -1,4 +1,4 @@
-package com.vvenv.alice_dictation
+package com.vvenv.alice
 
 import io.flutter.embedding.android.FlutterActivity
 
