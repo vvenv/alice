@@ -10,6 +10,24 @@ List<String> parseWords(String text) {
       .toList();
 }
 
+/// 按朗读词头去重（大小写不敏感），保留首次出现的那一行。
+///
+/// `apple` 与 `apple | n. | 苹果`、`Apple` 视为同一词；
+/// `you're = you are` 按左侧词头去重。
+///
+/// [parseWords] 本身不去重 —— 编辑框里用户还在敲，不能边打边删行。
+/// 去重发生在列表定稿时（「完成」/ 开始听写，见 [enrichWordListText]）。
+String dedupeWordList(String text) {
+  final seen = <String>{};
+  final kept = <String>[];
+  for (final line in parseWords(text)) {
+    final key = speakTextFromEntry(line).toLowerCase();
+    if (key.isEmpty || !seen.add(key)) continue;
+    kept.add(line);
+  }
+  return kept.join('\n');
+}
+
 /// 一行解析出来的结构化条目。
 class WordEntry {
   const WordEntry({required this.word, this.pos, this.meaning});

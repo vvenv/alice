@@ -228,6 +228,25 @@ void main() {
     expect(find.text('共 1 个单词'), findsOneWidget);
   });
 
+  testWidgets('首页：点完成会去掉重复单词', (tester) async {
+    await saveWordInput('');
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'apple\nbanana\napple\nApple');
+    await tester.pump();
+    expect(find.text('共 4 个单词'), findsOneWidget);
+
+    await tester.tap(find.text('完成'));
+    await tester.pumpAndSettle();
+
+    // 词数在标题徽标和「开始听写」按钮里各出现一次。
+    expect(find.text('2 词'), findsNWidgets(2));
+    expect(find.text('apple'), findsOneWidget);
+    expect(find.text('banana'), findsOneWidget);
+    expect(find.text('Apple'), findsNothing);
+  });
+
   testWidgets('首页：单词列表标题行高度不随按钮显隐变化', (tester) async {
     await saveWordInput('');
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));

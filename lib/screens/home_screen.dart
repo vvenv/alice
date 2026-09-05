@@ -63,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _shuffle = false;
   bool _isDisplayMode = false;
   OcrUiState _ocrUi = OcrUiState.idle;
+  Alignment _cameraAlignment = kDefaultCameraButtonAlignment;
 
   List<WordHistoryEntry> _history = <WordHistoryEntry>[];
   List<String> _favorites = <String>[];
@@ -104,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
       loadWordHistory(),
       loadPersistedFavorites(),
       loadIntervalSec(),
+      loadCameraButtonAlignment(),
     ]);
     if (!mounted) return;
 
@@ -116,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _history = results[2] as List<WordHistoryEntry>;
       _favorites = results[3] as List<String>;
       _intervalSec = results[4] as double;
+      _cameraAlignment = results[5] as Alignment;
       _ready = true;
     });
   }
@@ -131,6 +134,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _toast.removeListener(_onToastChanged);
     _toast.dispose();
     super.dispose();
+  }
+
+  // --- 拍照按钮落点 ---------------------------------------------------------
+
+  void _handleCameraMoved(Alignment alignment) {
+    setState(() => _cameraAlignment = alignment);
+    // 一次拖动只写一次，不用防抖。
+    unawaited(saveCameraButtonAlignment(alignment));
   }
 
   // --- 输入框持久化（防抖，避免每次按键都写存储）-------------------------
@@ -196,8 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleToggleDisplayMode() {
     setState(() {
       _isDisplayMode = !_isDisplayMode;
-      // 退出编辑模式（「完成」）时补上离线词性 + 释义。
-      if (_isDisplayMode) _wordInput = enrichWordListText(_wordInput);
+      // 退出编辑模式（「完成」）时补上离线词性 + 释义，并去掉重复词。
+      if (_isDisplayMode) {
+        _wordInput = enrichWordListText(_wordInput);
+        _clampStartIndex();
+      }
     });
   }
 
@@ -207,10 +221,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleStart() async {
-    // 即使用户从编辑模式直接开始，也保证补全过。
+    // 即使用户从编辑模式直接开始，也保证补全过、去过重。
     final enriched = enrichWordListText(_wordInput);
     if (enriched != _wordInput) {
-      setState(() => _wordInput = enriched);
+      setState(() {
+        _wordInput = enriched;
+        _clampStartIndex();
+      });
     }
 
     final allWords = parseWords(enriched);
@@ -650,6 +667,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     setState(() => _startIndex = i),
                                 isDisplayMode: _isDisplayMode,
                                 overlayActionSize: cameraSize,
+                                overlayAlignment: _cameraAlignment,
+                                onOverlayAlignmentChanged: _handleCameraMoved,
                                 overlayAction: AppIconButton(
                                   icon: AppIcons.camera,
                                   size: cameraSize,

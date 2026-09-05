@@ -157,12 +157,12 @@ WordMeta? lookupWordMeta(String word) {
   return null;
 }
 
-/// 用离线词典给多行单词表补上词性 + 释义。
+/// 用离线词典给多行单词表补上词性 + 释义，并按朗读词头去重。
 ///
 /// 已经带 `| pos | meaning` 的行原样保留；查不到的行保持纯单词。
 /// 同步且很便宜 —— 用在「完成」/ 开始听写这两个时机。
 String enrichWordListText(String text) {
-  return parseWords(text).map((line) {
+  return parseWords(dedupeWordList(text)).map((line) {
     final entry = parseWordLine(line);
     if (entry.hasMeta) return line;
 
