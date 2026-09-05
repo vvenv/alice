@@ -53,6 +53,15 @@ class PlaybackController extends ChangeNotifier {
   /// 当前倒计时的截止时刻（epoch 毫秒）。见 [_waitMs]。
   int? _deadlineMs;
 
+  /// 正在进行的 [stopSpeech]。
+  ///
+  /// stopSpeech 是异步的（要 await 播放器 pause 和 TTS stop），而
+  /// startDictation / 跳词 / 恢复播放都是「先停、紧接着开下一段朗读」。
+  /// 不等它做完就 speak，`tts.stop()` 会落在 `tts.speak()` 之后，
+  /// 把刚开始的那一遍掐掉 —— 表现就是「进听写第一个词不发声」。
+  /// 调度器在朗读前 await 这个 future。
+  Future<void>? _stopping;
+
   double _intervalSec;
   bool _autoNext;
 
@@ -110,7 +119,7 @@ class PlaybackController extends ChangeNotifier {
     _abortCycle();
     _scheduler = null;
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
     _updatePlayState(PlayState.idle);
   }
 
@@ -181,6 +190,14 @@ class PlaybackController extends ChangeNotifier {
     final word = list[s.index];
     final signal = _cycleAbort;
     if (signal == null || signal.aborted) return;
+
+    // 先等上一次 stopSpeech 落地，再开口 —— 见 [_stopping]。
+    final stopping = _stopping;
+    if (stopping != null) {
+      await stopping;
+      if (identical(_stopping, stopping)) _stopping = null;
+      if (_isCancelled(gen)) return;
+    }
 
     // 开关是异步从存储读的；等它一次，否则第一个词会按默认值（关）播。
     await loadReadTranslation();
@@ -324,7 +341,7 @@ class PlaybackController extends ChangeNotifier {
     _abortCycle();
     _scheduler = null;
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
 
     _wordList = List<String>.from(words);
     _currentIndex = 0;
@@ -364,7 +381,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _abortCycle();
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
   }
 
   void stopDictation() {
@@ -372,7 +389,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _abortCycle();
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
     _updatePlayState(PlayState.idle);
   }
 
@@ -383,7 +400,7 @@ class PlaybackController extends ChangeNotifier {
     _playGen += 1;
     _abortCycle();
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
 
     _currentIndex = nextIndex;
     if (_playState == PlayState.paused) {
@@ -399,7 +416,7 @@ class PlaybackController extends ChangeNotifier {
     _playGen += 1;
     _abortCycle();
     _clearCountdown();
-    stopSpeech();
+    _stopping = stopSpeech();
 
     _currentIndex = prevIndex;
     if (_playState == PlayState.paused) {
@@ -461,7 +478,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _countdownTimer?.cancel();
     _countdownTimer = null;
-    stopSpeech();
+    _stopping = stopSpeech();
     super.dispose();
   }
 }

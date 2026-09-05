@@ -4,6 +4,7 @@ import 'package:alice_dictation/screens/settings_screen.dart';
 import 'package:alice_dictation/services/dictionary.dart';
 import 'package:alice_dictation/services/library_data.dart';
 import 'package:alice_dictation/services/prefs.dart';
+import 'package:alice_dictation/services/storage.dart';
 import 'package:alice_dictation/state/ocr_quota_controller.dart';
 import 'package:alice_dictation/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
@@ -96,6 +97,22 @@ void main() {
       expect(find.text('•••••'), findsOneWidget);
     });
   }
+
+  testWidgets('首页：写进存储的历史能在历史抽屉里看到', (tester) async {
+    // 直接写存储，再让首页启动时把它读出来 —— 覆盖「保存了但看不见」这一半。
+    await clearWordHistory();
+    await addWordHistory('zebra\nyak\nxylophone');
+
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('菜单'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('历史记录'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('zebra'), findsWidgets);
+  });
 
   testWidgets('设置页：发音源弹窗能打开并切到自定义接口', (tester) async {
     await tester.pumpWidget(wrap(const SettingsScreen(), dark: false));

@@ -22,6 +22,15 @@ import 'screens/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 铺满到系统栏之下。
+  //
+  // 不开这个，Android 会把窗口内缩到系统栏之上，MediaQuery.padding.bottom
+  // 就是 0 —— SafeArea 什么也撑不开，底部内容会紧贴导航栏/手势条。
+  // （RN 的 react-native-safe-area-context 两种模式下都报得出 inset，
+  // Flutter 的 SafeArea 只认 MediaQuery，所以这一句是必须的。）
+  // AnnotatedRegion 里那套 SystemUiOverlayStyle 也要靠它才有意义。
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   await Prefs.init();
 
   // 从 RN 版 AsyncStorage 搬运老数据（错词本、历史、收藏、Credits…）。
