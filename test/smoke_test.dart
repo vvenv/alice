@@ -54,7 +54,7 @@ void main() {
 
       expect(find.text('Alice'), findsOneWidget);
       expect(find.text('听写'), findsOneWidget);
-      expect(find.text('单词列表'), findsOneWidget);
+      expect(find.textContaining('每行一个单词'), findsOneWidget);
       expect(find.text('开始听写'), findsOneWidget);
     });
 
@@ -205,7 +205,8 @@ void main() {
     await tester.tap(find.text('示例'));
     await tester.pumpAndSettle();
 
-    // 词数在两处显示：「单词列表」右侧的徽标，和「开始听写」按钮里的徽标。
+    // 展示态标题改成起点，词数仍在徽标和「开始听写」按钮里各出现一次。
+    expect(find.text('从 apple 开始'), findsOneWidget);
     expect(find.text('7 词'), findsNWidgets(2));
 
     // 有词之后才允许切换展示模式，「编辑」按钮出现。
@@ -225,7 +226,7 @@ void main() {
     expect(find.text('清空'), findsOneWidget);
     expect(find.text('完成'), findsOneWidget);
     expect(find.text('编辑'), findsNothing);
-    expect(find.text('共 1 个单词'), findsOneWidget);
+    expect(find.text('1 个单词'), findsOneWidget);
   });
 
   testWidgets('首页：点完成会去掉重复单词', (tester) async {
@@ -235,11 +236,12 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'apple\nbanana\napple\nApple');
     await tester.pump();
-    expect(find.text('共 4 个单词'), findsOneWidget);
+    expect(find.text('4 个单词'), findsOneWidget);
 
     await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
 
+    expect(find.text('从 apple 开始'), findsOneWidget);
     // 词数在标题徽标和「开始听写」按钮里各出现一次。
     expect(find.text('2 词'), findsNWidgets(2));
     expect(find.text('apple'), findsOneWidget);
@@ -252,14 +254,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    final header = find.ancestor(
-      of: find.text('单词列表'),
-      matching: find.byWidgetPredicate(
-        (w) =>
-            w is Row &&
-            w.mainAxisAlignment == MainAxisAlignment.spaceBetween,
-      ),
-    );
+    final header = find.byKey(const Key('word-list-header'));
     final emptyHeight = tester.getSize(header).height;
 
     await tester.tap(find.text('示例'));

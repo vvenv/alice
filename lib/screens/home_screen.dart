@@ -790,53 +790,75 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// 标题行不再写「单词列表」——输入框 placeholder 已经说明用途。
+  /// 空着不占文案；编辑中报词数；展示态改成「从 xx 开始」，把点选起点说清楚。
+  String? _sectionTitle(int parsedWordCount, bool effectiveDisplayMode) {
+    if (parsedWordCount == 0) return null;
+    if (!effectiveDisplayMode) return '$parsedWordCount 个单词';
+    final words = parseWords(_wordInput);
+    if (_startIndex < 0 || _startIndex >= words.length) {
+      return '$parsedWordCount 个单词';
+    }
+    return '从 ${parseWordLine(words[_startIndex]).word} 开始';
+  }
+
   Widget _buildSectionHeader(
     int parsedWordCount,
     bool canToggleDisplayMode,
     bool effectiveDisplayMode,
   ) {
     final colors = context.colors;
+    final title = _sectionTitle(parsedWordCount, effectiveDisplayMode);
+    final showCountBadge = effectiveDisplayMode && parsedWordCount > 0;
 
     return Padding(
+      key: const Key('word-list-header'),
       padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Text(
-                '单词列表',
-                style: TextStyle(
-                  fontFamily: AppFonts.displayZh,
-                  fontSize: 17,
-                  letterSpacing: 0.3,
-                  color: colors.foreground,
-                ),
-              ),
-              if (parsedWordCount > 0) ...[
-                const SizedBox(width: Spacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.sm,
-                    vertical: 2,
+          Expanded(
+            child: title == null
+                ? const SizedBox.shrink()
+                : Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppFonts.displayZh,
+                            fontSize: 17,
+                            letterSpacing: 0.3,
+                            color: colors.foreground,
+                          ),
+                        ),
+                      ),
+                      if (showCountBadge) ...[
+                        const SizedBox(width: Spacing.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(Radii.full),
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: Text(
+                            '$parsedWordCount 词',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: colors.muted,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(Radii.full),
-                    border: Border.all(color: colors.border),
-                  ),
-                  child: Text(
-                    '$parsedWordCount 词',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: colors.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-              ],
-            ],
           ),
           // 空列表没有切换按钮，但仍占住 sm 按钮的高度，避免标题行跟着跳。
           Visibility(

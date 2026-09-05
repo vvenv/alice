@@ -167,7 +167,7 @@ export function HomeScreenMock() {
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5">
           <span className="font-display text-xs font-bold text-ink">
-            单词列表
+            从 rule 开始
           </span>
           <span className="rounded-full border border-ink/10 px-1.5 py-px text-[9px] text-ink/50">
             44 词

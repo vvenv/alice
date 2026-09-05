@@ -39,8 +39,8 @@ class WordInputSection extends StatefulWidget {
 
   /// 浮在卡片右下角的操作按钮（首页放的是拍照识词）。
   ///
-  /// 挂在卡片上而不是挂在整个区域上：编辑模式下方还有「共 N 个单词 / 示例 /
-  /// 清空」那一行，按卡片定位才不用去猜那行有多高。
+  /// 挂在卡片上而不是挂在整个区域上：编辑模式下方还有「示例 / 清空」那一行，
+  /// 按卡片定位才不用去猜那行有多高。
   final Widget? overlayAction;
 
   /// [overlayAction] 的边长，列表照它让出底部空间。
@@ -223,26 +223,18 @@ class _WordInputSectionState extends State<WordInputSection> {
         if (!effectiveDisplayMode) ...[
           const SizedBox(height: Spacing.xs),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
-                '共 $wordCount 个单词',
-                style: TextStyle(fontSize: 12, color: colors.muted),
+              AppButton(
+                label: '示例',
+                size: ButtonSize.sm,
+                onPressed: widget.onSetSample,
               ),
-              Row(
-                children: [
-                  AppButton(
-                    label: '示例',
-                    size: ButtonSize.sm,
-                    onPressed: widget.onSetSample,
-                  ),
-                  const SizedBox(width: Spacing.sm),
-                  AppButton(
-                    label: '清空',
-                    size: ButtonSize.sm,
-                    onPressed: widget.onClear,
-                  ),
-                ],
+              const SizedBox(width: Spacing.sm),
+              AppButton(
+                label: '清空',
+                size: ButtonSize.sm,
+                onPressed: widget.onClear,
               ),
             ],
           ),
