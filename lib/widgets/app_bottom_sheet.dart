@@ -8,14 +8,16 @@ import '../theme/tokens.dart';
 ///
 /// 对应 RN 版 src/components/BottomSheet.tsx。
 ///
-/// [builder] 收到的是可滚动主体的最大可用高度（面板上限减去 chrome），
-/// 与 RN 版把 bodyMaxHeight 传给 children 函数的用法一致。
+/// [builder] 的结果挂在 [Flexible] 里，主体想吃掉剩余高度直接自己再套一层
+/// [Flexible] 即可。RN 版是把算好的 bodyMaxHeight 传给 children 函数的，
+/// 这里不照搬：那要在外面手算一遍 chrome 高度，而调用方还得把标题、搜索行
+/// 之类再减一次 —— 漏算哪一项，列表就会把抽屉底撑破。
 Future<T?> showAppBottomSheet<T>({
   required BuildContext context,
   String? title,
   Widget? headerRight,
   double maxHeightRatio = 0.8,
-  required Widget Function(BuildContext context, double bodyMaxHeight) builder,
+  required Widget Function(BuildContext context) builder,
 }) {
   final colors = context.themeController.colors;
 
@@ -46,7 +48,7 @@ class _AppBottomSheet extends StatelessWidget {
   final String? title;
   final Widget? headerRight;
   final double maxHeightRatio;
-  final Widget Function(BuildContext context, double bodyMaxHeight) builder;
+  final Widget Function(BuildContext context) builder;
 
   @override
   Widget build(BuildContext context) {
@@ -56,15 +58,6 @@ class _AppBottomSheet extends StatelessWidget {
     final sheetMaxHeight = media.size.height * maxHeightRatio;
     final bottomPad =
         media.padding.bottom > Spacing.xl ? media.padding.bottom : Spacing.xl;
-
-    // chrome = paddingTop + 抓手 + 标题行 + 底部安全区
-    final chromeHeight = Spacing.lg +
-        4 +
-        Spacing.md +
-        (title != null ? 28 + Spacing.sm : 0) +
-        bottomPad;
-    final bodyMaxHeight =
-        (sheetMaxHeight - chromeHeight).clamp(160.0, double.infinity);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -124,7 +117,7 @@ class _AppBottomSheet extends StatelessWidget {
               ),
               const SizedBox(height: Spacing.sm),
             ],
-            Flexible(child: builder(context, bodyMaxHeight.toDouble())),
+            Flexible(child: builder(context)),
           ],
         ),
       ),

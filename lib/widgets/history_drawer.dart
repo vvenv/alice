@@ -19,14 +19,13 @@ Future<void> showHistoryDrawer(
 }) {
   return showAppBottomSheet<void>(
     context: context,
-    builder: (sheetContext, bodyMaxHeight) => _HistoryDrawerBody(
+    builder: (sheetContext) => _HistoryDrawerBody(
       history: history,
       initialFavorites: favorites,
       onApply: onApply,
       onDelete: onDelete,
       onClear: onClear,
       onToggleFavorite: onToggleFavorite,
-      bodyMaxHeight: bodyMaxHeight,
     ),
   );
 }
@@ -41,7 +40,6 @@ class _HistoryDrawerBody extends StatefulWidget {
     required this.onDelete,
     required this.onClear,
     required this.onToggleFavorite,
-    required this.bodyMaxHeight,
   });
 
   final List<WordHistoryEntry> history;
@@ -50,7 +48,6 @@ class _HistoryDrawerBody extends StatefulWidget {
   final ValueChanged<String> onDelete;
   final VoidCallback onClear;
   final ValueChanged<String> onToggleFavorite;
-  final double bodyMaxHeight;
 
   @override
   State<_HistoryDrawerBody> createState() => _HistoryDrawerBodyState();
@@ -115,8 +112,7 @@ class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
           ],
         ),
         const SizedBox(height: Spacing.sm),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: widget.bodyMaxHeight),
+        Flexible(
           child: history.isEmpty
               ? Container(
                   padding: const EdgeInsets.symmetric(vertical: Spacing.lg),

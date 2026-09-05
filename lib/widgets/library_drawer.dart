@@ -21,12 +21,11 @@ Future<void> showLibraryDrawer(
   return showAppBottomSheet<void>(
     context: context,
     title: null, // 标题由内部维护（要跟着搜索结果变计数）
-    builder: (sheetContext, bodyMaxHeight) => _LibraryDrawerBody(
+    builder: (sheetContext) => _LibraryDrawerBody(
       groups: groups,
       initialFavorites: favorites,
       onApply: onApply,
       onToggleFavorite: onToggleFavorite,
-      bodyMaxHeight: bodyMaxHeight,
     ),
   );
 }
@@ -69,23 +68,18 @@ List<LibraryGroup> _filterLibraryGroups(
       .toList();
 }
 
-/// 搜索行（输入框 + 间距）的大致高度，用于给 ScrollView 分配空间。
-const double _searchBlockHeight = 44;
-
 class _LibraryDrawerBody extends StatefulWidget {
   const _LibraryDrawerBody({
     required this.groups,
     required this.initialFavorites,
     required this.onApply,
     required this.onToggleFavorite,
-    required this.bodyMaxHeight,
   });
 
   final List<LibraryGroup> groups;
   final List<String> initialFavorites;
   final ValueChanged<WordHistoryEntry> onApply;
   final ValueChanged<String> onToggleFavorite;
-  final double bodyMaxHeight;
 
   @override
   State<_LibraryDrawerBody> createState() => _LibraryDrawerBodyState();
@@ -195,11 +189,9 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
           ),
         ),
         const SizedBox(height: Spacing.sm),
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: (widget.bodyMaxHeight - _searchBlockHeight)
-                .clamp(80.0, double.infinity),
-          ),
+        // 用 Flexible 吃掉标题/搜索之外的剩余高度，避免再手算
+        // bodyMaxHeight - 搜索行 —— 漏算标题时列表会把抽屉底撑破。
+        Flexible(
           child: _buildList(context, filteredGroups, totalCount, filteredCount),
         ),
       ],

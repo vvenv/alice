@@ -98,6 +98,30 @@ void main() {
     });
   }
 
+  // 抽屉高度：底部面板过去是外面算一个 bodyMaxHeight、抽屉自己再减掉搜索行，
+  // 而词库抽屉的标题是画在正文里的（外面按「无标题」算的 chrome），这 36px
+  // 没人减 —— 正文比拿到的空间高一截，列表把抽屉底撑破。
+  //
+  // 矮屏才看得见：屏幕够高时列表内容撑不满 ConstrainedBox，多要的那点空间
+  // 没人去用。390x844 上一切正常，390x420 上就是 36px 的 RenderFlex 溢出。
+  testWidgets('首页：矮屏上打开词库抽屉不溢出', (tester) async {
+    tester.view.physicalSize = const Size(390, 420);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('菜单'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('词库'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('词库 ('), findsOneWidget);
+    expect(find.text('搜索标题或分类'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('首页：写进存储的历史能在历史抽屉里看到', (tester) async {
     // 直接写存储，再让首页启动时把它读出来 —— 覆盖「保存了但看不见」这一半。
     await clearWordHistory();

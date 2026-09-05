@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await showAppBottomSheet<void>(
       context: context,
       title: '更多',
-      builder: (sheetContext, _) => Column(
+      builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -388,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await showAppBottomSheet<void>(
       context: context,
       title: '拍照识词',
-      builder: (sheetContext, _) => ListenableBuilder(
+      builder: (sheetContext) => ListenableBuilder(
         listenable: quota,
         builder: (context, _) {
           final colors = context.colors;

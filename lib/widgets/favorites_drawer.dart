@@ -19,12 +19,11 @@ Future<void> showFavoritesDrawer(
 }) {
   return showAppBottomSheet<void>(
     context: context,
-    builder: (sheetContext, bodyMaxHeight) => _FavoritesDrawerBody(
+    builder: (sheetContext) => _FavoritesDrawerBody(
       initialFavorites: favorites,
       history: history,
       onApply: onApply,
       onToggleFavorite: onToggleFavorite,
-      bodyMaxHeight: bodyMaxHeight,
     ),
   );
 }
@@ -83,14 +82,12 @@ class _FavoritesDrawerBody extends StatefulWidget {
     required this.history,
     required this.onApply,
     required this.onToggleFavorite,
-    required this.bodyMaxHeight,
   });
 
   final List<String> initialFavorites;
   final List<WordHistoryEntry> history;
   final ValueChanged<WordHistoryEntry> onApply;
   final ValueChanged<String> onToggleFavorite;
-  final double bodyMaxHeight;
 
   @override
   State<_FavoritesDrawerBody> createState() => _FavoritesDrawerBodyState();
@@ -124,8 +121,7 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
             ),
           ),
         ),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: widget.bodyMaxHeight),
+        Flexible(
           child: items.isEmpty
               ? Container(
                   padding: const EdgeInsets.symmetric(vertical: Spacing.lg),
