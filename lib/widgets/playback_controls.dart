@@ -7,6 +7,7 @@ import '../theme/tokens.dart';
 import 'app_button.dart';
 import 'app_icons.dart';
 import 'app_slider.dart';
+import 'app_switch.dart';
 
 /// 间隔滑块 + 自动播放/打乱开关 + 「开始听写」主按钮。
 /// 首页和听写页共用（听写页不显示主按钮）。
@@ -179,22 +180,9 @@ class _ToggleItem extends StatelessWidget {
         Semantics(
           label: semanticLabel,
           toggled: value,
-          // 用 WidgetStateProperty 而不是 activeColor —— 后者在近几个
-          // Flutter 版本里被改名/弃用过，这组 API 更稳。
-          child: Switch(
+          child: AppSwitch(
             value: value,
             onChanged: onChanged,
-            thumbColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? colors.primary
-                  : colors.background,
-            ),
-            trackColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? colors.primarySoft
-                  : colors.track,
-            ),
-            trackOutlineColor: WidgetStateProperty.all(colors.borderSubtle),
           ),
         ),
       ],

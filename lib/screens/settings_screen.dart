@@ -19,6 +19,7 @@ import '../widgets/app_icons.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/app_slider.dart';
+import '../widgets/app_switch.dart';
 import '../widgets/ocr_settings_modal.dart';
 import '../widgets/tts_settings_modal.dart';
 import '../widgets/recharge_modal.dart';
@@ -279,23 +280,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               colors,
                               icon: AppIcons.musicalNotes,
                               label: '提示音',
-                              trailing: Switch(
+                              trailing: AppSwitch(
                                 value: _soundOn,
                                 onChanged: _handleToggleSound,
-                                thumbColor: WidgetStateProperty.resolveWith(
-                                  (states) =>
-                                      states.contains(WidgetState.selected)
-                                          ? colors.primary
-                                          : colors.background,
-                                ),
-                                trackColor: WidgetStateProperty.resolveWith(
-                                  (states) =>
-                                      states.contains(WidgetState.selected)
-                                          ? colors.primarySoft
-                                          : colors.track,
-                                ),
-                                trackOutlineColor: WidgetStateProperty.all(
-                                    colors.borderSubtle),
                               ),
                             ),
                             _divider(colors),
@@ -303,23 +290,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               colors,
                               icon: AppIcons.language,
                               label: '朗读中文释义',
-                              trailing: Switch(
+                              trailing: AppSwitch(
                                 value: _readTranslationOn,
                                 onChanged: _handleToggleReadTranslation,
-                                thumbColor: WidgetStateProperty.resolveWith(
-                                  (states) =>
-                                      states.contains(WidgetState.selected)
-                                          ? colors.primary
-                                          : colors.background,
-                                ),
-                                trackColor: WidgetStateProperty.resolveWith(
-                                  (states) =>
-                                      states.contains(WidgetState.selected)
-                                          ? colors.primarySoft
-                                          : colors.track,
-                                ),
-                                trackOutlineColor: WidgetStateProperty.all(
-                                    colors.borderSubtle),
                               ),
                             ),
                             _divider(colors),

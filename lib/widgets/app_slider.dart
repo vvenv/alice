@@ -7,7 +7,7 @@ import '../theme/theme_controller.dart';
 /// RN 侧要用 pageX 绕开 Android 上 locationX 参照系乱跳的 bug；Flutter 的
 /// 手势坐标本来就是相对于当前 RenderBox 的，直接用 localPosition 即可。
 const double _thumbSize = 24;
-const double _trackHeight = 6;
+const double _trackHeight = 8;
 
 class AppSlider extends StatelessWidget {
   const AppSlider({
@@ -54,7 +54,17 @@ class AppSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final dark = context.themeController.isDark;
     final fraction = ((value - min) / (max - min)).clamp(0.0, 1.0);
+    // 暗色 primary 是浅石板，当填充会和槽糊在一起；改用金色铺已完成段。
+    final rest = Color.alphaBlend(
+      colors.foreground.withValues(alpha: dark ? 0.52 : 0.22),
+      colors.surface,
+    );
+    final fill = dark ? colors.gold : colors.primary;
+    final thumbFill = dark ? colors.foreground : colors.primary;
+    final thumbRing = dark ? colors.gold : colors.surfaceRaised;
+    final trackHeight = dark ? 10.0 : _trackHeight;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -69,25 +79,36 @@ class AppSlider extends StatelessWidget {
           onChanged(_snap(x / trackWidth));
         }
 
+        // 轨道必须用 Positioned 拉满宽度。Stack 默认 loose，Container 会跟着
+        // FractionallySizedBox 缩成「已填充」那一段，未完成的 track 就消失了。
         Widget content = SizedBox(
           height: 40,
           width: width,
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _thumbSize / 2,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(_trackHeight / 2),
-                  child: Container(
-                    height: _trackHeight,
-                    color: colors.border,
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: fraction,
-                      child: Container(color: colors.primary),
+              Positioned(
+                left: _thumbSize / 2,
+                right: _thumbSize / 2,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(trackHeight / 2),
+                    child: SizedBox(
+                      height: trackHeight,
+                      width: double.infinity,
+                      child: ColoredBox(
+                        color: rest,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: fraction,
+                            heightFactor: 1,
+                            child: ColoredBox(color: fill),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -99,8 +120,9 @@ class AppSlider extends StatelessWidget {
                   width: _thumbSize,
                   height: _thumbSize,
                   decoration: BoxDecoration(
-                    color: colors.primary,
+                    color: thumbFill,
                     shape: BoxShape.circle,
+                    border: Border.all(color: thumbRing, width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: colors.primary.withValues(alpha: 0.35),
