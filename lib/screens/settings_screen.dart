@@ -31,6 +31,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundOn = true;
+  bool _readTranslationOn = false;
   double _speechRate = kDefaultSpeechRate;
   double _intervalSec = kDefaultIntervalSec;
   OcrProviderConfig? _customOcrConfig;
@@ -53,6 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _bootstrap() async {
     final soundOn = await loadSoundEnabled();
+    final readTranslation = await loadReadTranslation();
     final rate = await loadSpeechRate();
     final interval = await loadIntervalSec();
     final custom = await loadOcrProviderConfig();
@@ -62,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _soundOn = soundOn;
+      _readTranslationOn = readTranslation;
       _speechRate = rate;
       _intervalSec = interval;
       _customOcrConfig = custom;
@@ -81,6 +84,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _handleToggleSound(bool value) {
     setState(() => _soundOn = value);
     setSoundEnabled(value);
+  }
+
+  void _handleToggleReadTranslation(bool value) {
+    setState(() => _readTranslationOn = value);
+    setReadTranslationEnabled(value);
   }
 
   void _handleSpeechRateChanged(double value) {
@@ -234,6 +242,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               trailing: Switch(
                                 value: _soundOn,
                                 onChanged: _handleToggleSound,
+                                thumbColor: WidgetStateProperty.resolveWith(
+                                  (states) =>
+                                      states.contains(WidgetState.selected)
+                                          ? colors.primary
+                                          : colors.background,
+                                ),
+                                trackColor: WidgetStateProperty.resolveWith(
+                                  (states) =>
+                                      states.contains(WidgetState.selected)
+                                          ? colors.primarySoft
+                                          : colors.track,
+                                ),
+                                trackOutlineColor: WidgetStateProperty.all(
+                                    colors.borderSubtle),
+                              ),
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.language,
+                              label: '朗读中文释义',
+                              trailing: Switch(
+                                value: _readTranslationOn,
+                                onChanged: _handleToggleReadTranslation,
                                 thumbColor: WidgetStateProperty.resolveWith(
                                   (states) =>
                                       states.contains(WidgetState.selected)

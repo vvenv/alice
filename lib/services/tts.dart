@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import 'abort.dart';
 import 'dictation.dart';
 import 'logger.dart';
+import 'prefs.dart';
 import 'storage.dart';
 import 'tts_cache.dart';
 
@@ -22,6 +23,50 @@ const _log = Logger('TTS');
 const TtsCacheApi _cache = TtsCache();
 
 double _currentSpeechRate = kDefaultSpeechRate;
+
+/// 朗读语言。有道词典发音只有英文，中文只能走系统 TTS。
+const String kLangEn = 'en-US';
+const String kLangZh = 'zh-CN';
+
+final RegExp _cjkRe = RegExp(r'[一-鿿]');
+
+bool _isCjk(String text) => _cjkRe.hasMatch(text);
+
+String _langFor(String text) => _isCjk(text) ? kLangZh : kLangEn;
+
+// --- 「读中文释义」开关 -------------------------------------------------------
+
+const String _readTranslationKey = 'alice_read_translation';
+
+bool _readTranslation = false;
+bool _readTranslationLoaded = false;
+Future<bool>? _readTranslationLoad;
+
+/// 当前是否要在两遍单词之间朗读中文释义。同步读，供调度器在热路径上用。
+bool isReadTranslationEnabled() => _readTranslation;
+
+/// 从存储读一次开关。重复调用共享同一个 Future。
+Future<bool> loadReadTranslation() {
+  if (_readTranslationLoaded) return Future.value(_readTranslation);
+  return _readTranslationLoad ??= Prefs.getString(_readTranslationKey)
+      .then((v) {
+        // 读盘期间用户手动切过的话，以用户的操作为准。
+        if (!_readTranslationLoaded) _readTranslation = v == 'on';
+        return _readTranslation;
+      })
+      .catchError((Object _) => _readTranslation)
+      .whenComplete(() {
+        _readTranslationLoaded = true;
+        _readTranslationLoad = null;
+      });
+}
+
+void setReadTranslationEnabled(bool value) {
+  _readTranslation = value;
+  _readTranslationLoaded = true;
+  Prefs.setString(_readTranslationKey, value ? 'on' : 'off')
+      .catchError((Object _) {});
+}
 
 AbortSignal? _currentAbort;
 AudioPlayer? _wordPlayer;
@@ -68,7 +113,7 @@ Future<FlutterTts> _getTts() async {
   if (existing != null) return existing;
 
   final tts = FlutterTts();
-  await tts.setLanguage('en-US');
+  await tts.setLanguage(kLangEn);
   // 让 speak() 等到朗读结束才返回 —— 调度器依赖这个语义。
   await tts.awaitSpeakCompletion(true);
   _tts = tts;
@@ -85,6 +130,9 @@ String _cacheKeyFor(String text) => text.trim().toLowerCase();
 Future<String?> prefetchWordAudio(String word) async {
   final text = speakTextFromEntry(word);
   if (text.isEmpty || !_cache.canUseDiskCache) return null;
+  // 有道 dictvoice 是英文词典发音（type=1/2 是英音/美音），拿中文去问它只会
+  // 缓存下一段错的音频，而且会盖过系统中文 TTS。中文一律走系统 TTS。
+  if (_isCjk(text)) return null;
 
   final ready = await _cache.readyPath(text);
   if (ready != null) return ready;
@@ -216,7 +264,11 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
 }
 
 /// 用系统 TTS 朗读，返回是否正常读完。
-Future<bool> _speakWithSystemTts(String text, AbortSignal signal) async {
+Future<bool> _speakWithSystemTts(
+  String text,
+  AbortSignal signal,
+  String lang,
+) async {
   await _ensureAudioSession();
   final tts = await _getTts();
   await tts.stop();
@@ -246,6 +298,8 @@ Future<bool> _speakWithSystemTts(String text, AbortSignal signal) async {
   timer = Timer(Duration(milliseconds: maxMs), () => finish(true));
 
   try {
+    // 语言逐句设置：同一段听写里英文单词和中文释义会交替出现。
+    await tts.setLanguage(lang);
     await tts.setSpeechRate(_normalizedRate(_currentSpeechRate));
     // awaitSpeakCompletion(true) 让这里等到读完才返回。
     await tts.speak(text);
@@ -279,18 +333,22 @@ double _normalizedRate(double rate) {
 
 /// 只在已缓存时使用有道免费发音；播放开始时绝不等待下载，
 /// 直接回落到系统 TTS。`you're = you are` 这类条目读左侧。
-Future<bool> speakWord(String word) async {
+///
+/// [lang] 不传时按文本内容判定（含汉字即中文）—— 听写中文释义时调用方
+/// 会显式传 [kLangZh]。
+Future<bool> speakWord(String word, {String? lang}) async {
   _currentAbort?.abort();
   _currentAbort = null;
 
   final text = speakTextFromEntry(word);
   if (text.isEmpty) return false;
 
+  final speechLang = lang ?? _langFor(text);
   final signal = AbortSignal();
   _currentAbort = signal;
 
   try {
-    final path = await _cache.readyPath(text);
+    final path = speechLang == kLangEn ? await _cache.readyPath(text) : null;
 
     if (path != null) {
       final ok = await _playAudioFile(path, signal);
@@ -298,12 +356,12 @@ Future<bool> speakWord(String word) async {
       _log.debug('有道播放失败，回落到系统 TTS: $text');
     }
 
-    return await _speakWithSystemTts(text, signal);
+    return await _speakWithSystemTts(text, signal, speechLang);
   } catch (e) {
     if (signal.aborted) return false;
     _log.warn('speakWord 失败: $text $e');
     try {
-      return await _speakWithSystemTts(text, signal);
+      return await _speakWithSystemTts(text, signal, speechLang);
     } catch (_) {
       return false;
     }

@@ -3,16 +3,23 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../services/abort.dart';
+import '../services/dictation.dart';
 import '../services/tts.dart';
 
-/// 听写播放调度器。对应 RN 版 src/hooks/usePlayback.ts。
+/// 听写播放调度器。对应 Expo 版 src/hooks/usePlayback.ts。
 ///
-/// 一个单词的生命周期：speak1 → gap(700ms) → speak2 → interval(间隔秒数) → 下一词。
+/// 一个单词的生命周期：
+/// speak1 →（读中文释义开着时）speakMeaning → speak2 → interval → 下一词，
+/// 每两遍朗读之间隔 700ms。
 /// `gen` 是「代」计数：任何打断（暂停/停止/跳词/重开）都会 +1，
 /// 让还在飞的异步回合自行作废，避免旧回合把状态写回来。
 enum PlayState { idle, playing, paused }
 
-enum _WordPhase { speak1, gap, speak2, interval }
+/// 一个词的朗读阶段：单词 → 中文释义 → 单词 → 间隔。
+///
+/// 释义那一遍只在「读中文释义」开着且该词真有可读释义时才进；关掉时
+/// speak1 直接接 speak2，与以前一致。
+enum _WordPhase { speak1, speakMeaning, speak2, interval }
 
 const int _repeatGapMs = 700;
 
@@ -175,11 +182,21 @@ class PlaybackController extends ChangeNotifier {
     final signal = _cycleAbort;
     if (signal == null || signal.aborted) return;
 
+    // 开关是异步从存储读的；等它一次，否则第一个词会按默认值（关）播。
+    await loadReadTranslation();
+    if (_isCancelled(gen)) return;
+
     if (s.phase == _WordPhase.speak1 || s.phase == _WordPhase.speak2) {
       s.speaking = true;
       final phase = s.phase;
       _currentIndex = s.index;
       _notify();
+
+      // 听写顺序：单词 → 释义 → 单词。释义夹在两遍单词中间；
+      // 空串表示这个词没有可朗读的释义。
+      final meaningSpeech = isReadTranslationEnabled()
+          ? speakableMeaning(parseWordLine(word).meaning)
+          : '';
 
       // 后台继续预取，但不阻塞播放。speakWord 只用已经缓存好的音频，
       // 否则立即回落到系统 TTS。
@@ -201,16 +218,19 @@ class PlaybackController extends ChangeNotifier {
       // 无限循环（以及一个卡死的 App）。跳过重复间隙，让调度器推进到
       // 下一阶段/下一个词。`speak2` 本身就充当了 `speak1` 的第二次尝试。
       if (!ok && phase == _WordPhase.speak1) {
-        cur.phase = _WordPhase.speak2;
+        cur.phase = meaningSpeech.isNotEmpty
+            ? _WordPhase.speakMeaning
+            : _WordPhase.speak2;
         unawaited(_runScheduler());
         return;
       }
 
       if (phase == _WordPhase.speak1) {
-        cur.phase = _WordPhase.gap;
         final gapOk = await _waitMs(_repeatGapMs, signal);
         if (_isCancelled(gen) || !gapOk) return;
-        cur.phase = _WordPhase.speak2;
+        cur.phase = meaningSpeech.isNotEmpty
+            ? _WordPhase.speakMeaning
+            : _WordPhase.speak2;
         unawaited(_runScheduler());
         return;
       }
@@ -238,7 +258,21 @@ class PlaybackController extends ChangeNotifier {
       return;
     }
 
-    if (s.phase == _WordPhase.gap) {
+    if (s.phase == _WordPhase.speakMeaning) {
+      final speakable = speakableMeaning(parseWordLine(word).meaning);
+      if (speakable.isNotEmpty) {
+        s.speaking = true;
+        await speakWord(speakable, lang: kLangZh);
+        if (_isCancelled(gen)) return;
+        final cur = _scheduler;
+        if (cur == null || cur.gen != gen) return;
+        cur.speaking = false;
+      }
+
+      // 释义听完，用第二遍单词收尾 —— 最后落在耳朵里的应该是单词本身
+      // （单词 → 释义 → 单词）。
+      final gapOk = await _waitMs(_repeatGapMs, signal);
+      if (_isCancelled(gen) || !gapOk) return;
       s.phase = _WordPhase.speak2;
       unawaited(_runScheduler());
       return;

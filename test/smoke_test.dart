@@ -63,10 +63,13 @@ void main() {
 
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('外观'), findsOneWidget);
+      expect(find.text('朗读中文释义'), findsOneWidget);
+
+      // 下面这些分组在首屏之外，ListView 还没构建到 —— 逐个滚过去，
+      // 顺带验证整条滚动路径不会因为约束问题炸掉。
+      await tester.scrollUntilVisible(find.text('识别服务'), 300);
       expect(find.text('识别服务'), findsOneWidget);
 
-      // 「数据」分组在首屏之下，ListView 还没构建到 —— 滚过去，
-      // 顺带验证整条滚动路径不会因为约束问题炸掉。
       await tester.scrollUntilVisible(find.text('清空发音缓存'), 300);
       expect(find.text('清空发音缓存'), findsOneWidget);
     });

@@ -38,6 +38,7 @@ const List<String> _legacyKeys = [
   'dictation_interval_sec',
   'alice_theme_mode',
   'alice_sound_enabled',
+  'alice_read_translation',
   'alice_ocr_credits',
   'alice_ocr_selected_model',
   'alice_ocr_provider_config',
