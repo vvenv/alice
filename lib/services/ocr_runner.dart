@@ -3,7 +3,7 @@ import 'ocr.dart';
 
 /// 拍照/相册 → 识别 → 回调的一次完整流程。
 ///
-/// 对应 RN 版 src/components/OcrSection.tsx —— 那边是个「不渲染任何东西、
+/// 对应 Expo 版 src/components/OcrSection.tsx —— 那边是个「不渲染任何东西、
 /// 只通过 ref 暴露 processPhoto / processAlbum」的组件（hideActions 时直接
 /// return null）。Flutter 侧没必要为此造一个 widget，直接做成普通类。
 class OcrRunner {
@@ -28,6 +28,13 @@ class OcrRunner {
 
   bool _busy = false;
 
+  /// runOcr 的同步重入锁。
+  ///
+  /// [_busy] 不够用：它要等 [_setUiState] 才置位，而那发生在 `await
+  /// canRunOcrNow()` 之后 —— 两次快速点击会双双穿过去，高级模型就被扣两次费。
+  /// 这个标志在第一个 await **之前**同步占位。
+  bool _running = false;
+
   bool get busy => _busy;
 
   void _setUiState(OcrUiState state) {
@@ -43,44 +50,50 @@ class OcrRunner {
     Future<String?> Function() getPath,
     OcrProgressPhase preparingPhase,
   ) async {
-    if (_busy) return;
-
-    // 预检：高级内置模型需要余额。余额不够时直接跳过整个拍照流程，
-    // 转交充值 UI，别让用户白拍一张。
-    final gate = await canRunOcrNow();
-    if (!gate.allowed) {
-      onInsufficientCredits();
-      return;
-    }
-
-    _setUiState(const OcrUiState(busy: true, message: ''));
+    // 重入锁在第一个 await 之前同步占位，见 [_running]。
+    if (_running) return;
+    _running = true;
     try {
-      final path = await getPath();
-      if (path == null) {
+      // 预检：高级内置模型需要余额。余额不够时直接跳过整个拍照流程，
+      // 转交充值 UI，别让用户白拍一张。
+      final gate = await canRunOcrNow();
+      if (!gate.allowed) {
+        onInsufficientCredits();
+        return;
+      }
+
+      _setUiState(const OcrUiState(busy: true, message: ''));
+      try {
+        final path = await getPath();
+        if (path == null) {
+          _setUiState(OcrUiState.idle);
+          return;
+        }
+
+        _reportProgress(preparingPhase);
+        final result =
+            await ocrWordsFromImage(path, onProgress: _reportProgress);
+
+        if (result.words.isEmpty) {
+          onOutcome(
+            result.rawText.isNotEmpty
+                ? OcrOutcomeMessages.emptyUnparsed
+                : OcrOutcomeMessages.empty,
+          );
+          return;
+        }
+
+        onResult(result.words);
+        onOutcome(OcrOutcomeMessages.success(result.words.length));
+      } on InsufficientCreditsError {
+        onInsufficientCredits();
+      } catch (error) {
+        onOutcome(_message(error));
+      } finally {
         _setUiState(OcrUiState.idle);
-        return;
       }
-
-      _reportProgress(preparingPhase);
-      final result = await ocrWordsFromImage(path, onProgress: _reportProgress);
-
-      if (result.words.isEmpty) {
-        onOutcome(
-          result.rawText.isNotEmpty
-              ? OcrOutcomeMessages.emptyUnparsed
-              : OcrOutcomeMessages.empty,
-        );
-        return;
-      }
-
-      onResult(result.words);
-      onOutcome(OcrOutcomeMessages.success(result.words.length));
-    } on InsufficientCreditsError {
-      onInsufficientCredits();
-    } catch (error) {
-      onOutcome(_message(error));
     } finally {
-      _setUiState(OcrUiState.idle);
+      _running = false;
     }
   }
 

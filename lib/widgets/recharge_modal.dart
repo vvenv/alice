@@ -38,16 +38,31 @@ class _RechargeModal extends StatefulWidget {
 
 class _RechargeModalState extends State<_RechargeModal> {
   String? _purchasing;
+  String _error = '';
   late int _credits = widget.initialCredits;
 
   Future<void> _handlePurchase(CreditPack pack) async {
-    setState(() => _purchasing = pack.id);
+    setState(() {
+      _purchasing = pack.id;
+      _error = '';
+    });
     try {
       await widget.onPurchase(pack);
       if (mounted) setState(() => _credits = getCachedCredits());
+    } catch (error) {
+      // 就地把失败显示出来。没有这个 catch，异常就没人接：转圈停了，
+      // 用户什么反馈都拿不到。
+      if (mounted) setState(() => _error = _errorText(error));
     } finally {
       if (mounted) setState(() => _purchasing = null);
     }
+  }
+
+  static String _errorText(Object error) {
+    final text = error.toString();
+    final message =
+        text.startsWith('Exception: ') ? text.substring(11) : text;
+    return message.isNotEmpty ? message : '充值失败，请重试';
   }
 
   @override
@@ -167,6 +182,15 @@ class _RechargeModalState extends State<_RechargeModal> {
                       ),
                       const SizedBox(height: Spacing.sm),
                     ],
+                    if (_error.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: Spacing.xs),
+                        child: Text(
+                          _error,
+                          style:
+                              TextStyle(fontSize: 12, color: colors.danger),
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.only(top: Spacing.xs),
                       child: Text(

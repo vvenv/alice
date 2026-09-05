@@ -269,6 +269,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 step: 0.1,
                                 value: _speechRate,
                                 onChanged: _handleSpeechRateChanged,
+                                label: '朗读语速',
+                                formatValue: (v) =>
+                                    '${v.toStringAsFixed(1)} 倍',
                               ),
                             ),
                           ]),
@@ -294,6 +297,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 step: kIntervalStep,
                                 value: _intervalSec,
                                 onChanged: _handleIntervalChanged,
+                                label: '默认听写间隔秒数',
+                                formatValue: (v) =>
+                                    '${v.toStringAsFixed(1)} 秒',
                               ),
                             ),
                           ]),

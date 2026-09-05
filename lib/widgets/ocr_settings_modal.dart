@@ -461,7 +461,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
           iconColor: colors.primary,
           text: '连接成功，配置可用',
           textColor: colors.primary,
-          background: colors.dangerSoft,
+          background: colors.primarySoft,
         ),
       if (_test is _TestError)
         _testResult(

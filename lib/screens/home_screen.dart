@@ -121,7 +121,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    // 防抖还没落盘就退出的话，把它冲掉 —— 只 cancel 会把刚打的几秒钟丢掉。
+    // 这里不 await：dispose 不能异步，而 SharedPreferences 的写入会自己走完。
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+      unawaited(saveWordInput(_wordInput));
+    }
+    _debounce = null;
     _toast.removeListener(_onToastChanged);
     _toast.dispose();
     super.dispose();

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 
-/// 自绘滑块。对应 RN 版 src/components/Slider.tsx。
+/// 自绘滑块。对应 Expo 版 src/components/Slider.tsx。
 ///
 /// RN 侧要用 pageX 绕开 Android 上 locationX 参照系乱跳的 bug；Flutter 的
 /// 手势坐标本来就是相对于当前 RenderBox 的，直接用 localPosition 即可。
@@ -18,6 +18,8 @@ class AppSlider extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.disabled = false,
+    this.label,
+    this.formatValue,
   });
 
   final double min;
@@ -26,6 +28,21 @@ class AppSlider extends StatelessWidget {
   final double value;
   final ValueChanged<double> onChanged;
   final bool disabled;
+
+  /// 读屏软件播报的名称 —— 这个滑块在调什么。
+  final String? label;
+
+  /// 播报用的数值格式化（如 `7.0s`、`0.9x`）。默认一位小数。
+  final String Function(double value)? formatValue;
+
+  String _format(double v) =>
+      formatValue?.call(v) ?? v.toStringAsFixed(1);
+
+  /// 把 [value] 按 [step] 挪一格并夹回区间 —— 读屏的上下滑手势走这里。
+  double _stepped(double delta) {
+    final raw = ((value + delta) / step).round() * step;
+    return raw.clamp(min, max).toDouble();
+  }
 
   double _snap(double pct) {
     final clamped = pct.clamp(0.0, 1.0);
@@ -102,12 +119,24 @@ class AppSlider extends StatelessWidget {
           content = Opacity(opacity: 0.5, child: content);
         }
 
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (d) => handleAt(d.localPosition),
-          onHorizontalDragStart: (d) => handleAt(d.localPosition),
-          onHorizontalDragUpdate: (d) => handleAt(d.localPosition),
-          child: content,
+        // 读屏支持：报成可调节控件，并给出上下滑的加减动作
+        // （TalkBack / VoiceOver 在滑块上的 swipe up/down）。
+        return Semantics(
+          slider: true,
+          enabled: !disabled,
+          label: label,
+          value: _format(value),
+          increasedValue: _format(_stepped(step)),
+          decreasedValue: _format(_stepped(-step)),
+          onIncrease: disabled ? null : () => onChanged(_stepped(step)),
+          onDecrease: disabled ? null : () => onChanged(_stepped(-step)),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (d) => handleAt(d.localPosition),
+            onHorizontalDragStart: (d) => handleAt(d.localPosition),
+            onHorizontalDragUpdate: (d) => handleAt(d.localPosition),
+            child: content,
+          ),
         );
       },
     );

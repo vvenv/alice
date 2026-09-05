@@ -63,6 +63,8 @@ class PlaybackControls extends StatelessWidget {
                 step: kIntervalStep,
                 value: intervalSec,
                 onChanged: onIntervalChanged,
+                label: '听写间隔秒数',
+                formatValue: (v) => '${v.toStringAsFixed(1)} 秒',
               ),
             ),
             const SizedBox(width: Spacing.sm),

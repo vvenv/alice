@@ -43,6 +43,9 @@ class PlaybackController extends ChangeNotifier {
   int _currentIndex = 0;
   int? _remainingMs;
 
+  /// 当前倒计时的截止时刻（epoch 毫秒）。见 [_waitMs]。
+  int? _deadlineMs;
+
   double _intervalSec;
   bool _autoNext;
 
@@ -76,6 +79,7 @@ class PlaybackController extends ChangeNotifier {
   void _clearCountdown() {
     _countdownTimer?.cancel();
     _countdownTimer = null;
+    _deadlineMs = null;
     if (_remainingMs != null) {
       _remainingMs = null;
       _notify();
@@ -104,10 +108,14 @@ class PlaybackController extends ChangeNotifier {
   }
 
   /// 等待 ms 毫秒，期间每 50ms 刷新一次剩余时间。被打断返回 false。
+  ///
+  /// 截止时刻放在字段里而不是闭包变量里：间隔滑块要在倒计时中途改写它
+  /// （见 [setIntervalSec]）。以前 ticker 读的是启动时捕获的那个局部量，
+  /// 滑块写进去的新值 50ms 后就被覆盖回去 —— 「实时生效」其实什么也没做。
   Future<bool> _waitMs(int ms, AbortSignal signal) {
     if (ms <= 0) return Future.value(true);
 
-    final deadline = DateTime.now().millisecondsSinceEpoch + ms;
+    _deadlineMs = DateTime.now().millisecondsSinceEpoch + ms;
     _remainingMs = ms;
     _notify();
 
@@ -134,7 +142,13 @@ class PlaybackController extends ChangeNotifier {
         finish(false);
         return;
       }
-      final left = deadline - DateTime.now().millisecondsSinceEpoch;
+      // 每一拍都重新读字段，才能吃到滑块中途改写的新截止时刻。
+      final current = _deadlineMs;
+      if (current == null) {
+        finish(false);
+        return;
+      }
+      final left = current - DateTime.now().millisecondsSinceEpoch;
       _remainingMs = left > 0 ? left : 0;
       _notify();
       if (left <= 0) finish(true);
@@ -363,7 +377,12 @@ class PlaybackController extends ChangeNotifier {
 
     if (_playState == PlayState.playing &&
         _scheduler?.phase == _WordPhase.interval) {
-      _remainingMs = (sec * 1000).round();
+      // 用新的间隔重开倒计时：改写截止时刻，ticker 下一拍就会读到。
+      final deadline =
+          DateTime.now().millisecondsSinceEpoch + (sec * 1000).round();
+      _deadlineMs = deadline;
+      final left = deadline - DateTime.now().millisecondsSinceEpoch;
+      _remainingMs = left > 0 ? left : 0;
     }
     _notify();
   }
