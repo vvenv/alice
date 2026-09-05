@@ -206,6 +206,12 @@ class PlaybackController extends ChangeNotifier {
           prefetchWordAudio(list[s.index + 1]).catchError((Object _) => null),
         );
       }
+      // 预取的必须是 speakMeaning 真正要播的那个串，否则缓存对不上。
+      if (meaningSpeech.isNotEmpty) {
+        unawaited(
+          prefetchWordAudio(meaningSpeech).catchError((Object _) => null),
+        );
+      }
 
       final ok = await speakWord(word);
       if (_isCancelled(gen)) return;
