@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'services/storage.dart';
 import 'services/tts.dart';
 import 'state/ocr_quota_controller.dart';
 import 'theme/theme_controller.dart';
+import 'theme/tokens.dart';
 import 'screens/home_screen.dart';
 
 /// 入口。对应 RN 版 App.tsx。
@@ -118,6 +120,21 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
           ),
           // 文字默认走系统无衬线；需要衬线/展示体的地方各自指定 fontFamily
           // （与 RN 版 designTokens.fonts 的用法一致）。
+          //
+          // Web 例外：CanvasKit 够不着系统字体，默认字族只有 Roboto，中文
+          // 全是豆腐块。引擎本来有「缺字就去 fonts.gstatic.com 下 Noto」的
+          // 兜底，但这个应用自己注册了思源宋体，缺字检查判定已覆盖，补丁
+          // 字体不会下载 —— 而它又不在默认字族的兜底链里。（就算下载得到，
+          // gstatic 在国内也拉不到，不能指望。）
+          //
+          // 所以 Web 上把打包进产物的思源宋体显式挂成兜底字族。fontFamily
+          // 必须一起写死成 Roboto：fontFamilyFallback 只在 fontFamily 非空时
+          // 生效，只给 fallback 不给 family 是没有效果的（实测）。
+          //
+          // 原生平台不加：系统字体本来就有中文，挂上兜底反而会把正文变成
+          // 衬线，与 RN 版不一致。
+          fontFamily: kIsWeb ? 'Roboto' : null,
+          fontFamilyFallback: kIsWeb ? const [AppFonts.serif] : null,
           splashFactory: NoSplash.splashFactory,
           highlightColor: Colors.transparent,
         ),

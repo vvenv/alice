@@ -103,10 +103,12 @@ flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 
 按重要性排序。
 
-### 1. 全部未经编译验证 ⚠️
+### 1. 只在 Web 上真跑过 ⚠️
 
-Flutter SDK 还在下载，`flutter analyze` 一次都没跑过。这是目前唯一的大风险 ——
-代码是照 Dart 语义写的，但没过编译器的东西不能算能跑。
+`flutter analyze` / `flutter test` / web 与 Android 的 release 构建都是绿的，
+Web 产物也在浏览器里手动走过一遍完整流程（首页 → 设置 → 听写 → 完成，深浅色
+都看了）。但 **Android / iOS 真机一次都没启动过** —— 装上 APK 之前，原生侧的
+TTS、音频会话、拍照 OCR、老数据迁移都还只是「编译得过」。
 
 ### 2. TTS 语速需要真机校准
 
@@ -135,6 +137,12 @@ RN 版靠 `eas build` + `scripts/release.sh` 管证书和云端构建，Flutter 
   库 `RKStorage`（表 `catalystLocalStorage`），iOS 读
   `Documents/RCTAsyncLocalStorage_V1/manifest.json`（大值在以 key 的 MD5
   命名的独立文件里）。只跑一次、不覆盖新值、失败不阻塞启动。
+- **Web 上的中文字体**：CanvasKit 够不着系统字体，默认字族只有 Roboto，
+  中文原本全渲染成豆腐块 —— 引擎「缺字就去 fonts.gstatic.com 下 Noto」的兜底
+  被应用自己注册的思源宋体骗过了，判定已覆盖便不下载，而它又不在默认字族的
+  兜底链里（何况 gstatic 国内也拉不到）。`main.dart` 里 Web 分支显式
+  `fontFamily: 'Roboto'` + `fontFamilyFallback: [NotoSerifSC]`；两个都要写，
+  只给 fallback 不给 family 不生效。原生不加，否则正文中文会变成衬线。
 - **音频会话**：`audio_session` 已接入，对应 RN 版 `setAudioModeAsync` 的
   静音键仍出声 / 后台播放 / 不混音。
 - **平台配置**：`scripts/bootstrap.sh` 生成平台目录并写入权限、用途说明、
