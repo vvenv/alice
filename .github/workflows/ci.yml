@@ -76,8 +76,8 @@ jobs:
       - name: Typecheck website
         run: pnpm --filter website check
 
-  library:
-    name: Data · library.json 与 data/ 一致
+  data:
+    name: Data · 词表格式与 library.json 一致
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -91,14 +91,19 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
+      # 词表格式：`word | pos | meaning`，1 或 3 列。单字条目的 pos 必须是带声调
+      # 的拼音 —— 多音字候选过滤依赖声调符号。
+      - name: Validate data files
+        run: pnpm data:check
+
       # 改了 data/ 却忘了重新生成 assets/data/library.json，应用里就是旧词表。
       # 这种漏更新在 Expo 时代真的发生过（4 个词表的词性标注错了一个版本）。
       - name: Regenerate and diff
         run: |
           set -euo pipefail
-          pnpm library:build
+          pnpm data:gen
           if ! git diff --quiet -- assets/data/library.json; then
-            echo "::error::assets/data/library.json 与 data/ 不一致，请运行 pnpm library:build 并提交"
+            echo "::error::assets/data/library.json 与 data/ 不一致，请运行 pnpm data:gen 并提交"
             git --no-pager diff --stat -- assets/data/library.json
             exit 1
           fi

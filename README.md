@@ -173,11 +173,14 @@ flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 `assets/data/` 下两个 JSON 都是生成物，别手改：
 
 ```bash
-pnpm library:build   # data/**/*.txt        → assets/data/library.json（290 条词表）
+pnpm data:check      # 校验 data/ 的行格式
+pnpm data:gen        # data/**/*.txt        → assets/data/library.json（290 条词表）
 pnpm dict:build      # ECDICT（首次会下载）  → assets/data/ecdict-meta.json
 ```
 
-改了 `data/` 一定要重新生成并一起提交 —— CI 有一个 job 专门比对这一致性。
+词表的行格式是 `word | pos | meaning`，1 列或 3 列（全角 `｜` 也认），只有 word
+必填。改了 `data/` 一定要重新生成并一起提交 —— CI 有一个 job 同时跑格式校验和
+一致性比对。
 （Expo 时代这一步是 `data/ → src/lib/library.ts → 导出 JSON` 两跳，中间那份
 漏更新过一次，4 个词表的词性标注错了一整个版本。现在直接一跳到 JSON。）
 

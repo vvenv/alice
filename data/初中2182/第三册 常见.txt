@@ -1,6 +1,6 @@
 CD player | phr. | 激光唱机
 several | adj. & pron. | 几个；若干
-shelf | n. 架子；搁板
+shelf | n. | 架子；搁板
 already | adv. | 已经
 used to | phr. | 过去常常
 on | prep. | 关于
@@ -417,7 +417,7 @@ British | adj. | 英国人的
 club | n. | 俱乐部，社团
 expert | n. | 专家，内行
 tent | n. | 帐篷
-freeze | v. 结冰，凝结
+freeze | v. | 结冰，凝结
 alive | adj. | 活着的
 progress | v. | 进步，提高，前进
 self-respect | n. | 自尊，自重

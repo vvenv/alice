@@ -35,10 +35,12 @@ pnpm lint                    # scripts/ 的 TypeScript 类型检查
 pnpm --filter website check  # 网站类型检查
 ```
 
-改过 `data/` 下的词表之后，记得重新生成资源并一起提交（CI 会卡住不一致的提交）：
+改过 `data/` 下的词表之后，先校验格式，再重新生成资源，两者一起提交
+（CI 会卡住格式错误和不一致的提交）：
 
 ```bash
-pnpm library:build
+pnpm data:check
+pnpm data:gen
 ```
 
 ## 提交规范
