@@ -65,7 +65,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 35 个用例（含 198 个行为基线断言）
+flutter test                 # 64 个用例（含 198 个行为基线断言）
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```

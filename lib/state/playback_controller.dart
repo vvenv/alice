@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../services/abort.dart';
 import '../services/dictation.dart';
-import '../services/tts.dart';
+import '../services/tts.dart' show kLangZh;
+import 'speech_port.dart';
 
 /// 听写播放调度器。对应 Expo 版 src/hooks/usePlayback.ts。
 ///
@@ -42,8 +43,13 @@ class PlaybackController extends ChangeNotifier {
   PlaybackController({
     required double intervalSec,
     required bool autoNext,
+    SpeechPort? speech,
   })  : _intervalSec = intervalSec,
-        _autoNext = autoNext;
+        _autoNext = autoNext,
+        _speech = speech ?? const SystemSpeechPort();
+
+  /// 朗读能力。测试注入假实现，见 speech_port.dart。
+  final SpeechPort _speech;
 
   PlayState _playState = PlayState.idle;
   List<String> _wordList = <String>[];
@@ -53,9 +59,9 @@ class PlaybackController extends ChangeNotifier {
   /// 当前倒计时的截止时刻（epoch 毫秒）。见 [_waitMs]。
   int? _deadlineMs;
 
-  /// 正在进行的 [stopSpeech]。
+  /// 正在进行的 [SpeechPort.stop]。
   ///
-  /// stopSpeech 是异步的（要 await 播放器 pause 和 TTS stop），而
+  /// 停止是异步的（要 await 播放器 pause 和 TTS stop），而
   /// startDictation / 跳词 / 恢复播放都是「先停、紧接着开下一段朗读」。
   /// 不等它做完就 speak，`tts.stop()` 会落在 `tts.speak()` 之后，
   /// 把刚开始的那一遍掐掉 —— 表现就是「进听写第一个词不发声」。
@@ -119,7 +125,7 @@ class PlaybackController extends ChangeNotifier {
     _abortCycle();
     _scheduler = null;
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
     _updatePlayState(PlayState.idle);
   }
 
@@ -200,7 +206,7 @@ class PlaybackController extends ChangeNotifier {
     }
 
     // 开关是异步从存储读的；等它一次，否则第一个词会按默认值（关）播。
-    await loadReadTranslation();
+    await _speech.loadReadTranslation();
     if (_isCancelled(gen)) return;
 
     if (s.phase == _WordPhase.speak1 || s.phase == _WordPhase.speak2) {
@@ -211,26 +217,22 @@ class PlaybackController extends ChangeNotifier {
 
       // 听写顺序：单词 → 释义 → 单词。释义夹在两遍单词中间；
       // 空串表示这个词没有可朗读的释义。
-      final meaningSpeech = isReadTranslationEnabled()
+      final meaningSpeech = _speech.readTranslationEnabled
           ? speakableMeaning(parseWordLine(word).meaning)
           : '';
 
       // 后台继续预取，但不阻塞播放。speakWord 只用已经缓存好的音频，
       // 否则立即回落到系统 TTS。
-      unawaited(prefetchWordAudio(word).catchError((Object _) => null));
+      unawaited(_speech.prefetch(word));
       if (s.index + 1 < list.length) {
-        unawaited(
-          prefetchWordAudio(list[s.index + 1]).catchError((Object _) => null),
-        );
+        unawaited(_speech.prefetch(list[s.index + 1]));
       }
       // 预取的必须是 speakMeaning 真正要播的那个串，否则缓存对不上。
       if (meaningSpeech.isNotEmpty) {
-        unawaited(
-          prefetchWordAudio(meaningSpeech).catchError((Object _) => null),
-        );
+        unawaited(_speech.prefetch(meaningSpeech));
       }
 
-      final ok = await speakWord(word);
+      final ok = await _speech.speak(word);
       if (_isCancelled(gen)) return;
 
       final cur = _scheduler;
@@ -285,7 +287,7 @@ class PlaybackController extends ChangeNotifier {
       final speakable = speakableMeaning(parseWordLine(word).meaning);
       if (speakable.isNotEmpty) {
         s.speaking = true;
-        await speakWord(speakable, lang: kLangZh);
+        await _speech.speak(speakable, lang: kLangZh);
         if (_isCancelled(gen)) return;
         final cur = _scheduler;
         if (cur == null || cur.gen != gen) return;
@@ -341,7 +343,7 @@ class PlaybackController extends ChangeNotifier {
     _abortCycle();
     _scheduler = null;
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
 
     _wordList = List<String>.from(words);
     _currentIndex = 0;
@@ -352,9 +354,9 @@ class PlaybackController extends ChangeNotifier {
     }
 
     // 给前两个词最早的预取机会。播放本身不等待这两个请求。
-    unawaited(prefetchWordAudio(words[0]).catchError((Object _) => null));
+    unawaited(_speech.prefetch(words[0]));
     if (words.length > 1) {
-      unawaited(prefetchWordAudio(words[1]).catchError((Object _) => null));
+      unawaited(_speech.prefetch(words[1]));
     }
 
     _updatePlayState(PlayState.playing);
@@ -381,7 +383,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _abortCycle();
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
   }
 
   void stopDictation() {
@@ -389,7 +391,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _abortCycle();
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
     _updatePlayState(PlayState.idle);
   }
 
@@ -400,7 +402,7 @@ class PlaybackController extends ChangeNotifier {
     _playGen += 1;
     _abortCycle();
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
 
     _currentIndex = nextIndex;
     if (_playState == PlayState.paused) {
@@ -416,7 +418,7 @@ class PlaybackController extends ChangeNotifier {
     _playGen += 1;
     _abortCycle();
     _clearCountdown();
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
 
     _currentIndex = prevIndex;
     if (_playState == PlayState.paused) {
@@ -478,7 +480,7 @@ class PlaybackController extends ChangeNotifier {
     _scheduler = null;
     _countdownTimer?.cancel();
     _countdownTimer = null;
-    _stopping = stopSpeech();
+    _stopping = _speech.stop();
     super.dispose();
   }
 }

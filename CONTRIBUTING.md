@@ -35,6 +35,19 @@ pnpm lint                    # scripts/ 的 TypeScript 类型检查
 pnpm --filter website check  # 网站类型检查
 ```
 
+测试大致分四层，改动落在哪层就先看哪层：
+
+| 文件 | 管什么 |
+| --- | --- |
+| `test/rn_equivalence_test.dart` | 纯函数的行为基线（198 条断言，语料由 Expo 实现跑出来） |
+| `test/playback_scheduler_test.dart` | 听写调度器的时序 —— 读几遍、什么语言、打断与倒计时 |
+| `test/settings_test.dart` | 设置项的持久化、序列化往返、迁移 key 清单 |
+| `test/project_guards_test.dart` | 构建产物的不变量：图标、启动 Activity、权限、包名、版本号格式 |
+
+调度器测试靠 `lib/state/speech_port.dart` 这个接缝把音频插件换成假实现 ——
+**动播放逻辑时不要绕过它直接调 `services/tts.dart` 的顶层函数**，那样会让这
+一整块重新变成不可测。
+
 改过 `data/` 下的词表之后，先校验格式，再重新生成资源，两者一起提交
 （CI 会卡住格式错误和不一致的提交）：
 
