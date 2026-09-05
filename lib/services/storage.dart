@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/painting.dart';
+
 import '../models/word_history_entry.dart';
 import 'dictation.dart';
 import 'library_data.dart';
@@ -14,6 +16,8 @@ const String _wordHistoryKey = 'dictation_word_history';
 const String _favoritesKey = 'dictation_favorites';
 const String _speechRateKey = 'dictation_speech_rate';
 const String _intervalSecKey = 'dictation_interval_sec';
+// Flutter 版独有（RN 版的拍照按钮不能拖），所以不走 dictation_ 前缀。
+const String _cameraButtonPosKey = 'alice_camera_button_pos';
 
 /// 用户历史条数上限。内置词表存在代码/资源里，不占用存储。
 const int _maxUserHistoryEntries = 50;
@@ -346,6 +350,43 @@ Future<double> loadIntervalSec() async {
 Future<void> saveIntervalSec(double sec) async {
   try {
     await Prefs.setString(_intervalSecKey, clampIntervalSec(sec).toString());
+  } catch (_) {
+    // 忽略
+  }
+}
+
+// --- 拍照按钮的落点 -------------------------------------------------------
+
+/// 拍照按钮默认停在单词卡片的右下角。
+///
+/// 存的是 [Alignment]（-1 ~ 1）而不是像素：换机型、转屏、键盘顶起来把卡片压扁，
+/// 按钮都还停在用户放的那个相对位置上。
+const Alignment kDefaultCameraButtonAlignment = Alignment.bottomRight;
+
+Alignment clampCameraButtonAlignment(Alignment a) => Alignment(
+      a.x.isFinite ? a.x.clamp(-1.0, 1.0).toDouble() : 1,
+      a.y.isFinite ? a.y.clamp(-1.0, 1.0).toDouble() : 1,
+    );
+
+Future<Alignment> loadCameraButtonAlignment() async {
+  try {
+    final data = await Prefs.getString(_cameraButtonPosKey);
+    if (data == null || data.isEmpty) return kDefaultCameraButtonAlignment;
+    final parts = data.split(',');
+    if (parts.length != 2) return kDefaultCameraButtonAlignment;
+    final x = double.tryParse(parts[0]);
+    final y = double.tryParse(parts[1]);
+    if (x == null || y == null) return kDefaultCameraButtonAlignment;
+    return clampCameraButtonAlignment(Alignment(x, y));
+  } catch (_) {
+    return kDefaultCameraButtonAlignment;
+  }
+}
+
+Future<void> saveCameraButtonAlignment(Alignment a) async {
+  try {
+    final safe = clampCameraButtonAlignment(a);
+    await Prefs.setString(_cameraButtonPosKey, '${safe.x},${safe.y}');
   } catch (_) {
     // 忽略
   }

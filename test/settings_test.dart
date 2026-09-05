@@ -210,8 +210,16 @@ void main() {
 
     expect(used, isNotEmpty, reason: '一个 key 都没扫到，正则大概是坏的');
 
+    // Flutter 版之后才加的 key。RN 版从来没写过，也就没有东西可搬 ——
+    // 放进 _legacyKeys 反而会让那份「RN 版写过的全部 key」的清单说谎。
+    // 新增条目前先确认一遍：RN 版真的没写过这个 key 吗？
+    const flutterOnly = <String>{
+      'alice_camera_button_pos', // 拍照按钮拖到哪儿了，RN 版的按钮不能拖
+    };
+
     final missing = <String>[];
     used.forEach((key, path) {
+      if (flutterOnly.contains(key)) return;
       if (!declared.contains(key)) missing.add('$key（$path）');
     });
 
