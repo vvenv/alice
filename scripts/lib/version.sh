@@ -1,143 +1,82 @@
 # Alice 版本号工具（供 release.sh 共用）
 # 用法: VERSION_ROOT=/path/to/repo source scripts/lib/version.sh
 #
-# 同步位置:
-#   - package.json                          version
-#   - app.json                              expo.version + android.versionCode
-#   - android/app/build.gradle              versionName + versionCode
-#   - ios/Alice.xcodeproj/project.pbxproj   MARKETING_VERSION + CURRENT_PROJECT_VERSION
-#   - flutter_app/pubspec.yaml              version: <version>+<versionCode>
+# 唯一的版本号来源是 pubspec.yaml 的那一行：
 #
-# Flutter 版的 versionName / versionCode 全部来自 pubspec.yaml 那一行，
-# android/app/build.gradle.kts 里读的是 flutter.versionName / flutter.versionCode。
-# 漏掉它，Flutter 包会一直停在旧版本号 —— versionCode 比装在机器上的 RN 版低，
-# 覆盖安装会被系统按降级拒掉。
+#     version: 0.6.3+11
+#              ~~~~~ ~~
+#              版本号 versionCode
+#
+# Android 的 versionName / versionCode 与 iOS 的 MARKETING_VERSION /
+# CURRENT_PROJECT_VERSION 都由 Flutter 从这里派生，工程文件里没有第二份拷贝
+# 需要同步（这是从 Expo 时代继承下来的教训：那时候有五份，漏掉一份就出事）。
+#
+# versionCode 只增不减 —— Android 拒绝安装比机器上现有版本低的 versionCode。
 
 if [ -z "${VERSION_ROOT:-}" ]; then
   VERSION_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 fi
 
+_pubspec() { echo "$VERSION_ROOT/pubspec.yaml"; }
+
+# 「0.6.3+11」里的 0.6.3
 get_current_version() {
-  node -e "
-    const fs = require('fs');
-    const path = require('path');
-    const pkg = JSON.parse(fs.readFileSync(path.join(process.argv[1], 'package.json'), 'utf8'));
-    process.stdout.write(pkg.version);
-  " "$VERSION_ROOT"
+  local line
+  line="$(grep -m1 '^version:' "$(_pubspec)")" ||
+    { echo "pubspec.yaml 里找不到 version:" >&2; return 1; }
+  line="${line#version:}"
+  line="${line// /}"
+  echo "${line%%+*}"
 }
 
+# 「0.6.3+11」里的 11
 get_current_version_code() {
-  node -e "
-    const fs = require('fs');
-    const path = require('path');
-    const app = JSON.parse(fs.readFileSync(path.join(process.argv[1], 'app.json'), 'utf8'));
-    process.stdout.write(String(app.expo?.android?.versionCode ?? 0));
-  " "$VERSION_ROOT"
+  local line
+  line="$(grep -m1 '^version:' "$(_pubspec)")" ||
+    { echo "pubspec.yaml 里找不到 version:" >&2; return 1; }
+  line="${line// /}"
+  case "$line" in
+    *+*) echo "${line##*+}" ;;
+    *)   echo 0 ;;
+  esac
 }
 
+# patch / minor / major / x.y.z → 目标版本号
 resolve_version() {
   local arg="$1"
-  node -e "
-    const fs = require('fs');
-    const path = require('path');
+  local current major minor patch
+  current="$(get_current_version)"
 
-    const root = process.argv[1];
-    const arg = process.argv[2];
-    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-    const current = pkg.version;
+  case "$arg" in
+    patch|minor|major)
+      IFS=. read -r major minor patch <<<"$current"
+      case "$arg" in
+        patch) patch=$((patch + 1)) ;;
+        minor) minor=$((minor + 1)); patch=0 ;;
+        major) major=$((major + 1)); minor=0; patch=0 ;;
+      esac
+      arg="$major.$minor.$patch"
+      ;;
+    *)
+      arg="${arg#v}"
+      if ! [[ "$arg" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "无效的版本号: ${arg}（可用 patch / minor / major / x.y.z）" >&2
+        return 1
+      fi
+      ;;
+  esac
 
-    const parse = (value) => {
-      const normalized = value.replace(/^v/, '');
-      if (!/^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$/.test(normalized)) {
-        throw new Error('无效的语义化版本: ' + value);
-      }
-      const [core, prerelease = ''] = normalized.split('-');
-      const [major, minor, patch] = core.split('.').map(Number);
-      return { major, minor, patch, prerelease, raw: normalized };
-    };
-
-    const format = ({ major, minor, patch, prerelease }) =>
-      prerelease ? major + '.' + minor + '.' + patch + '-' + prerelease
-                 : major + '.' + minor + '.' + patch;
-
-    let next;
-    if (arg === 'patch' || arg === 'minor' || arg === 'major') {
-      const parsed = parse(current);
-      if (parsed.prerelease) {
-        throw new Error('当前为预发布版本，请显式指定目标版本号');
-      }
-      if (arg === 'patch') parsed.patch += 1;
-      if (arg === 'minor') { parsed.minor += 1; parsed.patch = 0; }
-      if (arg === 'major') { parsed.major += 1; parsed.minor = 0; parsed.patch = 0; }
-      next = format(parsed);
-    } else {
-      next = parse(arg).raw;
-    }
-
-    if (next === current) {
-      throw new Error('新版本 ' + next + ' 与当前版本相同');
-    }
-
-    process.stdout.write(next);
-  " "$VERSION_ROOT" "$arg"
+  if [ "$arg" = "$current" ]; then
+    echo "新版本 $arg 与当前版本相同" >&2
+    return 1
+  fi
+  echo "$arg"
 }
 
-# Sync package.json, app.json, Android Gradle, and iOS Xcode project.
-# Always bumps android versionCode / iOS CURRENT_PROJECT_VERSION by +1.
+# 写回 pubspec.yaml，versionCode 一律 +1。输出新的 versionCode。
 sync_versions() {
-  local version="$1"
-  node -e "
-    const fs = require('fs');
-    const path = require('path');
-
-    const root = process.argv[1];
-    const version = process.argv[2];
-
-    const pkgPath = path.join(root, 'package.json');
-    const appPath = path.join(root, 'app.json');
-    const gradlePath = path.join(root, 'android/app/build.gradle');
-    const pbxPath = path.join(root, 'ios/Alice.xcodeproj/project.pbxproj');
-    const pubspecPath = path.join(root, 'flutter_app/pubspec.yaml');
-
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    pkg.version = version;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-
-    const app = JSON.parse(fs.readFileSync(appPath, 'utf8'));
-    const prevCode = Number(app.expo?.android?.versionCode ?? 0);
-    const versionCode = prevCode + 1;
-    app.expo.version = version;
-    app.expo.android = app.expo.android || {};
-    app.expo.android.versionCode = versionCode;
-    fs.writeFileSync(appPath, JSON.stringify(app, null, 2) + '\n');
-
-    if (fs.existsSync(gradlePath)) {
-      let gradle = fs.readFileSync(gradlePath, 'utf8');
-      gradle = gradle.replace(/versionCode\\s+\\d+/, 'versionCode ' + versionCode);
-      gradle = gradle.replace(/versionName\\s+\"[^\"]+\"/, 'versionName \"' + version + '\"');
-      fs.writeFileSync(gradlePath, gradle);
-    }
-
-    if (fs.existsSync(pbxPath)) {
-      let pbx = fs.readFileSync(pbxPath, 'utf8');
-      pbx = pbx.replace(/MARKETING_VERSION = [^;]+;/g, 'MARKETING_VERSION = ' + version + ';');
-      pbx = pbx.replace(
-        /CURRENT_PROJECT_VERSION = \\d+;/g,
-        'CURRENT_PROJECT_VERSION = ' + versionCode + ';'
-      );
-      fs.writeFileSync(pbxPath, pbx);
-    }
-
-    if (fs.existsSync(pubspecPath)) {
-      let pubspec = fs.readFileSync(pubspecPath, 'utf8');
-      const next = 'version: ' + version + '+' + versionCode;
-      if (!/^version:.*$/m.test(pubspec)) {
-        throw new Error('flutter_app/pubspec.yaml 里找不到 version:');
-      }
-      pubspec = pubspec.replace(/^version:.*$/m, next);
-      fs.writeFileSync(pubspecPath, pubspec);
-    }
-
-    process.stdout.write(String(versionCode));
-  " "$VERSION_ROOT" "$version"
+  local version="$1" code
+  code=$(( $(get_current_version_code) + 1 ))
+  perl -pi -e "s/^version:.*\$/version: $version+$code/" "$(_pubspec)"
+  echo "$code"
 }

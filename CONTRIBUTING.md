@@ -4,24 +4,41 @@
 
 ## 开发环境
 
+应用是 Flutter，仓库根目录就是 Flutter 工程。
+
 ```bash
 git clone https://github.com/vvenv/alice.git
 cd alice
-pnpm install
 cp .env.example .env   # 按需填入自己的密钥（OCR 功能需要智谱 API Key）
-pnpm start             # Expo dev server
+
+flutter pub get
+flutter run            # 连着设备或模拟器；-d chrome 跑 Web
 ```
 
-网站（`website/` 子包）：
+平台目录（`android/`、`ios/`、`web/`）是 `flutter create` 生成的，重新生成用
+`bash scripts/bootstrap.sh` —— 它会把包名、权限、应用名再写回去，别直接跑
+`flutter create`。
+
+网站（`website/` 子包，React + Vite）与仓库脚本走 pnpm：
 
 ```bash
+pnpm install
 pnpm --filter website dev
 ```
 
 ## 提交前检查
 
 ```bash
-pnpm lint   # TypeScript 类型检查
+flutter analyze              # 应用：静态分析
+flutter test                 # 应用：单元 + widget 测试
+pnpm lint                    # scripts/ 的 TypeScript 类型检查
+pnpm --filter website check  # 网站类型检查
+```
+
+改过 `data/` 下的词表之后，记得重新生成资源并一起提交（CI 会卡住不一致的提交）：
+
+```bash
+pnpm library:build
 ```
 
 ## 提交规范

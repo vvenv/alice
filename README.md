@@ -1,52 +1,232 @@
-# Alice 听写 · Flutter 版
+# Alice 听写 🐰
 
-从 `../src`（Expo / React Native）迁移过来的 Flutter 实现。
+> "Down the rabbit-hole of words."
 
-## 当前状态
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Website](https://img.shields.io/badge/官网-alice.edao.plus-E5397B)](https://alice.edao.plus)
 
-迁移完成，四个目标全部构建通过。
+英文单词听写应用，Flutter 实现，支持 Android / iOS / Web。
 
-| 检查 | 结果 |
-| --- | --- |
-| `flutter analyze` | 干净，0 issue |
-| `flutter test` | 18/18 通过（含 114 个 RN 等价性用例） |
-| `flutter build web --release` | ✅ |
-| `flutter build apk --release` | ✅ 72.7 MB（RN 版 109 MB，小 33%） |
+官网与下载：**<https://alice.edao.plus>**
+
+> 0.6.3 之前的版本是 Expo / React Native 实现，已在本仓库移除。
+> 最后一个包含它的提交打了 tag `rn-final`，迁移记录见
+> [`docs/migration-from-expo.md`](docs/migration-from-expo.md)。
+
+## 截图
+
+|                          首页                          |                           词库                            |                        听写                         |                         完成                         |
+| :----------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------: | :--------------------------------------------------: |
+| ![首页：单词列表与拍照识词](docs/screenshots/home.png) | ![词库：内置教材词表与搜索](docs/screenshots/library.png) | ![听写：怀表倒计时](docs/screenshots/dictation.png) | ![完成：成绩单与错词本](docs/screenshots/finish.png) |
+
+## 功能
+
+- 粘贴英文单词列表 / 拍照 OCR 识别（内置智谱 GLM-4V 双档模型；支持自定义 OCR 服务商；Web 版需自备 API Key）
+- 识别模型分档：免费档（GLM-4V Flash）无限使用，高级档（GLM-4V Plus）消耗 Credits
+- Credits 充值：购买充值包，余额本地持久化，仅成功识别才扣减
+- AI 识图可能存在误差，识别入口均有提示
+- 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
+- 可调间隔、自动播放下一个
+- 显示 / 隐藏当前单词，词性与释义提示
+- 标记错词，本地持久化，历史记录管理
+- 导出错词到剪贴板
+- 亮色 / 暗色主题
+
+## 技术栈
+
+- **Flutter** — 跨平台应用，仓库根目录就是 Flutter 工程
+- **系统 en-US TTS** — 英文单词发音（`flutter_tts`），有道发音 mp3 兜底并本地缓存
+- **智谱 GLM-4V** — 视觉 OCR 识别
+- **Vite + React + Tailwind CSS** — 官网（`website/` 子包）
+
+## 快速开始
 
 ```bash
-cd flutter_app
-bash scripts/bootstrap.sh   # flutter create + pub get + 平台配置（幂等）
-flutter analyze
-flutter test
+git clone https://github.com/vvenv/alice.git
+cd alice
+cp .env.example .env   # 填入自己的密钥（见下方「配置」）
+
+flutter pub get
+flutter run                # 连着的设备 / 模拟器
+flutter run -d chrome      # Web
+```
+
+官网本地开发：
+
+```bash
+pnpm install
+pnpm --filter website dev
+```
+
+## 提交前检查
+
+```bash
+flutter analyze              # 0 issue
+flutter test                 # 18 个用例
+pnpm lint                    # scripts/ 的 TypeScript
+pnpm --filter website check
+```
+
+## 配置
+
+敏感配置放在 gitignored 的 `.env` 中（模板见 [`.env.example`](.env.example)）：
+
+| 环境变量            | 说明                                                                | 必填                                |
+| ------------------- | ------------------------------------------------------------------- | ----------------------------------- |
+| `ZHIPU_API_KEY`     | 智谱 API Key（OCR 拍照识词），[申请地址](https://open.bigmodel.cn/) | Android / iOS OCR 需要；Web 不注入 |
+| `DEPLOY_SERVER`     | 发布脚本的部署目标（`user@host`）                                   | 仅发版需要                          |
+| `DEPLOY_REMOTE_DIR` | 服务器上的站点目录                                                  | 仅发版需要                          |
+| `R2_*` / `CLOUDFLARE_*` | APK 上传用的 Cloudflare R2 配置                                 | 仅发版需要                          |
+
+`ZHIPU_API_KEY` 走 Dart 的编译期常量，不进仓库：
+
+```bash
 flutter build apk --release --dart-define=ZHIPU_API_KEY=xxx
 ```
 
-APK 校验结果：包名 `com.vvenv.alice`（与 RN 版一致，老数据迁移依赖这一点）、
-应用名「Alice 听写」、版本 0.6.3（versionCode 11）、启动 Activity
-`com.vvenv.alice.MainActivity` 确实在 `classes.dex` 里、`app.json` 里的六个权限
-齐全，五个密度的应用图标与自适应图标都是 Alice 的怀表，词典 / 词库 / 字体 /
-音效资源全部打进了 `flutter_assets`。
+**Web 构建绝不要传这个参数** —— Web 产物是公开 JS，内嵌共享密钥等于把它发出去。
+Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里还有
+`ZHIPU_BASE_URL` / `VISION_MODEL` 两个可选的编译期常量，有默认值。
 
-> 出包之后请照着上面这几项核一遍，尤其是启动 Activity —— 少了它编译期毫无
-> 征兆，装到手机上必然闪退。参考命令：
->
-> ```bash
-> aapt2 dump badging build/app/outputs/flutter-apk/app-release.apk | head
-> ```
+## 发版
+
+### Android
+
+```bash
+pnpm release:android           # 保持当前版本发版
+pnpm release:android patch     # 0.6.3 → 0.6.4
+pnpm release:android minor     # 0.6.3 → 0.7.0
+pnpm release:android major     # 0.6.3 → 1.0.0
+pnpm release:android 0.7.0     # 指定版本号
+```
+
+流程：可选升版 → `flutter build apk --release` → **核对启动 Activity 在 dex 里**
+→ 上传到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
+详见 [`scripts/release.sh`](scripts/release.sh)。
+
+版本号只有 `pubspec.yaml` 里 `version: 0.6.3+11` 这一处，
+`versionName` / `versionCode` 与 iOS 的 `MARKETING_VERSION` /
+`CURRENT_PROJECT_VERSION` 都由 Flutter 从它派生。versionCode 只增不减 ——
+Android 拒绝安装比机器上现有版本低的 versionCode。
+
+### 官网 + Web 应用
+
+```bash
+pnpm release:website                   # 落地页 + /app/（推荐）
+pnpm release:website -- --skip-webapp  # 仅落地页
+pnpm release:webapp                    # 仅更新 /app/
+```
+
+两者无先后顺序要求：落地页 rsync 只排除 `app/`，不会互相覆盖。APK 托管在
+Cloudflare R2，不经过部署服务器。Web 应用入口：<https://alice.edao.plus/app/>。
+
+### 出包自检
+
+APK 出来之后按这几项核一遍 —— `release.sh` 会自动做第一项，其余建议手工看一眼：
+
+```bash
+aapt2 dump badging build/app/outputs/flutter-apk/app-release.apk | head
+```
+
+- **启动 Activity 在 `classes.dex` 里**。manifest 写的是相对类名 `.MainActivity`，
+  它按 gradle 的 namespace 解析。如果 Kotlin 源码的包名对不上，编译期毫无征兆，
+  R8 还会把这个「没人引用」的类删掉，装到手机上必然闪退。0.6.2 就栽在这里。
+- 包名 `com.vvenv.alice`、应用名「Alice 听写」、版本号与 `pubspec.yaml` 一致
+- 六个权限齐全：INTERNET / CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS /
+  FOREGROUND_SERVICE / FOREGROUND_SERVICE_MEDIA_PLAYBACK
+- 图标是 Alice 的怀表，不是 Flutter 的蓝色 F
 
 体积构成里最大的两块是两个思源宋体（各 14.1 MB，Flutter 只对图标字体做
 tree-shaking，正文字体不裁剪）和三个架构的原生库（约 50 MB）。
-（比之前记的 68 MB 大了约 4.7 MB：那一版的 `classes.dex` 只有 354 KB，R8 把
-MainActivity 连同大半个 Java 侧当死代码删了 —— 见下面「真机闪退」。）
 按架构分包能显著减小单设备体积：
 
 ```bash
 flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 ```
 
-### 环境相关的坑（本机踩过，换机器不一定有）
+## 项目结构
 
-这些与迁移代码无关，但值得记下来：
+```
+├── lib/                    # 应用源码
+│   ├── main.dart           # 入口
+│   ├── screens/            # 首页、听写、设置
+│   ├── widgets/            # UI 组件
+│   ├── state/              # ChangeNotifier 控制器
+│   ├── services/           # 存储、词典、TTS、OCR、老数据迁移
+│   ├── models/             # 数据模型
+│   └── theme/              # 配色与设计 token
+├── test/                   # 单元 + widget 测试，golden/ 是行为基线
+├── android/ ios/ web/      # 平台目录，由 scripts/bootstrap.sh 生成并配置
+├── assets/
+│   ├── data/               # library.json、ecdict-meta.json（生成物，打进包）
+│   ├── fonts/ sounds/      # 打进包
+│   └── icons/              # 图标源文件，不打进包
+├── data/                   # 内置词库源文件（教材单元 / 中高考词表）
+├── scripts/                # 平台脚手架、图标、词库词典生成、发版
+├── docs/                   # 截图与迁移记录
+└── website/                # 官网（Vite + React + Tailwind）
+```
+
+## 数据与资源
+
+`assets/data/` 下两个 JSON 都是生成物，别手改：
+
+```bash
+pnpm library:build   # data/**/*.txt        → assets/data/library.json（290 条词表）
+pnpm dict:build      # ECDICT（首次会下载）  → assets/data/ecdict-meta.json
+```
+
+改了 `data/` 一定要重新生成并一起提交 —— CI 有一个 job 专门比对这一致性。
+（Expo 时代这一步是 `data/ → src/lib/library.ts → 导出 JSON` 两跳，中间那份
+漏更新过一次，4 个词表的词性标注错了一整个版本。现在直接一跳到 JSON。）
+
+应用图标由 `assets/icons/` 里的源图生成，三个平台整套：
+
+```bash
+pnpm icons:build     # 需要 Pillow
+```
+
+平台目录（`android/`、`ios/`、`web/`）需要重新生成时走 bootstrap，**不要**直接跑
+`flutter create` —— 包名、权限、应用名、图标都得再写回去：
+
+```bash
+bash scripts/bootstrap.sh   # 幂等
+```
+
+## 已知缺口
+
+按重要性排序。
+
+### 1. iOS 从没跑过；Android 只验到「能启动」⚠️
+
+Web 产物在浏览器里手动走过完整流程（首页 → 设置 → 听写 → 完成，深浅色都看
+了）。Android 装到真机上过，第一版一启动就闪退，修完重新出包。
+**iOS 一次都没构建、更没装过。**
+
+原生侧还没有人真的用过的：TTS 发音与语速、音频会话（静音键 / 后台播放）、
+拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现要么走不到。
+
+### 2. TTS 语速需要真机校准
+
+`lib/services/tts.dart` 的 `_normalizedRate()` 把用户的 0.5–1.5 区间映射到各
+平台：iOS 走 `AVSpeechUtterance` 的 0..1，Android 走
+`TextToSpeech.setSpeechRate` 的 1.0 = 正常。这组映射是按文档推的，没在真机上
+听过。
+
+### 3. 包名不能改
+
+`scripts/bootstrap.sh` 把 applicationId / bundleIdentifier 固定成
+`com.vvenv.alice`，与 Expo 版一致。**改了包名就是另一个沙箱**，
+`lib/services/legacy_migration_io.dart` 会读不到任何东西，从老版本升上来的
+用户，错词本 / 历史 / 收藏 / Credits 全部丢失。
+
+### 4. 签名还是 debug key
+
+`android/app/build.gradle.kts` 的 release buildType 目前用 debug 签名
+（`flutter create` 的默认）。上架应用商店之前需要配真正的 keystore。
+
+## 环境相关的坑（本机踩过，换机器不一定有）
 
 1. **Gradle 依赖拉不动**。到 Maven Central / dl.google.com 的连接会「建立成功但
    零字节」地挂死。已在 `android/build.gradle.kts`、`android/settings.gradle.kts`
@@ -67,149 +247,18 @@ flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
    `xattr -dr com.apple.quarantine <flutter-sdk>` 然后 `flutter precache --force --android`
    把被删的产物补回来。用 `brew install --cask flutter` 正常安装不会有这问题。
 
-## 目录对照
+4. **Web 上的中文字体**。CanvasKit 够不着系统字体，默认字族只有 Roboto。引擎
+   「缺字就去 fonts.gstatic.com 下 Noto」的兜底会被应用自己注册的思源宋体骗过 ——
+   判定已覆盖便不下载，而它又不在默认字族的兜底链里，结果中文全是豆腐块
+   （何况 gstatic 国内也拉不到）。`lib/main.dart` 的 Web 分支显式写了
+   `fontFamily: 'Roboto'` + `fontFamilyFallback: [NotoSerifSC]` ——
+   **两个都要写**，只给 fallback 不给 family 不生效。原生不加，否则正文中文
+   会变成衬线。
 
-| RN (`../src`) | Flutter (`lib`) |
-| --- | --- |
-| `lib/theme.tsx` + `lib/designTokens.ts` | `theme/app_colors.dart`、`theme/tokens.dart`、`theme/theme_controller.dart` |
-| `lib/storage.ts` | `services/storage.dart` + `services/prefs.dart` |
-| `lib/library.ts`（16k 行代码即数据） | `assets/data/library.json` + `services/library_data.dart` |
-| `lib/dictionary.ts` + `lib/ecdict-meta.json` | `services/dictionary.dart` + `assets/data/ecdict-meta.json` |
-| `lib/dictation.ts` | `services/dictation.dart` |
-| `lib/tts.ts` | `services/tts.dart` |
-| `lib/sound.ts` | `services/sound.dart` |
-| `lib/haptics.ts` | `services/haptics.dart` |
-| `lib/credits.ts` | `services/credits.dart` |
-| `lib/ocrConfig.ts` | `services/ocr_config.dart` |
-| `lib/ocr.ts` | `services/ocr.dart` |
-| `components/OcrSection.tsx` | `services/ocr_runner.dart`（RN 侧是个不渲染的 ref 组件，这里做成普通类） |
-| `hooks/usePlayback.ts` | `state/playback_controller.dart` |
-| `hooks/useToast.ts` | `state/toast_controller.dart` |
-| `hooks/useWrongWords.ts` | `state/wrong_words_controller.dart` |
-| `hooks/useOcrQuota.ts` | `state/ocr_quota_controller.dart` |
-| `components/*.tsx` | `widgets/*.dart` |
-| `screens/*.tsx` | `screens/*.dart` |
-| `App.tsx` | `main.dart` |
+## 贡献
 
-## 依赖对照
+欢迎 Issue 和 PR！请先阅读 [贡献指南](CONTRIBUTING.md)。
 
-| Expo | Flutter |
-| --- | --- |
-| `@react-native-async-storage/async-storage` | `shared_preferences` |
-| `expo-speech` | `flutter_tts` |
-| `expo-audio` | `just_audio` + `audio_session` |
-| `expo-image-picker` | `image_picker` |
-| `expo-image-manipulator` | `flutter_image_compress` |
-| `expo-file-system` | `path_provider` + `dart:io`（按平台条件导入） |
-| `expo-haptics` | `flutter/services` 的 `HapticFeedback` |
-| `expo-clipboard` | `flutter/services` 的 `Clipboard` |
-| `expo-linear-gradient` | `LinearGradient`（内置） |
-| `react-native-svg`（倒计时环） | `CustomPainter`（内置） |
-| `@expo/vector-icons` | Material Icons（映射表在 `widgets/app_icons.dart`） |
-| `@react-navigation/*` | `Navigator` + `MaterialPageRoute` |
-| `expo-constants`（版本号） | `package_info_plus` |
-| React Context | `provider` |
+## 许可证
 
-## 已知缺口
-
-按重要性排序。
-
-### 1. iOS 从没跑过；Android 只验到「能启动」⚠️
-
-Web 产物在浏览器里手动走过完整流程（首页 → 设置 → 听写 → 完成，深浅色都看
-了）。Android 装到真机上过一次，第一版一启动就闪退（原因见下面「已解决」的
-「真机闪退」），修完重新出包。**iOS 一次都没构建、更没装过。**
-
-原生侧还没有人真的用过的：TTS 发音与语速、音频会话（静音键 / 后台播放）、
-拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现要么走不到。
-
-### 2. TTS 语速需要真机校准
-
-`services/tts.dart` 的 `_normalizedRate()` 把用户的 0.5–1.5 区间映射到各平台：
-iOS 走 `AVSpeechUtterance` 的 0..1，Android 走 `TextToSpeech.setSpeechRate` 的
-1.0 = 正常。这组映射是按文档推的，没在真机上听过。
-
-### 3. 包名不能改
-
-`scripts/bootstrap.sh` 会把 applicationId / bundleIdentifier 固定成
-`com.vvenv.alice`，和 RN 版一致。**改了包名就是另一个沙箱**，下面的老数据迁移
-会读不到任何东西，老用户的错词本 / 历史 / 收藏 / Credits 全部丢失。
-
-### 4. 发版流程要重搭
-
-RN 版靠 `eas build` + `scripts/release.sh` 管证书和云端构建，Flutter 侧没有
-等价物，签名与 CI 需要重做。
-
-## 已解决
-
-- **Web 构建**：`dart:io` 已从 `tts.dart` 移出，改成按平台条件导入
-  （`tts_cache.dart` → `tts_cache_io.dart` / `tts_cache_noop.dart`）。
-  Web 上磁盘缓存为空实现，发音直接走系统 TTS —— 与 RN 版 web 的行为一致。
-- **老数据迁移**：`services/legacy_migration_io.dart` 在首次启动时把 RN 版
-  AsyncStorage 的数据搬进 shared_preferences。Android 读私有目录里的 SQLite
-  库 `RKStorage`（表 `catalystLocalStorage`），iOS 读
-  `Documents/RCTAsyncLocalStorage_V1/manifest.json`（大值在以 key 的 MD5
-  命名的独立文件里）。只跑一次、不覆盖新值、失败不阻塞启动。
-- **真机闪退**：manifest 里的 `android:name=".MainActivity"` 按 gradle 的
-  namespace 解析成 `com.vvenv.alice.MainActivity`，而 `flutter create --org
-  com.vvenv --project-name alice_dictation` 把类生成在
-  `com.vvenv.alice_dictation` 下 —— bootstrap 只改了 gradle 与 manifest 的包名，
-  没搬 Kotlin 源码。编译期没有任何征兆（manifest 不校验类存不存在），R8 还因为
-  没有 keep 规则指向真实类，把 MainActivity 连同 FlutterActivity 一起当死代码
-  删了：`classes.dex` 里一个 `com/vvenv/*` 都不剩，装上去必然
-  ClassNotFoundException。现在源码在 `com/vvenv/alice/` 下，
-  `scripts/bootstrap.sh` 会一并搬包名，末尾还会核对 manifest 声明的 Activity
-  在 Kotlin 源码里确实存在。
-- **应用图标**：`flutter create` 铺的是 Flutter 自带的蓝色 F。
-  `scripts/gen-icons.py` 从 `assets/images/` 的两张源图生成三个平台的整套图标
-  （Android 五个密度的传统 / 圆形 / 自适应前景 + `mipmap-anydpi-v26` 的自适应
-  XML 与 `iconBackground` 颜色、iOS 的 appiconset、Web 的 favicon 与 PWA 图标），
-  与 RN 版逐像素一致。产物提交进仓库，bootstrap 只负责删掉 `flutter create`
-  重新铺回来的默认 `ic_launcher.png`（和我们的 `.webp` 同名会撞 duplicate
-  resource）。
-- **版本号**：Flutter 的 versionName / versionCode 只认 `pubspec.yaml` 的
-  `version: x.y.z+code`（`build.gradle.kts` 读的是 `flutter.versionName`）。
-  它原先不在 `../scripts/lib/version.sh` 的同步范围里，一直停在 `0.6.2+1` ——
-  versionCode 1 比装在机器上的 RN 版（10）还低，覆盖安装会被系统按降级拒掉。
-  现在 `sync_versions()` 一并改写它，`pnpm release:android patch` 之类的命令
-  会把五处版本号一起推上去。
-- **Web 上的中文字体**：CanvasKit 够不着系统字体，默认字族只有 Roboto，
-  中文原本全渲染成豆腐块 —— 引擎「缺字就去 fonts.gstatic.com 下 Noto」的兜底
-  被应用自己注册的思源宋体骗过了，判定已覆盖便不下载，而它又不在默认字族的
-  兜底链里（何况 gstatic 国内也拉不到）。`main.dart` 里 Web 分支显式
-  `fontFamily: 'Roboto'` + `fontFamilyFallback: [NotoSerifSC]`；两个都要写，
-  只给 fallback 不给 family 不生效。原生不加，否则正文中文会变成衬线。
-- **音频会话**：`audio_session` 已接入，对应 RN 版 `setAudioModeAsync` 的
-  静音键仍出声 / 后台播放 / 不混音。
-- **平台配置**：`scripts/bootstrap.sh` 生成平台目录并写入权限、用途说明、
-  后台音频、应用名与包名。
-
-## 资源
-
-`assets/data/library.json` 由 `../scripts/export-library-json.mjs` 从
-`../src/lib/library.ts` 导出（290 条词表）。RN 侧的词库变了之后重新跑一遍：
-
-```bash
-node scripts/export-library-json.mjs
-```
-
-`assets/data/ecdict-meta.json` 直接复制自 `../src/lib/ecdict-meta.json`，
-上游由 `pnpm dict:build` 生成。
-
-`assets/images/icon.png`、`adaptive-icon.png` 是 RN 版 `../assets/` 的副本，
-应用图标由它们生成。图标本身改了之后重新跑一遍，再把产物一起提交：
-
-```bash
-python3 scripts/gen-icons.py   # 需要 Pillow
-```
-
-## 配置
-
-OCR 密钥走编译期常量，不进仓库：
-
-```bash
-flutter build apk --dart-define=ZHIPU_API_KEY=xxx
-```
-
-Web 构建**不要**传这个参数 —— Web 产物是公开的，用户需自备 API Key
-（与 RN 版 `app.config.js` 里 `isWebBuild` 的处理一致）。
+[MIT](LICENSE) © 2026 vvenv

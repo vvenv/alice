@@ -3,7 +3,7 @@
 
 Source: https://github.com/skywind3000/ECDICT (MIT)
 Downloads ecdict.csv into .cache/ on first run, then writes
-src/lib/ecdict-meta.json for in-app lookup.
+assets/data/ecdict-meta.json, which lib/services/dictionary.dart reads.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_CSV = ROOT / ".cache" / "ecdict.csv"
 DATA_DIR = ROOT / "data"
-OUT_JSON = ROOT / "src" / "lib" / "ecdict-meta.json"
+OUT_JSON = ROOT / "assets" / "data" / "ecdict-meta.json"
 ECDICT_URL = (
     "https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv"
 )

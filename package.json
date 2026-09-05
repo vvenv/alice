@@ -1,78 +1,22 @@
 {
-  "name": "alice-dictation",
-  "version": "0.6.3",
+  "name": "alice-workspace",
   "private": true,
-  "main": "index.js",
+  "type": "module",
   "packageManager": "pnpm@11.20.0",
+  "description": "Alice 听写的 Node 侧：官网（website/）与仓库脚本。应用本身是 Flutter，版本号在 pubspec.yaml。",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "build": "ALICE_WEB_BUILD=1 expo export --platform web --output-dir dist && node scripts/flatten-web-dist.mjs",
-    "build:android": "eas build --platform android --non-interactive",
-    "build:ios": "eas build --platform ios --non-interactive",
-    "build:android:local": "eas build --platform android --non-interactive --local --profile preview",
-    "build:ios:local": "eas build --platform ios --non-interactive --local --profile preview",
+    "library:build": "node --experimental-strip-types scripts/generate-library.ts",
+    "dict:build": "python3 scripts/build-ecdict-meta.py",
+    "icons:build": "python3 scripts/gen-icons.py",
     "release:android": "bash scripts/release.sh",
     "release:website": "bash scripts/release-website.sh",
     "release:webapp": "bash scripts/release-webapp.sh",
-    "dict:build": "python3 scripts/build-ecdict-meta.py",
-    "lint": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@babel/runtime": "^8.0.0",
-    "@expo-google-fonts/noto-serif-sc": "^0.4.3",
-    "@expo-google-fonts/playfair-display": "^0.4.2",
-    "@expo/metro-runtime": "^57.0.8",
-    "@expo/vector-icons": "^15.1.1",
-    "@react-native-async-storage/async-storage": "^3.1.1",
-    "@react-navigation/native": "^7.3.14",
-    "@react-navigation/native-stack": "^7.18.6",
-    "babel-preset-expo": "^57.0.5",
-    "expo": "^57.0.10",
-    "expo-asset": "^57.0.8",
-    "expo-audio": "^57.0.3",
-    "expo-clipboard": "^57.0.1",
-    "expo-constants": "^57.0.9",
-    "expo-file-system": "^57.0.1",
-    "expo-font": "^57.0.1",
-    "expo-haptics": "^57.0.1",
-    "expo-image-manipulator": "^57.0.7",
-    "expo-image-picker": "^57.0.7",
-    "expo-linear-gradient": "^57.0.1",
-    "expo-speech": "^57.0.1",
-    "expo-splash-screen": "^57.0.5",
-    "expo-status-bar": "^57.0.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-native": "0.86.2",
-    "react-native-safe-area-context": "^5.8.1",
-    "react-native-screens": "^4.26.2",
-    "react-native-svg": "^15.15.5",
-    "react-native-web": "^0.21.2"
+    "lint": "tsc -p tsconfig.scripts.json"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.1",
-    "@babel/plugin-transform-runtime": "^8.0.1",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.18",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3",
     "wrangler": "^4.123.0"
-  },
-  "expo": {
-    "install": {
-      "exclude": [
-        "@babel/core",
-        "@babel/plugin-transform-runtime",
-        "@babel/runtime"
-      ]
-    },
-    "doctor": {
-      "appConfigFieldsNotSyncedCheck": {
-        "enabled": false
-      }
-    }
   }
 }

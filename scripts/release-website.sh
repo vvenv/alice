@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Deploy the marketing website (and by default the Expo Web app under /app/).
+# Deploy the marketing website (and by default the Flutter Web app under /app/).
 #
 # Flow:
 #   1. Build the website (pnpm --filter website build)
 #   2. rsync dist/ to the server, excluding downloads/ and app/ so the live
 #      APK and Web app are never wiped by --delete
-#   3. Unless --skip-webapp: build + rsync the Expo Web app to …/app/
+#   3. Unless --skip-webapp: build + rsync the Flutter Web app to …/app/
 #
 # Website and webapp deploys are order-independent: each leaves the other alone.
 #
@@ -61,7 +61,7 @@ echo ""
 echo "▶ [1/2] Building website..."
 pnpm --filter website build
 
-# Never wipe live APKs or the Expo Web app directory when syncing the landing site.
+# Never wipe live APKs or the Web app directory when syncing the landing site.
 echo "▶ [2/2] Deploying to $SERVER:$REMOTE_DIR (excluding downloads/ and app/)..."
 rsync -avz --delete --exclude=downloads --exclude=app \
   "$WEBSITE_DIR/dist/" "$SERVER:$REMOTE_DIR/"
@@ -75,5 +75,5 @@ if [ "$SKIP_WEBAPP" -eq 0 ]; then
   echo ""
   bash "$ROOT/scripts/release-webapp.sh"
 else
-  echo "  (--skip-webapp: Expo Web app not updated)"
+  echo "  (--skip-webapp: Web app not updated)"
 fi

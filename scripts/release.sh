@@ -4,8 +4,8 @@
 #
 # Flow:
 #   0. Optionally bump version (patch / minor / major / x.y.z)
-#   1. Read version from app.json
-#   2. Build the APK locally via EAS (--local, preview profile) to a temp path
+#   1. Read version from pubspec.yaml
+#   2. Build the release APK with `flutter build apk` to a temp path
 #   3. Upload it to Cloudflare R2 (wrangler) as alice-<version>-<timestamp>.apk
 #      — zero egress fees, and the deploy server no longer carries ~110 MB APKs
 #   4. Update APK_URL in website/src/data/site.ts (and public/llms.txt)
@@ -21,8 +21,10 @@
 #   pnpm release:android 0.3.0        # set explicit version then release
 #   bash scripts/release.sh patch     # same, directly
 #
-# Prereqs: EAS CLI authenticated, Java 17 or 21 (NOT 25+ — JEP 472 breaks AGP
-#          CMake configure) / Android SDK for --local builds,
+# Prereqs: Flutter SDK on PATH, Java 17 or 21 (NOT 25+ — JEP 472 breaks AGP
+#          CMake configure) / Android SDK,
+#          ZHIPU_API_KEY in .env (compiled into the APK; never into the web
+#          build — see scripts/release-webapp.sh),
 #          SSH key auth to the deploy server (BatchMode),
 #          R2 bucket + API token configured in .env (see .env.example):
 #            R2_BUCKET / R2_PUBLIC_BASE / CLOUDFLARE_ACCOUNT_ID /
@@ -43,6 +45,23 @@ VERSION_ROOT="$ROOT"
 source "$ROOT/scripts/lib/version.sh"
 
 error() { echo "ERROR: $*" >&2; exit 1; }
+
+# 核对 APK 里 manifest 声明的启动 Activity 真的存在于 classes.dex。
+# 见 README「出包自检」：这一条错了只有真机启动时才看得出来。
+verify_launch_activity() {
+  local apk="$1" aapt fqcn
+  aapt="$(ls "$HOME"/Library/Android/sdk/build-tools/*/aapt2 2>/dev/null | tail -1)"
+  if [ -z "$aapt" ]; then
+    echo "  ⚠ 找不到 aapt2，跳过启动 Activity 自检" >&2
+    return 0
+  fi
+  fqcn="$("$aapt" dump badging "$apk" | sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p")"
+  [ -n "$fqcn" ] || error "APK 里没有 launchable-activity"
+  if ! unzip -p "$apk" 'classes*.dex' | LC_ALL=C grep -qa "L${fqcn//./\/};"; then
+    error "启动 Activity $fqcn 不在 classes.dex 里 —— 这个包装上去会闪退"
+  fi
+  echo "  启动 Activity: $fqcn ✓"
+}
 
 # --- args ---
 VERSION_ARG=""
@@ -91,7 +110,7 @@ R2_PUBLIC_BASE="${R2_PUBLIC_BASE%/}"
 : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID not set — add it to .env (see .env.example)}"
 : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN not set — add it to .env (see .env.example)}"
 
-# --- JDK for Gradle / EAS --local ---
+# --- JDK for Gradle ---
 # JDK 25+ restricts native access in java.lang.System (JEP 472) and breaks
 # AGP's CMake configure step ("A restricted method in java.lang.System has
 # been called"). Pick Android Studio's bundled JBR (JDK 21), then Homebrew
@@ -117,7 +136,7 @@ if [ -n "$VERSION_ARG" ]; then
 fi
 
 # --- read version + timestamp ---
-VERSION="$(node -p "require('./app.json').expo.version")"
+VERSION="$(get_current_version)"
 TS="$(date +%Y%m%d-%H%M)"
 APK_NAME="alice-${VERSION}-${TS}.apk"
 APK_URL="$R2_PUBLIC_BASE/$APK_NAME"
@@ -130,13 +149,18 @@ echo ""
 TMP_DIR="$(mktemp -d)"
 TMP_APK="$TMP_DIR/alice.apk"
 trap 'rm -rf "$TMP_DIR"' EXIT
-echo "▶ [1/6] Building APK via EAS (local, preview)..."
-# Call eas directly (not via `pnpm build:android:local -- ...`): pnpm forwards the
-# `--` separator to eas, which then treats --output as a positional arg and
-# rejects it. `pnpm exec` resolves the eas binary without that separator.
-pnpm exec eas build \
-  --platform android --non-interactive --local --profile preview \
-  --output "$TMP_APK"
+echo "▶ [1/6] Building release APK..."
+# OCR 密钥走编译期常量。Web 构建不传（产物是公开 JS），这里必须传。
+: "${ZHIPU_API_KEY:?ZHIPU_API_KEY not set — add it to .env (see .env.example)}"
+flutter build apk --release --dart-define=ZHIPU_API_KEY="$ZHIPU_API_KEY"
+BUILT_APK="build/app/outputs/flutter-apk/app-release.apk"
+[ -f "$BUILT_APK" ] || error "flutter build 没有产出 $BUILT_APK"
+cp "$BUILT_APK" "$TMP_APK"
+
+# manifest 声明的启动 Activity 必须真的打进 dex —— 少了它编译期毫无征兆，
+# 装到手机上必然 ClassNotFoundException 闪退（0.6.2 就栽在这里）。
+verify_launch_activity "$TMP_APK"
+
 echo "  built: $(du -h "$TMP_APK" | cut -f1) → $TMP_APK"
 
 # --- 2. upload APK to Cloudflare R2 ---
@@ -169,7 +193,7 @@ echo "▶ [4/6] Building website..."
 pnpm --filter website build
 
 # --- 5. deploy website ---
-# Always preserve the Expo Web app under /app/ (deployed separately).
+# Always preserve the Web app under /app/ (deployed separately).
 # downloads/ is intentionally NOT excluded anymore: the APK lives on R2 now,
 # so --delete also cleans up the legacy server copy in one go.
 echo "▶ [5/6] Deploying website to $SERVER:$REMOTE_DIR..."
@@ -189,8 +213,7 @@ echo "  Site: $PUBLIC_HOST/#download"
 echo ""
 echo "Reminder: review & commit when ready —"
 if [ -n "$VERSION_ARG" ]; then
-  echo "  git add package.json app.json android/app/build.gradle ios/Alice.xcodeproj/project.pbxproj \\"
-  echo "         website/src/data/site.ts website/public/llms.txt"
+  echo "  git add pubspec.yaml website/src/data/site.ts website/public/llms.txt"
 else
   echo "  git add website/src/data/site.ts website/public/llms.txt"
 fi

@@ -19,6 +19,6 @@ export const GITHUB_URL = "https://github.com/vvenv/alice";
 export const APP_VERSION = "0.6.2";
 export const APK_URL =
   "https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.6.2-20260831-2116.apk";
-/** Expo Web app (static export), hosted under the marketing site. */
+/** Flutter Web build, hosted under the marketing site. */
 export const WEB_APP_URL = `${SITE_URL}/app/`;
 export const OG_IMAGE_URL = `${SITE_URL}/og.png`;
