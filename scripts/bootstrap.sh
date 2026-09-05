@@ -2,12 +2,13 @@
 # 生成并配置 Flutter 平台目录（android/ ios/ web/）。
 #
 # `flutter create .` 只会补出缺失的平台脚手架，不动已有的 lib/ 与 assets/。
-# 之后这个脚本把 RN 版 app.json 里的应用身份与权限配置搬过来：
+# 之后这个脚本把应用身份与权限写回去 —— 这些是 flutter create 不知道的：
 #
 #   - applicationId / bundleIdentifier 保持 com.vvenv.alice
 #     ★ 这一条是硬要求：包名变了就是另一个 app 沙箱，
-#       services/legacy_migration_io.dart 将读不到 RN 版的 AsyncStorage，
-#       老用户的错词本 / 历史 / 收藏 / Credits 会全部丢失。
+#       lib/services/legacy_migration_io.dart 将读不到老的 Expo 版
+#       AsyncStorage，老用户的错词本 / 历史 / 收藏 / Credits 会全部丢失。
+#       （Expo 实现本身已经删了，见 tag rn-final；但用户手机上还装着它。）
 #   - 应用名「Alice 听写」
 #   - Android 权限：CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS /
 #     FOREGROUND_SERVICE / FOREGROUND_SERVICE_MEDIA_PLAYBACK / INTERNET
@@ -55,8 +56,8 @@ GRADLE="android/app/build.gradle.kts"
 [ -f "$GRADLE" ] || error "找不到 android/app/build.gradle[.kts]"
 
 step "Android: applicationId → $APP_ID"
-# flutter create 生成的是 com.vvenv.alice_dictation，改回 RN 版的包名，
-# 这样才是同一个 app 的升级，老数据也才读得到。
+# flutter create 按 --org + --project-name 拼出 com.vvenv.alice_dictation，
+# 改回历史包名，这样才算同一个 app 的升级，老数据也才读得到。
 perl -0pi -e "s/com\.vvenv\.alice_dictation/$APP_ID/g" "$GRADLE"
 perl -0pi -e "s/com\.vvenv\.alice_dictation/$APP_ID/g" \
   android/app/src/main/AndroidManifest.xml 2>/dev/null || true

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""从 assets/images 里的两张源图生成三个平台的应用图标。
+"""从 assets/icons 里的源图生成三个平台的应用图标。
 
-`flutter create` 铺的是 Flutter 自带的蓝色 F 图标，得整套换掉。源图与 RN 版
-共用同两张（`../assets/icon.png`、`../assets/adaptive-icon.png` 的副本），
-生成规则也照抄 expo prebuild 的产物，这样两版装在同一台机器上图标一致。
+`flutter create` 铺的是 Flutter 自带的蓝色 F 图标，得整套换掉。`icon.svg` /
+`adaptive-icon.svg` 是设计源文件，同名的 png 是它们的 1024×1024 导出，这个脚本
+从 png 出发。生成规则沿用 expo prebuild 当年的那套，图标与老版本保持一致。
 
     python3 scripts/gen-icons.py
 
@@ -38,11 +38,10 @@ except ImportError:  # pragma: no cover - 只在缺依赖时走到
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SRC_ICON = ROOT / "assets/images/icon.png"
-SRC_ADAPTIVE = ROOT / "assets/images/adaptive-icon.png"
+SRC_ICON = ROOT / "assets/icons/icon.png"
+SRC_ADAPTIVE = ROOT / "assets/icons/adaptive-icon.png"
 
-# 自适应图标的背景色。与 RN 版 android/app/src/main/res/values/colors.xml
-# 里的 iconBackground 一致 —— 换了这个值两版图标就不一样了。
+# 自适应图标的背景色。与 assets/icons/*.svg 里的底色一致。
 ICON_BACKGROUND = "#1A2B4A"
 
 # 传统图标 48dp、自适应前景 108dp，各密度的像素尺寸。

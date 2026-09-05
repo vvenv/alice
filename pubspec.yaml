@@ -61,7 +61,6 @@ flutter:
   assets:
     - assets/data/
     - assets/sounds/
-    - assets/images/
 
   fonts:
     # 每个文件是固定的字重/字形 —— 使用时不要再叠加 fontWeight/fontStyle，
