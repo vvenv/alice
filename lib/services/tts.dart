@@ -187,7 +187,13 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
         );
       }
     }
-    if (state.processingState == ProcessingState.completed) {
+    // ★ 必须等 seenPlaying。playerStateStream 会把**当前**状态重放给新订阅者，
+    //   而播放器是复用的：上一次朗读结束后它停在 completed，这次一订阅就先收到
+    //   那个陈旧的 completed，于是本次朗读被判定为「秒完成」。调度器随即进入
+    //   700ms 间隙、再开下一次朗读，而下一次开头的 player.pause() 正好把还在
+    //   响的这一遍尾音掐掉 —— 表现就是「两遍发音里，前一遍的尾音没了」。
+    //   （RN 版的 expo-audio 用的是事件发射器，不重放，所以没这个问题。）
+    if (state.processingState == ProcessingState.completed && seenPlaying) {
       finish(true);
     }
   });
