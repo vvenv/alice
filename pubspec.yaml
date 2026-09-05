@@ -1,7 +1,7 @@
 name: alice_dictation
 description: Alice 听写 — 英文单词听写应用（Flutter 版）
 publish_to: "none"
-version: 0.7.1+13
+version: 0.7.2+14
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -48,7 +48,10 @@ dependencies:
   # 使用 flutter/services 的 HapticFeedback，无需额外依赖
 
   # 应用版本号 — 对应 Constants.expoConfig.version
-  package_info_plus: ^10.2.1
+  # 10.x 在 AGP 9 + android.builtInKotlin=false 下不再自己 apply KGP，
+  # Kotlin 源码不会被编译，release 构建会在 GeneratedPluginRegistrant 处
+  # 报找不到 PackageInfoPlugin。8.3.1 仍自己 apply kotlin-android，能出包。
+  package_info_plus: 8.3.1
 
 dev_dependencies:
   flutter_test:

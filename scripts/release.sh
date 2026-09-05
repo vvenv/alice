@@ -57,7 +57,9 @@ verify_launch_activity() {
   fi
   fqcn="$("$aapt" dump badging "$apk" | sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p")"
   [ -n "$fqcn" ] || error "APK 里没有 launchable-activity"
-  if ! unzip -p "$apk" 'classes*.dex' | LC_ALL=C grep -qa "L${fqcn//./\/};"; then
+  # 不用 grep -q：匹配到就关管道，unzip 吃 SIGPIPE，pipefail 会把整段判失败。
+  # 2 MB 的 dex 读完即可。-F 按字面匹配，避免包名里的点被当成正则。
+  if ! unzip -p "$apk" 'classes*.dex' | LC_ALL=C grep -aF "L$(printf '%s' "$fqcn" | tr '.' '/');" >/dev/null; then
     error "启动 Activity $fqcn 不在 classes.dex 里 —— 这个包装上去会闪退"
   fi
   echo "  启动 Activity: $fqcn ✓"

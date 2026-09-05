@@ -100,9 +100,9 @@ Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里
 
 ```bash
 pnpm release:android           # 保持当前版本发版
-pnpm release:android patch     # 0.7.1 → 0.7.2
-pnpm release:android minor     # 0.7.1 → 0.8.0
-pnpm release:android major     # 0.7.1 → 1.0.0
+pnpm release:android patch     # 0.7.2 → 0.7.3
+pnpm release:android minor     # 0.7.2 → 0.8.0
+pnpm release:android major     # 0.7.2 → 1.0.0
 pnpm release:android 0.7.0     # 指定版本号
 ```
 
@@ -110,7 +110,7 @@ pnpm release:android 0.7.0     # 指定版本号
 → 上传到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
 详见 [`scripts/release.sh`](scripts/release.sh)。
 
-版本号只有 `pubspec.yaml` 里 `version: 0.7.1+13` 这一处，
+版本号只有 `pubspec.yaml` 里 `version: 0.7.2+14` 这一处，
 `versionName` / `versionCode` 与 iOS 的 `MARKETING_VERSION` /
 `CURRENT_PROJECT_VERSION` 都由 Flutter 从它派生。versionCode 只增不减 ——
 Android 拒绝安装比机器上现有版本低的 versionCode。
