@@ -39,6 +39,8 @@ const List<String> _legacyKeys = [
   'alice_theme_mode',
   'alice_sound_enabled',
   'alice_read_translation',
+  'alice_tts_source',
+  'alice_tts_provider_config',
   'alice_ocr_credits',
   'alice_ocr_selected_model',
   'alice_ocr_provider_config',

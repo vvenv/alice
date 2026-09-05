@@ -8,6 +8,7 @@ import '../services/ocr_config.dart';
 import '../services/sound.dart';
 import '../services/storage.dart';
 import '../services/tts.dart';
+import '../services/tts_config.dart';
 import '../state/ocr_quota_controller.dart';
 import '../state/toast_controller.dart';
 import '../theme/app_colors.dart';
@@ -19,6 +20,7 @@ import '../widgets/app_toast.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/app_slider.dart';
 import '../widgets/ocr_settings_modal.dart';
+import '../widgets/tts_settings_modal.dart';
 import '../widgets/recharge_modal.dart';
 
 /// 设置页。对应 RN 版 src/screens/SettingsScreen.tsx。
@@ -32,6 +34,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundOn = true;
   bool _readTranslationOn = false;
+  TtsSource _ttsSource = TtsSource.youdao;
+  TtsProviderConfig? _ttsConfig;
   double _speechRate = kDefaultSpeechRate;
   double _intervalSec = kDefaultIntervalSec;
   OcrProviderConfig? _customOcrConfig;
@@ -55,6 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _bootstrap() async {
     final soundOn = await loadSoundEnabled();
     final readTranslation = await loadReadTranslation();
+    final tts = await loadTtsSettings();
     final rate = await loadSpeechRate();
     final interval = await loadIntervalSec();
     final custom = await loadOcrProviderConfig();
@@ -65,6 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _soundOn = soundOn;
       _readTranslationOn = readTranslation;
+      _ttsSource = tts.source;
+      _ttsConfig = tts.config;
       _speechRate = rate;
       _intervalSec = interval;
       _customOcrConfig = custom;
@@ -101,6 +108,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _handleIntervalChanged(double value) {
     setState(() => _intervalSec = value);
     saveIntervalSec(value);
+  }
+
+  String get _ttsSourceDetail {
+    if (_ttsSource != TtsSource.custom) return '有道词典';
+    return isTtsProviderConfigSet(_ttsConfig) ? '自定义接口' : '未配置';
+  }
+
+  Future<void> _openTtsSettings() async {
+    final result = await showTtsSettingsModal(
+      context,
+      source: _ttsSource,
+      config: _ttsConfig,
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _ttsSource = result.source;
+      _ttsConfig = result.config;
+    });
+    await saveTtsProviderConfig(result.config);
+    await saveTtsSource(result.source);
+    if (!mounted) return;
+    _toast.show(
+      result.source == TtsSource.custom ? '已启用自定义发音服务' : '已切换为有道词典发音',
+    );
   }
 
   Future<void> _openOcrSettings() async {
@@ -235,6 +267,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // 声音
                           _sectionLabel('声音', colors),
                           _card(colors, [
+                            _row(
+                              colors,
+                              icon: AppIcons.server,
+                              label: '发音源',
+                              detail: _ttsSourceDetail,
+                              onTap: _openTtsSettings,
+                            ),
+                            _divider(colors),
                             _row(
                               colors,
                               icon: AppIcons.musicalNotes,

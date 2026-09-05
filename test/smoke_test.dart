@@ -63,6 +63,7 @@ void main() {
 
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('外观'), findsOneWidget);
+      expect(find.text('发音源'), findsOneWidget);
       expect(find.text('朗读中文释义'), findsOneWidget);
 
       // 下面这些分组在首屏之外，ListView 还没构建到 —— 逐个滚过去，
@@ -95,6 +96,40 @@ void main() {
       expect(find.text('•••••'), findsOneWidget);
     });
   }
+
+  testWidgets('设置页：发音源弹窗能打开并切到自定义接口', (tester) async {
+    await tester.pumpWidget(wrap(const SettingsScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('发音源'));
+    await tester.pumpAndSettle();
+
+    // 默认是有道，说明文案与服务商预设都还没出现
+    expect(find.text('当前使用有道词典发音'), findsOneWidget);
+    expect(find.text('小米 MiMo'), findsNothing);
+
+    await tester.tap(find.text('自定义接口'));
+    await tester.pumpAndSettle();
+
+    // 切过去之后：预设、接口类型、各个字段都在
+    expect(find.text('小米 MiMo'), findsOneWidget);
+    expect(find.text('Chat Completions'), findsOneWidget);
+    expect(find.text('接口地址 (Base URL)'), findsOneWidget);
+    expect(find.text('模型名称'), findsOneWidget);
+    expect(find.text('英文音色'), findsOneWidget);
+
+    // 选预设会把地址/模型填好
+    await tester.tap(find.text('小米 MiMo'));
+    await tester.pumpAndSettle();
+    expect(
+      find.widgetWithText(TextField, 'https://api.xiaomimimo.com/v1'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(TextField, 'mimo-v2.5-tts'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('听写页：眼睛按钮切换单词显示', (tester) async {
     await tester.pumpWidget(

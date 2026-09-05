@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:audio_session/audio_session.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
@@ -8,9 +10,11 @@ import 'package:just_audio/just_audio.dart';
 import 'abort.dart';
 import 'dictation.dart';
 import 'logger.dart';
+import 'ocr_config.dart' show buildChatCompletionsUrl;
 import 'prefs.dart';
 import 'storage.dart';
 import 'tts_cache.dart';
+import 'tts_config.dart';
 
 /// 单词发音。优先播放已缓存的有道词典音频，否则回落到系统 TTS。
 ///
@@ -130,6 +134,12 @@ String _cacheKeyFor(String text) => text.trim().toLowerCase();
 Future<String?> prefetchWordAudio(String word) async {
   final text = speakTextFromEntry(word);
   if (text.isEmpty || !_cache.canUseDiskCache) return null;
+
+  // 选了自定义服务商就由它生成 —— 它中英文都能读。
+  await ensureTtsSettingsLoaded();
+  final provider = _activeProviderConfig();
+  if (provider != null) return _prefetchProviderAudio(text, provider);
+
   // 有道 dictvoice 是英文词典发音（type=1/2 是英音/美音），拿中文去问它只会
   // 缓存下一段错的音频，而且会盖过系统中文 TTS。中文一律走系统 TTS。
   if (_isCjk(text)) return null;
@@ -156,6 +166,230 @@ Future<String?> prefetchWordAudio(String word) async {
 
 /// 清空发音缓存，返回删除的文件数。
 Future<int> clearTtsCache() => _cache.clear();
+
+// ---------------------------------------------------------------------------
+// 自定义 TTS 服务商（OpenAI 兼容）
+// ---------------------------------------------------------------------------
+
+/// 已在生成的片段最多等这么久，避免同一个词先用系统音、下一遍换服务商音。
+const Duration _providerWaitTimeout = Duration(milliseconds: 1500);
+
+const int _minAudioBytes = 256;
+
+final Map<String, Future<String?>> _pendingProviderDownloads = {};
+
+String _providerVoiceFor(TtsProviderConfig cfg, String text) =>
+    (_isCjk(text) ? cfg.voiceZh : cfg.voiceEn).trim();
+
+String _providerFormatFor(TtsProviderConfig cfg) {
+  if (cfg.api == TtsApiKind.chat) return 'wav';
+  final fmt = (cfg.responseFormat ?? 'mp3').trim().toLowerCase();
+  return fmt.isEmpty ? 'mp3' : fmt;
+}
+
+/// MiMo 的 TTS 把要朗读的文本放在 assistant 轮；通用 chat.completions
+/// （以及自定义端点）期望的是 user 消息。
+String _chatContentRole(TtsProviderConfig cfg) =>
+    RegExp(r'xiaomimimo\.com', caseSensitive: false).hasMatch(cfg.baseUrl)
+        ? 'assistant'
+        : 'user';
+
+/// 服务商 / 模型 / 音色 / 格式（speech 形态还含语速）的 8 位十六进制哈希。
+/// 其中任何一项变了，缓存文件名就变，片段自动重新生成。
+String _providerClipHash(TtsProviderConfig cfg, String text) {
+  // chat 形态不发 speed，把语速算进去会让每次拖动滑块都重生成同一段音频。
+  final rateQ = cfg.api == TtsApiKind.speech
+      ? (_currentSpeechRate * 10).round().toString()
+      : '-';
+  final seed = '${cfg.api.name}|${cfg.model}|'
+      '${_providerVoiceFor(cfg, text)}|${_providerFormatFor(cfg)}|$rateQ';
+  var h = 5381;
+  for (final unit in seed.codeUnits) {
+    h = ((h << 5) + h + unit) & 0xffffffff;
+  }
+  return h.toRadixString(16).padLeft(8, '0');
+}
+
+String _providerClipName(String text, TtsProviderConfig cfg) {
+  final trimmed = text.trim().toLowerCase();
+  final safe = Uri.encodeComponent(trimmed).replaceAll('%', '_');
+  return '${safe.isEmpty ? 'unknown' : safe}'
+      '.${_providerClipHash(cfg, text)}.${_providerFormatFor(cfg)}';
+}
+
+Future<String?> _readyProviderClip(String text, TtsProviderConfig cfg) =>
+    _cache.readyClipPath(_providerClipName(text, cfg));
+
+String _apiErrorMessage(http.Response res) {
+  try {
+    final decoded = json.decode(utf8.decode(res.bodyBytes, allowMalformed: true));
+    if (decoded is Map && decoded['error'] is Map) {
+      final message = (decoded['error'] as Map)['message'];
+      if (message is String && message.isNotEmpty) return message;
+    }
+  } catch (_) {
+    // 落到下面的通用文案
+  }
+  return 'HTTP ${res.statusCode}';
+}
+
+/// 从 chat.completions 的响应里取 `choices[0].message.audio.data`。
+String? _chatAudioData(Object? decoded) {
+  if (decoded is! Map) return null;
+  final choices = decoded['choices'];
+  if (choices is! List || choices.isEmpty) return null;
+  final first = choices.first;
+  if (first is! Map) return null;
+  final message = first['message'];
+  if (message is! Map) return null;
+  final audio = message['audio'];
+  if (audio is! Map) return null;
+  final data = audio['data'];
+  return data is String ? data : null;
+}
+
+/// 向服务商请求一段音频并写入缓存，返回本地路径。失败返回 null。
+Future<String?> _downloadProviderAudio(
+  String text,
+  TtsProviderConfig cfg,
+  AbortSignal signal, {
+  bool rethrowError = false,
+}) async {
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ${cfg.apiKey}',
+  };
+  final voice = _providerVoiceFor(cfg, text);
+  List<int> bytes;
+
+  final client = http.Client();
+  void closeOnAbort() => client.close();
+  signal.addListener(closeOnAbort);
+
+  try {
+    if (cfg.api == TtsApiKind.chat) {
+      // MiMo 风格：走 chat.completions 合成，base64 音频在回复里。
+      final audio = <String, String>{'format': 'wav'};
+      if (voice.isNotEmpty) audio['voice'] = voice;
+      final res = await client.post(
+        Uri.parse(buildChatCompletionsUrl(cfg.baseUrl)),
+        headers: headers,
+        body: json.encode({
+          'model': cfg.model,
+          'messages': [
+            {'role': _chatContentRole(cfg), 'content': text},
+          ],
+          'audio': audio,
+        }),
+      );
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw Exception(_apiErrorMessage(res));
+      }
+      final decoded =
+          json.decode(utf8.decode(res.bodyBytes, allowMalformed: true));
+      final b64 = _chatAudioData(decoded);
+      if (b64 == null || b64.isEmpty) {
+        throw Exception('响应中没有音频数据');
+      }
+      // 各家对 base64 的换行/填充处理不一，先洗掉非字母表字符再补齐。
+      bytes = base64.decode(
+        base64.normalize(b64.replaceAll(RegExp(r'[^A-Za-z0-9+/=]'), '')),
+      );
+    } else {
+      // 标准 /audio/speech：响应体就是二进制音频。
+      final body = <String, dynamic>{
+        'model': cfg.model,
+        'input': text,
+        'response_format': _providerFormatFor(cfg),
+        'speed': _currentSpeechRate.clamp(0.25, 4.0),
+      };
+      if (voice.isNotEmpty) body['voice'] = voice;
+      final res = await client.post(
+        Uri.parse(buildSpeechUrl(cfg.baseUrl)),
+        headers: headers,
+        body: json.encode(body),
+      );
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw Exception(_apiErrorMessage(res));
+      }
+      bytes = res.bodyBytes;
+    }
+  } catch (e) {
+    if (signal.aborted) return null;
+    _log.debug('TTS 服务商请求失败: $text $e');
+    if (rethrowError) rethrow;
+    return null;
+  } finally {
+    signal.removeListener(closeOnAbort);
+    client.close();
+  }
+
+  if (signal.aborted || bytes.length < _minAudioBytes) {
+    if (rethrowError && bytes.length < _minAudioBytes) {
+      throw Exception('返回的音频过短，可能不是有效音频');
+    }
+    return null;
+  }
+
+  return _cache.writeClip(_providerClipName(text, cfg), bytes);
+}
+
+Future<String?> _prefetchProviderAudio(String text, TtsProviderConfig cfg) {
+  final key = '${_providerClipHash(cfg, text)}:${_cacheKeyFor(text)}';
+  final pending = _pendingProviderDownloads[key];
+  if (pending != null) return pending;
+
+  final download = _downloadProviderAudio(text, cfg, AbortSignal())
+      .catchError((Object _) => null);
+  _pendingProviderDownloads[key] = download;
+  unawaited(download.whenComplete(() {
+    if (identical(_pendingProviderDownloads[key], download)) {
+      _pendingProviderDownloads.remove(key);
+    }
+  }));
+  return download;
+}
+
+/// 有界地等一次正在进行的生成。用来吃掉「同一个词两遍用了两种嗓音」的竞态：
+/// 第一遍最多等 1.5 秒，等不到就照常回落系统 TTS。
+Future<String?> _waitForProviderClip(String text, TtsProviderConfig cfg) async {
+  final ready = await _readyProviderClip(text, cfg);
+  if (ready != null) return ready;
+
+  final pending = _prefetchProviderAudio(text, cfg);
+  await Future.any<Object?>([
+    pending,
+    Future<Object?>.delayed(_providerWaitTimeout),
+  ]);
+  return _readyProviderClip(text, cfg);
+}
+
+/// 当前生效的服务商配置；没选自定义或配置不完整时返回 null。
+TtsProviderConfig? _activeProviderConfig() {
+  if (getCachedTtsSource() != TtsSource.custom) return null;
+  final cfg = getCachedTtsProviderConfig();
+  return isTtsProviderConfigSet(cfg) ? cfg : null;
+}
+
+/// 试听一段中英文，验证服务商配置是否可用。失败抛出带描述的异常。
+Future<void> testTtsConfig(TtsProviderConfig cfg) async {
+  var played = false;
+  for (final sample in ['apple', '苹果，一种很常见的水果']) {
+    final path = await _downloadProviderAudio(
+      sample,
+      cfg,
+      AbortSignal(),
+      rethrowError: true,
+    );
+    if (path == null) {
+      throw Exception('无法生成试听音频，请检查接口地址、密钥和模型');
+    }
+    final ok =
+        await _playAudioFile(path, AbortSignal()).catchError((Object _) => false);
+    if (ok) played = true;
+  }
+  if (!played) throw Exception('音频已生成，但本机播放失败');
+}
 
 // ---------------------------------------------------------------------------
 // 播放
@@ -348,12 +582,22 @@ Future<bool> speakWord(String word, {String? lang}) async {
   _currentAbort = signal;
 
   try {
-    final path = speechLang == kLangEn ? await _cache.readyPath(text) : null;
+    await ensureTtsSettingsLoaded();
+    final provider = _activeProviderConfig();
+
+    // 自定义服务商：中英文都由它生成，第一遍最多等 1.5 秒，
+    // 免得同一个词两遍用了两种嗓音。
+    // 有道：只有英文，且只用已经缓存好的，绝不在播放时等下载。
+    final path = provider != null
+        ? await _waitForProviderClip(text, provider)
+        : (speechLang == kLangEn ? await _cache.readyPath(text) : null);
 
     if (path != null) {
       final ok = await _playAudioFile(path, signal);
       if (ok || signal.aborted) return ok;
-      _log.debug('有道播放失败，回落到系统 TTS: $text');
+      _log.debug(
+        '${provider != null ? '服务商' : '有道'}播放失败，回落到系统 TTS: $text',
+      );
     }
 
     return await _speakWithSystemTts(text, signal, speechLang);

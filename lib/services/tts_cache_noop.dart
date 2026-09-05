@@ -21,5 +21,11 @@ class TtsCache implements TtsCacheApi {
   Future<String?> download(String text, AbortSignal signal) async => null;
 
   @override
+  Future<String?> readyClipPath(String name) async => null;
+
+  @override
+  Future<String?> writeClip(String name, List<int> bytes) async => null;
+
+  @override
   Future<int> clear() async => 0;
 }

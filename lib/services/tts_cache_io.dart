@@ -113,6 +113,32 @@ class TtsCache implements TtsCacheApi {
   }
 
   @override
+  Future<String?> readyClipPath(String name) async {
+    final dir = await _ensureCacheDir();
+    final file = File('${dir.path}/$name');
+    return _isValid(file) ? file.path : null;
+  }
+
+  @override
+  Future<String?> writeClip(String name, List<int> bytes) async {
+    if (bytes.length < _minAudioBytes) return null;
+    try {
+      final dir = await _ensureCacheDir();
+      final file = File('${dir.path}/$name');
+      if (file.existsSync()) {
+        try {
+          file.deleteSync();
+        } catch (_) {}
+      }
+      file.writeAsBytesSync(bytes);
+      return file.path;
+    } catch (e) {
+      _log.debug('写入 TTS 片段失败: $name $e');
+      return null;
+    }
+  }
+
+  @override
   Future<int> clear() async {
     final tmp = await getTemporaryDirectory();
     final dir = Directory('${tmp.path}/$_cacheDirName');
