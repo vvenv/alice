@@ -1,5 +1,6 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
+import { Platform } from "react-native";
 
 import { config } from "./config";
 import {
@@ -17,6 +18,12 @@ import {
 
 const OCR_MAX_EDGE = 1600;
 const OCR_JPEG_QUALITY = 0.82;
+const OCR_IMAGE_PICKER: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ["images"],
+  quality: 1,
+  // Android system crop is square-only and flaky on some OEMs.
+  allowsEditing: Platform.OS === "ios",
+};
 
 /** Disclaimer surfaced at OCR entry points so users know results may be off. */
 export const OCR_DISCLAIMER = "AI 识图可能存在误差，请核对识别结果";
@@ -110,11 +117,7 @@ export async function takePhoto(): Promise<string | null> {
     throw new Error("需要相机权限");
   }
 
-  const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ["images"],
-    quality: 1,
-    allowsEditing: true,
-  });
+  const result = await ImagePicker.launchCameraAsync(OCR_IMAGE_PICKER);
 
   if (result.canceled || !result.assets.length) return null;
   return result.assets[0]!.uri;
@@ -126,11 +129,7 @@ export async function pickFromAlbum(): Promise<string | null> {
     throw new Error("需要相册权限");
   }
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ["images"],
-    quality: 1,
-    allowsEditing: true,
-  });
+  const result = await ImagePicker.launchImageLibraryAsync(OCR_IMAGE_PICKER);
 
   if (result.canceled || !result.assets.length) return null;
   return result.assets[0]!.uri;
@@ -252,8 +251,8 @@ export async function ocrWordsFromImage(
   }
 
   // Charge credits only after a successful API response so failed/errored
-  // calls don't consume the user's balance. Single-flight (ocrBusy) prevents
-  // concurrent spends.
+  // calls don't consume the user's balance. OcrSection's runningRef
+  // prevents a double-tap from starting two spends.
   if (premiumCost > 0) {
     await trySpendCredits(premiumCost);
   }
@@ -401,7 +400,9 @@ function englishCandidates(candidate: string): string[] {
     // are noise and never become entries.
     return tokens.filter((t) => WORD_RE.test(t));
   }
-  return leading.length <= MAX_PHRASE_TOKENS ? [leading.join(" ")] : leading;
+  return leading.length <= MAX_PHRASE_TOKENS
+    ? [leading.join(" ")]
+    : leading.filter((t) => WORD_RE.test(t));
 }
 /**
  * Vision models often ignore "one per line" and return comma- or space-separated

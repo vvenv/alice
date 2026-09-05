@@ -3,13 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { parseWordLine, speakableMeaning } from "../lib/dictation";
 import {
   isReadTranslationEnabled,
+  loadReadTranslation,
   prefetchWordAudio,
   speakWord,
   stopSpeech,
 } from "../lib/tts";
 
 type PlayState = "idle" | "playing" | "paused";
-type WordPhase = "speak1" | "gap" | "speak2" | "speakMeaning" | "interval";
+type WordPhase = "speak1" | "speak2" | "speakMeaning" | "interval";
 
 const REPEAT_GAP_MS = 700;
 
@@ -152,6 +153,9 @@ export function usePlayback({
     const signal = cycleAbortRef.current?.signal;
     if (!signal || signal.aborted) return;
 
+    await loadReadTranslation();
+    if (isCancelled(gen)) return;
+
     if (s.phase === "speak1" || s.phase === "speak2") {
       s.speaking = true;
       const phase = s.phase;
@@ -169,10 +173,8 @@ export function usePlayback({
       void prefetchWordAudio(word);
       const nextWord = list[s.index + 1];
       if (nextWord) void prefetchWordAudio(nextWord);
-      if (isReadTranslationEnabled()) {
-        const meaning = parseWordLine(word).meaning;
-        if (meaning) void prefetchWordAudio(meaning);
-      }
+      // Prefetch the same string speakMeaning will play, or the clip misses.
+      if (meaningSpeech) void prefetchWordAudio(meaningSpeech);
 
       const ok = await speakWord(word);
       if (isCancelled(gen)) return;
@@ -331,8 +333,8 @@ export function usePlayback({
     playGenRef.current += 1;
     updatePlayState("playing");
 
-    startFrom(index, "speak1"); }
-  , [finishDictation, startFrom, updatePlayState]);
+    startFrom(index, "speak1");
+  }, [finishDictation, startFrom, updatePlayState]);
 
   const pauseDictation = useCallback(() => {
     playGenRef.current += 1;

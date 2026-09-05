@@ -14,6 +14,7 @@ import { buildChatCompletionsUrl } from "./ocrConfig";
 import { DEFAULT_SPEECH_RATE } from "./storage";
 import {
   buildSpeechUrl,
+  ensureTtsSettingsLoaded,
   getCachedTtsProviderConfig,
   getCachedTtsSource,
   isTtsProviderConfigSet,
@@ -38,33 +39,37 @@ const READ_TRANSLATION_KEY = "alice_read_translation";
 let readTranslation = false;
 let readTranslationLoaded = false;
 
-function ensureReadTranslationLoaded(): void {
-  if (readTranslationLoaded) return;
-  readTranslationLoaded = true;
-  AsyncStorage.getItem(READ_TRANSLATION_KEY)
-    .then((v) => {
-      if (v === "on") readTranslation = true;
-    })
-    .catch(() => {});
-}
-ensureReadTranslationLoaded();
+let readTranslationLoad: Promise<boolean> | null = null;
 
 export function isReadTranslationEnabled(): boolean {
   return readTranslation;
 }
 
-export async function loadReadTranslation(): Promise<boolean> {
-  try {
-    const v = await AsyncStorage.getItem(READ_TRANSLATION_KEY);
-    readTranslation = v === "on";
-  } catch {
-    // keep current value
+export function loadReadTranslation(): Promise<boolean> {
+  if (readTranslationLoaded) return Promise.resolve(readTranslation);
+  if (!readTranslationLoad) {
+    readTranslationLoad = AsyncStorage.getItem(READ_TRANSLATION_KEY)
+      .then((v) => {
+        // A toggle during the read wins over the stale disk value.
+        if (!readTranslationLoaded) {
+          readTranslation = v === "on";
+        }
+        return readTranslation;
+      })
+      .catch(() => readTranslation)
+      .finally(() => {
+        readTranslationLoaded = true;
+        readTranslationLoad = null;
+      });
   }
-  return readTranslation;
+  return readTranslationLoad;
 }
+
+void loadReadTranslation().catch(() => {});
 
 export function setReadTranslationEnabled(value: boolean): void {
   readTranslation = value;
+  readTranslationLoaded = true;
   AsyncStorage.setItem(READ_TRANSLATION_KEY, value ? "on" : "off").catch(
     () => {},
   );
@@ -206,6 +211,7 @@ export async function prefetchWordAudio(word: string): Promise<string | null> {
   const text = speakTextFromEntry(word);
   if (!text) return null;
 
+  await ensureTtsSettingsLoaded();
   const provider = getActiveProviderConfig();
   if (provider) return prefetchProviderAudio(text, provider);
 
@@ -309,12 +315,21 @@ function providerFormatFor(cfg: TtsProviderConfig): string {
 const memoryClips = new Map<string, string>();
 const pendingProviderDownloads = new Map<string, Promise<string | null>>();
 
+function chatContentRole(cfg: TtsProviderConfig): "assistant" | "user" {
+  // MiMo TTS puts the spoken text on an assistant turn; generic
+  // chat.completions TTS (and custom endpoints) expect a user message.
+  return /xiaomimimo\.com/i.test(cfg.baseUrl) ? "assistant" : "user";
+}
+
 /**
- * Stable 8-hex hash of provider/model/voice/format/speech-rate: changing any
- * of them regenerates clips instead of replaying stale audio.
+ * Stable 8-hex hash of provider/model/voice/format (and speech-rate for
+ * `/audio/speech`). Changing any of them regenerates clips.
  */
 function providerClipHash(cfg: TtsProviderConfig, text: string): string {
-  const rateQ = Math.round(currentSpeechRate * 10);
+  // Chat wires do not send `speed`; including rate would bust the cache
+  // and regenerate the same clip after every slider nudge.
+  const rateQ =
+    cfg.api === "speech" ? String(Math.round(currentSpeechRate * 10)) : "-";
   const seed = `${cfg.api}|${cfg.model}|${providerVoiceFor(cfg, text)}|${providerFormatFor(cfg)}|${rateQ}`;
   let h = 5381;
   for (let i = 0; i < seed.length; i += 1) {
@@ -378,7 +393,7 @@ async function downloadProviderAudio(
         signal,
         body: JSON.stringify({
           model: cfg.model,
-          messages: [{ role: "assistant", content: text }],
+          messages: [{ role: chatContentRole(cfg), content: text }],
           audio,
         }),
       });
@@ -403,6 +418,7 @@ async function downloadProviderAudio(
       if (voice) body.voice = voice;
       res = await fetch(buildSpeechUrl(cfg.baseUrl), {
         method: "POST",
+        headers,
         signal,
         body: JSON.stringify(body),
       });
@@ -434,10 +450,14 @@ async function downloadProviderAudio(
       type: providerFormatFor(cfg) === "wav" ? "audio/wav" : "audio/mpeg",
     }),
   );
-  memoryClips.set(
-    `${providerClipHash(cfg, text)}:${cacheKeyFor(text)}`,
-    blobUrl,
-  );
+  const memKey = `${providerClipHash(cfg, text)}:${cacheKeyFor(text)}`;
+  const prev = memoryClips.get(memKey);
+  if (prev) {
+    try {
+      URL.revokeObjectURL(prev);
+    } catch {}
+  }
+  memoryClips.set(memKey, blobUrl);
   return blobUrl;
 }
 
@@ -666,6 +686,7 @@ export async function speakWord(
   const signal = abortController.signal;
 
   try {
+    await ensureTtsSettingsLoaded();
     const provider = getActiveProviderConfig();
     const uri = provider
       ? getReadyProviderClip(text, provider) ??

@@ -2,36 +2,25 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Validates the word lists under data/ (same layout generate-library.ts reads).
- * Run via `pnpm data:check`; wired into CI next to `pnpm lint`.
+ * Validates the English word lists under data/ (same layout
+ * generate-library.ts reads). Run via `pnpm data:check`; wired into CI
+ * next to `pnpm lint`.
  *
  * Field conventions (mirrors the header of scripts/generate-library.ts):
  * `word | pos | meaning` — 1 or 3 pipe-separated columns, fullwidth ｜ accepted.
  *
- * Errors (contract violations that break dictation behaviour):
+ * Errors (contract violations that break dictation / library parsing):
  * - line is not 1 or 3 columns, or word column is empty
- * - CJK single-char entry whose pos is not a pinyin syllable (latin/ü with
- *   optional tone marks; digit-toned "hao2" rejected) — dictation.ts
- *   toneToDigit() relies on tone marks for polyphone candidate filtering
  * - duplicate word within one file
  *
  * Warnings (style/convention drift, not blocking):
- * - CJK single-char entry with empty meaning (组词 column expected)
- * - CJK single-char entry whose meaning has no 2-char chunk containing the
- *   head char — 组词朗读 (dictation.ts cjkWordSpeech) then falls back to
- *   learned/common-word candidates
  * - empty file
  *
- * Cross-file duplicates are reported as info only: the same char recurs
- * across lessons by design (e.g. 似 in 阅读 17 and 阅读 18).
+ * Cross-file duplicates are reported as info only: the same headword
+ * recurs across lessons by design (e.g. bank in 初中 and 高考).
  */
 
 const DATA_DIR = path.resolve(import.meta.dirname, "../data");
-
-const CJK_CHAR_RE = /^[\u4e00-\u9fff]$/;
-// Pinyin syllable: lowercase latin incl. ü, tone-marked vowels allowed, no digits/spaces.
-const PINYIN_RE = /^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+$/;
-const CHUNK_SPLIT_RE = /[；;，,、。.\s]+/;
 
 interface FileReport {
   label: string;
@@ -79,7 +68,7 @@ function checkFile(category: string, file: string): FileReport {
       report.errors.push(`L${lineNo}: expected 1 or 3 columns, got ${parts.length}: ${JSON.stringify(line)}`);
       return;
     }
-    const [word, pos, meaning] = parts;
+    const word = parts[0];
     if (!word) {
       report.errors.push(`L${lineNo}: empty word column`);
       return;
@@ -91,19 +80,6 @@ function checkFile(category: string, file: string): FileReport {
       report.errors.push(`L${lineNo}: duplicate word ${JSON.stringify(word)} (first at L${prev})`);
     } else {
       firstLineOf.set(word, lineNo);
-    }
-
-    if (CJK_CHAR_RE.test(word)) {
-      if (pos !== undefined && !PINYIN_RE.test(pos)) {
-        report.errors.push(
-          `L${lineNo}: ${word} | ${JSON.stringify(pos)} is not a pinyin syllable (use tone marks, e.g. "háo"; neutral tones unmarked, e.g. "ma")`,
-        );
-      }
-      if (!meaning) {
-        report.warnings.push(`L${lineNo}: ${word} has empty 组词/meaning column`);
-      } else if (!meaning.split(CHUNK_SPLIT_RE).some((chunk) => chunk.includes(word))) {
-        report.warnings.push(`L${lineNo}: ${word} meaning ${JSON.stringify(meaning)} has no chunk containing the head char`);
-      }
     }
   });
 

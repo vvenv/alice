@@ -101,54 +101,78 @@ const TTS_CONFIG_KEY = "alice_tts_provider_config";
 let _cachedSource: TtsSource = "youdao";
 let _cachedConfig: TtsProviderConfig | null = null;
 let _loaded = false;
+let _inflight: Promise<TtsSettings> | null = null;
+/** Bumped by saves so an in-flight disk read cannot clobber them. */
+let _saveGen = 0;
 
 export interface TtsSettings {
   source: TtsSource;
   config: TtsProviderConfig | null;
 }
 
-export async function loadTtsSettings(): Promise<TtsSettings> {
+function parseStoredConfig(raw: string): TtsProviderConfig | null {
   try {
-    const [source, raw] = await Promise.all([
+    const parsed = JSON.parse(raw) as TtsProviderConfig;
+    if (
+      (parsed.api === "chat" || parsed.api === "speech") &&
+      typeof parsed.baseUrl === "string" &&
+      typeof parsed.apiKey === "string" &&
+      typeof parsed.model === "string"
+    ) {
+      return {
+        api: parsed.api,
+        baseUrl: parsed.baseUrl,
+        apiKey: parsed.apiKey,
+        model: parsed.model,
+        voiceEn: parsed.voiceEn ?? "",
+        voiceZh: parsed.voiceZh ?? "",
+        responseFormat: parsed.responseFormat,
+      };
+    }
+  } catch {}
+  return null;
+}
+
+async function readTtsSettingsFromStorage(): Promise<TtsSettings> {
+  const gen = _saveGen;
+  let source: TtsSource = "youdao";
+  let config: TtsProviderConfig | null = null;
+  try {
+    const [storedSource, raw] = await Promise.all([
       AsyncStorage.getItem(TTS_SOURCE_KEY),
       AsyncStorage.getItem(TTS_CONFIG_KEY),
     ]);
-    _cachedSource = source === "custom" ? "custom" : "youdao";
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as TtsProviderConfig;
-        if (
-          (parsed.api === "chat" || parsed.api === "speech") &&
-          typeof parsed.baseUrl === "string" &&
-          typeof parsed.apiKey === "string" &&
-          typeof parsed.model === "string"
-        ) {
-          _cachedConfig = {
-            api: parsed.api,
-            baseUrl: parsed.baseUrl,
-            apiKey: parsed.apiKey,
-            model: parsed.model,
-            voiceEn: parsed.voiceEn ?? "",
-            voiceZh: parsed.voiceZh ?? "",
-            responseFormat: parsed.responseFormat,
-          };
-        }
-      } catch {}
-    } else {
-      _cachedConfig = null;
-    }
+    source = storedSource === "custom" ? "custom" : "youdao";
+    config = raw ? parseStoredConfig(raw) : null;
   } catch {}
-  _loaded = true;
+  if (gen === _saveGen) {
+    _cachedSource = source;
+    _cachedConfig = config;
+    _loaded = true;
+  }
   return { source: _cachedSource, config: _cachedConfig };
 }
 
+export function loadTtsSettings(): Promise<TtsSettings> {
+  if (_inflight) return _inflight;
+  _inflight = readTtsSettingsFromStorage().finally(() => {
+    _inflight = null;
+  });
+  return _inflight;
+}
 
-/** Sync accessor for the selected source; "youdao" until load has run. */
+/** Resolve after the first disk read; later calls are sync-cheap. */
+export function ensureTtsSettingsLoaded(): Promise<TtsSettings> {
+  if (_loaded) return Promise.resolve({ source: _cachedSource, config: _cachedConfig });
+  return loadTtsSettings();
+}
+
+/** Sync accessor; "youdao" until `ensureTtsSettingsLoaded` / `loadTtsSettings` finishes. */
 export function getCachedTtsSource(): TtsSource {
   return _loaded ? _cachedSource : "youdao";
 }
 
-/** Sync accessor for the provider config; null until load has run. */
+/** Sync accessor; null until the first load finishes. */
 export function getCachedTtsProviderConfig(): TtsProviderConfig | null {
   return _loaded ? _cachedConfig : null;
 }
@@ -167,6 +191,7 @@ export function isTtsProviderConfigSet(
 }
 
 export async function saveTtsSource(source: TtsSource): Promise<void> {
+  _saveGen += 1;
   _cachedSource = source;
   _loaded = true;
   try {
@@ -177,6 +202,7 @@ export async function saveTtsSource(source: TtsSource): Promise<void> {
 export async function saveTtsProviderConfig(
   cfg: TtsProviderConfig | null,
 ): Promise<void> {
+  _saveGen += 1;
   _cachedConfig = cfg;
   _loaded = true;
   try {

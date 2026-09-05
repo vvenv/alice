@@ -204,14 +204,16 @@ export function HomeScreen() {
     };
   }, [wordInput, ready, isDisplayMode]);
 
-  // Flush a pending debounced save on unmount: the cleanup above only
-  // cancels the timer, so quitting right after typing would drop the
-  // last few seconds of input.
+  // Always persist the latest input on unmount. The debounce effect's
+  // cleanup cancels the timer (including on unmount, depending on
+  // declaration order); this write does not rely on that timer still
+  // being pending.
   useEffect(
     () => () => {
-      if (!debounceRef.current) return;
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
       saveWordInput(wordInputRef.current);
     },
     [],
