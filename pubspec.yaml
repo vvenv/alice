@@ -20,11 +20,11 @@ dependencies:
   flutter_tts: ^4.2.0
 
   # 音频播放（有道发音 mp3 + 提示音）— 对应 expo-audio
-  just_audio: ^0.9.42
+  just_audio: ^0.10.6
 
   # 音频会话（静音键仍出声、后台播放、不混音）
   # — 对应 expo-audio 的 setAudioModeAsync
-  audio_session: ^0.1.21
+  audio_session: ^0.2.4
 
   # 老数据迁移：读 RN 版 AsyncStorage 在 Android 上的 SQLite 库（RKStorage）
   sqflite: ^2.4.1
@@ -48,12 +48,12 @@ dependencies:
   # 使用 flutter/services 的 HapticFeedback，无需额外依赖
 
   # 应用版本号 — 对应 Constants.expoConfig.version
-  package_info_plus: ^8.1.0
+  package_info_plus: ^10.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
