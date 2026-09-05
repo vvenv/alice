@@ -452,6 +452,49 @@
       "output": [
         "n. 【计】计算机术语"
       ]
+    },
+    {
+      "meaning": "interj. 喂；exclam. 啊",
+      "pos": "int.",
+      "output": [
+        "int. 喂；啊"
+      ]
+    },
+    {
+      "meaning": "na. 名词性用法；un. 不可数",
+      "pos": "n.",
+      "output": [
+        "n. 名词性用法；不可数"
+      ]
+    },
+    {
+      "meaning": "vbl. 动词形式；pp. 过去分词",
+      "pos": "v.",
+      "output": [
+        "v. 动词形式；过去分词"
+      ]
+    },
+    {
+      "meaning": "pref. 前缀；suff. 后缀",
+      "pos": "abbr.",
+      "output": [
+        "abbr. 前缀；后缀"
+      ]
+    },
+    {
+      "meaning": "n. 苹果；interj. 喂",
+      "pos": "a.",
+      "output": [
+        "n. 苹果",
+        "int. 喂"
+      ]
+    },
+    {
+      "meaning": "pl. 复数形式",
+      "pos": "pl.",
+      "output": [
+        "n. 复数形式"
+      ]
     }
   ],
   "sensesClamped": [
@@ -620,6 +663,100 @@
         "apple",
         "banana | n. | extra"
       ]
+    },
+    {
+      "input": "apple /ˈæpl/ n. 苹果",
+      "output": [
+        "apple"
+      ]
+    },
+    {
+      "input": "apple /ˈæpl/ | n. | 苹果",
+      "output": [
+        "apple | n. | 苹果"
+      ]
+    },
+    {
+      "input": "苹果 apple",
+      "output": []
+    },
+    {
+      "input": "苹果 | n. | apple",
+      "output": []
+    },
+    {
+      "input": "/ˈæpl/",
+      "output": []
+    },
+    {
+      "input": "actor / actress | n. | 演员",
+      "output": [
+        "actor / actress | n. | 演员"
+      ]
+    },
+    {
+      "input": "apple /",
+      "output": [
+        "apple"
+      ]
+    },
+    {
+      "input": "/ apple",
+      "output": []
+    },
+    {
+      "input": "actor / actress / singer",
+      "output": [
+        "actor",
+        "actress",
+        "singer"
+      ]
+    },
+    {
+      "input": "apple / banana / cat / dog / elephant",
+      "output": [
+        "apple",
+        "banana",
+        "cat",
+        "dog",
+        "elephant"
+      ]
+    },
+    {
+      "input": "look forward to 期待",
+      "output": [
+        "look forward to"
+      ]
+    },
+    {
+      "input": "ice cream n. 冰淇淋\n巧克力 chocolate",
+      "output": [
+        "ice cream"
+      ]
+    },
+    {
+      "input": "well-known adj. 著名的, famous adj. 出名的",
+      "output": [
+        "well-known",
+        "famous"
+      ]
+    },
+    {
+      "input": "one two three four five six 中文",
+      "output": [
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six"
+      ]
+    },
+    {
+      "input": "X-ray /ˈeks reɪ/ n. X 光",
+      "output": [
+        "X-ray"
+      ]
     }
   ],
   "lookupWordMeta": [
@@ -719,6 +856,262 @@
     {
       "input": "",
       "output": ""
+    }
+  ],
+  "normalizePos": [
+    {
+      "input": "n.",
+      "output": "n."
+    },
+    {
+      "input": "N.",
+      "output": "n."
+    },
+    {
+      "input": " v. ",
+      "output": "v."
+    },
+    {
+      "input": "vt.",
+      "output": "vt."
+    },
+    {
+      "input": "vi.",
+      "output": "vi."
+    },
+    {
+      "input": "adj.",
+      "output": "adj."
+    },
+    {
+      "input": "a.",
+      "output": "adj."
+    },
+    {
+      "input": "adv.",
+      "output": "adv."
+    },
+    {
+      "input": "prep.",
+      "output": "prep."
+    },
+    {
+      "input": "conj.",
+      "output": "conj."
+    },
+    {
+      "input": "pron.",
+      "output": "pron."
+    },
+    {
+      "input": "num.",
+      "output": "num."
+    },
+    {
+      "input": "art.",
+      "output": "art."
+    },
+    {
+      "input": "int.",
+      "output": "int."
+    },
+    {
+      "input": "interj.",
+      "output": "int."
+    },
+    {
+      "input": "exclam.",
+      "output": "int."
+    },
+    {
+      "input": "aux.",
+      "output": "aux."
+    },
+    {
+      "input": "abbr.",
+      "output": "abbr."
+    },
+    {
+      "input": "contr.",
+      "output": "contr."
+    },
+    {
+      "input": "pl.",
+      "output": "n."
+    },
+    {
+      "input": "na.",
+      "output": "n."
+    },
+    {
+      "input": "un.",
+      "output": "n."
+    },
+    {
+      "input": "pla.",
+      "output": "n."
+    },
+    {
+      "input": "pn.",
+      "output": "n."
+    },
+    {
+      "input": "vbl.",
+      "output": "v."
+    },
+    {
+      "input": "pp.",
+      "output": "v."
+    },
+    {
+      "input": "pref.",
+      "output": "abbr."
+    },
+    {
+      "input": "suf.",
+      "output": "abbr."
+    },
+    {
+      "input": "suff.",
+      "output": "abbr."
+    },
+    {
+      "input": "comb.",
+      "output": "abbr."
+    },
+    {
+      "input": "stuff.",
+      "output": "abbr."
+    },
+    {
+      "input": "quant.",
+      "output": "quant."
+    },
+    {
+      "input": "phr.",
+      "output": "phr."
+    },
+    {
+      "input": "ph.",
+      "output": "ph."
+    },
+    {
+      "input": "st.",
+      "output": "st."
+    },
+    {
+      "input": "pr.",
+      "output": "pr."
+    },
+    {
+      "input": "ind.",
+      "output": "ind."
+    },
+    {
+      "input": "pers.",
+      "output": "pers."
+    },
+    {
+      "input": "col.",
+      "output": "col."
+    },
+    {
+      "input": "ing.",
+      "output": "ing."
+    },
+    {
+      "input": "",
+      "output": ""
+    },
+    {
+      "input": "  ",
+      "output": ""
+    },
+    {
+      "input": "zzz.",
+      "output": "zzz."
+    },
+    {
+      "input": "N.  ",
+      "output": "n."
+    }
+  ],
+  "speakableMeaning": [
+    {
+      "input": null,
+      "output": ""
+    },
+    {
+      "input": "",
+      "output": ""
+    },
+    {
+      "input": "苹果",
+      "output": "苹果"
+    },
+    {
+      "input": "n. 苹果",
+      "output": "苹果"
+    },
+    {
+      "input": "n. 苹果；v. 摘苹果",
+      "output": "苹果"
+    },
+    {
+      "input": "adj. 著名的；adv. 很好地",
+      "output": "著名的"
+    },
+    {
+      "input": "跑；经营；运转",
+      "output": "跑"
+    },
+    {
+      "input": "（缩）美国国家航空航天局",
+      "output": "美国国家航空航天局"
+    },
+    {
+      "input": "n. （美）人行道",
+      "output": "人行道"
+    },
+    {
+      "input": "n.",
+      "output": ""
+    },
+    {
+      "input": "；；",
+      "output": ""
+    },
+    {
+      "input": "苹果，梨，橘子，葡萄，西瓜，草莓，蓝莓，樱桃",
+      "output": "苹果"
+    },
+    {
+      "input": "计算机辅助教育, 计算机辅助测试, 计算机辅助翻译, 计算机辅助排版",
+      "output": "计算机辅助教育"
+    },
+    {
+      "input": "a very long english meaning that goes on and on and on and on",
+      "output": "a very long english meaning that goes on and on and on and on"
+    },
+    {
+      "input": "  n.   苹果  ；  香蕉  ",
+      "output": "苹果"
+    },
+    {
+      "input": "（break 的过去时）折断；打破",
+      "output": "折断"
+    },
+    {
+      "input": "n. (pl.knives) 小刀",
+      "output": "小刀"
+    },
+    {
+      "input": "，、。",
+      "output": ""
+    },
+    {
+      "input": "abbr. CD player",
+      "output": "CD player"
     }
   ]
 }

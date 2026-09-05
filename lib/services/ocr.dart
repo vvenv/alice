@@ -320,13 +320,70 @@ String _cleanToken(String s) {
 }
 
 final RegExp _wordRe = RegExp(r"^[a-zA-Z][a-zA-Z'/\-\s]*$");
+final RegExp _spaceRe = RegExp(r'\s+');
+
+/// `tokens` 开头那一段连续的英文 token —— 也就是词头短语。
+///
+/// 行首不是英文就返回空：以中文（或纯音标）开头的行压根不是英文词条。
+/// 孤立的 `/` 只在两侧都是英文 token 时才算词头的一部分，这样
+/// `actor / actress` 这种带空格的斜杠短语能整条留下（OCR 提示词要求的正是
+/// 这个格式），而行尾的 `/` 或后面跟的注解仍然会截断词头。
+List<String> _leadingEnglishRun(List<String> tokens) {
+  final run = <String>[];
+  for (var i = 0; i < tokens.length; i++) {
+    final token = tokens[i];
+    if (_wordRe.hasMatch(token)) {
+      run.add(token);
+    } else if (token == '/' &&
+        run.isNotEmpty &&
+        i + 1 < tokens.length &&
+        _wordRe.hasMatch(tokens[i + 1])) {
+      run.add(token);
+    } else {
+      break;
+    }
+  }
+  return run;
+}
+
+/// 一段清洗过的 token 串开头的英文词头短语，不以英文开头则返回 null。
+String? _englishPhrase(String tokenRun) {
+  final run = _leadingEnglishRun(
+    tokenRun.split(_spaceRe).where((t) => t.isNotEmpty).toList(),
+  );
+  final phrase =
+      run.length <= _maxPhraseTokens ? run : run.sublist(0, _maxPhraseTokens);
+  return phrase.isNotEmpty ? phrase.join(' ') : null;
+}
+
+/// 从一个逗号分片里取候选词。
+///
+/// 纯英文串保持原行为：整条短语（不超过 _maxPhraseTokens 个 token），
+/// 过长的堆砌展平成单个 token。混排串 —— 词头后面跟着音标 / 词性 / 中文
+/// （视觉模型照抄课本行，而不是按 `word | pos | meaning` 输出）—— 只取
+/// 开头的英文词头，后面的注解是噪声，永远不进词表。
+List<String> _englishCandidates(String candidate) {
+  final tokens = candidate.split(_spaceRe).where((t) => t.isNotEmpty).toList();
+  final leading = _leadingEnglishRun(tokens);
+  if (leading.isEmpty) return const [];
+  if (leading.length == tokens.length) {
+    if (leading.length <= _maxPhraseTokens) return [candidate];
+    // 过长的纯英文堆砌展平成单 token；孤立的 "/" 是噪声，不成词条。
+    return tokens.where(_wordRe.hasMatch).toList();
+  }
+  return leading.length <= _maxPhraseTokens
+      ? [leading.join(' ')]
+      : leading.where(_wordRe.hasMatch).toList();
+}
 
 /// 视觉模型经常无视「每行一个」，返回逗号或空格分隔的列表。
 /// 这个函数把输出归一化成干净的单词表。
 ///
 /// 支持带 `|` 词性/释义的条目：
-///   `apple | n. | 苹果` —— 校验单词部分，保留元数据。
-/// 纯条目（无 `|`）沿用原来的逗号切分 + token 展平逻辑。
+///   `apple | n. | 苹果` —— 单词部分只取开头的英文词头（跟在词头后面的音标
+/// 会被丢掉），元数据原样保留。纯条目（无 `|`）按逗号切分，每片同样只取
+/// 开头的英文词头：整条短语（不超过 _maxPhraseTokens）、过长堆砌的单个
+/// token，或者混排行里的词头。中文永远不会变成词条。
 List<String> extractWordsFromOcrText(String rawText) {
   final cleaned = rawText
       .replaceAllMapped(
@@ -349,8 +406,14 @@ List<String> extractWordsFromOcrText(String rawText) {
     final pipeIdx = line.indexOf('|');
 
     if (pipeIdx != -1) {
-      // 带释义的条目：清洗并校验单词部分，元数据原样保留
-      final rawWord = line.substring(0, pipeIdx);
+      // 带释义的条目：从单词部分里捞出开头的英文词头（词头后面的音标丢掉），
+      // 元数据原样保留。
+      final wordPart = _englishPhrase(_cleanToken(line.substring(0, pipeIdx)));
+      if (wordPart == null) continue;
+
+      final key = wordPart.toLowerCase();
+      if (!seen.add(key)) continue;
+
       final metaParts = line
           .substring(pipeIdx + 1)
           .split('|')
@@ -358,32 +421,19 @@ List<String> extractWordsFromOcrText(String rawText) {
           .where((s) => s.isNotEmpty)
           .toList();
 
-      final wordPart = _cleanToken(rawWord);
-      if (wordPart.isEmpty || !_wordRe.hasMatch(wordPart)) continue;
-
-      final key = wordPart.toLowerCase();
-      if (!seen.add(key)) continue;
-
       // 用统一的间距重新拼装
       words.add([wordPart, ...metaParts].join(' | '));
     } else {
-      // 纯单词：先按逗号/分号切（视觉模型可能忽略每行一个），
-      // 再把过长的串展平成单个 token
+      // 纯单词行：先按逗号/分号切（视觉模型可能忽略每行一个），
+      // 每片再只取开头的英文词头。
       final candidates = <String>[];
       for (final part in line.split(RegExp(r'[,，;；、]+'))) {
         final candidate = _cleanToken(part);
         if (candidate.isEmpty) continue;
-        final tokens =
-            candidate.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-        if (tokens.length <= _maxPhraseTokens) {
-          candidates.add(candidate);
-        } else {
-          candidates.addAll(tokens);
-        }
+        candidates.addAll(_englishCandidates(candidate));
       }
 
       for (final word in candidates) {
-        if (!_wordRe.hasMatch(word)) continue;
         final key = word.toLowerCase();
         if (!seen.add(key)) continue;
         words.add(word);

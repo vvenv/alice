@@ -28,6 +28,49 @@ class WordEntry {
       (meaning != null && meaning!.isNotEmpty);
 }
 
+/// 词性前缀（ECDICT 与用户词表通用），如 "n." "vt." "adj."。
+///
+/// 这一份是共享的：dictionary.dart 与 build-ecdict-meta.py 认的是同一套缩写，
+/// 分开写过一次，结果两边慢慢长歪了。
+final RegExp posPrefixRe = RegExp(
+  r'^(n\.|v\.|vt\.|vi\.|adj\.|adv\.|prep\.|conj\.|pron\.|num\.|art\.|int\.|'
+  r'interj\.|aux\.|abbr\.|contr\.|pl\.|a\.|na\.|un\.|vbl\.|pp\.|pn\.|exclam\.|'
+  r'pref\.|suf\.|suff\.|comb\.|quant\.|phr\.|ph\.|st\.|pr\.|ind\.|pers\.|col\.|'
+  r'ing\.|pla\.|stuff\.)\s*',
+  caseSensitive: false,
+);
+
+/// 归一化词性缩写（ECDICT 原文与教材习惯的差异，构建脚本同款映射）：
+/// interj./exclam.→int.，na./un./pla./pn.→n.，vbl./pp.→v.，
+/// pref./suf./suff./comb./stuff.→abbr.，a.→adj.，pl.→n.
+String normalizePos(String pos) {
+  final key = pos.trim().toLowerCase();
+  switch (key) {
+    case 'a.':
+      return 'adj.';
+    case 'pl.':
+    case 'na.':
+    case 'un.':
+    case 'pla.':
+    case 'pn.':
+      return 'n.';
+    case 'interj.':
+    case 'exclam.':
+      return 'int.';
+    case 'vbl.':
+    case 'pp.':
+      return 'v.';
+    case 'pref.':
+    case 'suf.':
+    case 'suff.':
+    case 'comb.':
+    case 'stuff.':
+      return 'abbr.';
+    default:
+      return key;
+  }
+}
+
 const String _pipe = '|';
 const String _fullwidthPipe = '｜';
 
@@ -77,4 +120,51 @@ String speakTextFromEntry(String entry) {
 
   final left = text.substring(0, eq).trim();
   return left.isNotEmpty ? left : text;
+}
+
+final RegExp _senseSplitRe = RegExp('[；;]');
+final RegExp _glossSplitRe = RegExp('[，,、]');
+final RegExp _meaningParenRe = RegExp(r'[（(][^（）()]*[）)]');
+final RegExp _meaningEdgePunctRe =
+    RegExp(r'^[\s，,、。.：:；;]+|[\s，,、。.：:；;]+$');
+
+/// 朗读释义的长度上限（视觉宽度，全角 1、半角 0.5），超过则截取首个词条。
+const double _speakMeaningMaxWidth = 12;
+
+/// 全角记 1 字宽、半角记 0.5（与 dictionary.dart 的 sensesClamped 同一口径）。
+double _meaningWidth(String text) {
+  var width = 0.0;
+  for (final rune in text.runes) {
+    width += rune > 0x2e7f ? 1 : 0.5;
+  }
+  return width;
+}
+
+/// 朗读用的中文释义。与释义展示不同，TTS 只需要最核心的一个意思：
+///
+/// - 去掉词性前缀（"n." "vt." 等会被 TTS 逐字念出）；
+/// - 多义项（「；」分隔，构建脚本与 enrichWordListText 保证）只取第一个非空义项；
+/// - 括号补注（缩写的英文全称等）不朗读；
+/// - 首义项仍超长时（同义词枚举）截取首个词条。
+///
+/// 返回空串表示没有可朗读的内容（如整个释义只有词性标记）。
+String speakableMeaning(String? meaning) {
+  if (meaning == null || meaning.isEmpty) return '';
+
+  for (final raw in meaning.split(_senseSplitRe)) {
+    var text = raw.trim();
+    final pos = posPrefixRe.firstMatch(text);
+    if (pos != null) text = text.substring(pos.group(0)!.length).trim();
+    text = text.replaceAll(_meaningParenRe, '').trim();
+    text = text.replaceAll(_meaningEdgePunctRe, '');
+    if (text.isEmpty) continue;
+
+    if (_meaningWidth(text) > _speakMeaningMaxWidth) {
+      text = text.split(_glossSplitRe).first;
+      text = text.replaceAll(_meaningEdgePunctRe, '');
+      if (text.isEmpty) continue;
+    }
+    return text;
+  }
+  return '';
 }

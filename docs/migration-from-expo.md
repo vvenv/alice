@@ -19,13 +19,24 @@ git checkout rn-final -- src/          # 只取出来看，别提交
 
 ## 行为是怎么对齐的
 
-`test/rn_equivalence_test.dart` 断言的期望值不是手写的，是**真的跑 RN 版的
+`test/rn_equivalence_test.dart` 断言的期望值不是手写的，是**真的跑 Expo 版的
 TypeScript** 跑出来的：`src/lib/dictation.ts`、`dictionary.ts` 的全部导出函数，
-加上 `ocr.ts` 里的 `extractWordsFromOcrText`，共 114 个用例，语料落在
+加上 `ocr.ts` 里的 `extractWordsFromOcrText`，共 198 个用例，语料落在
 `test/golden/rn_golden.json`。
 
-生成器（`scripts/rn-golden/`）随 RN 代码一起删了，语料留下。它现在是一份**冻结的
-行为基线**：不能再重新生成，但仍然拦得住 Dart 侧的行为漂移。
+生成器 `scripts/rn-golden/generate.sh` 保留着，但它不再读工作区 —— Expo 代码
+在这个分支上已经没有了 —— 而是从 git ref 取源码：
+
+```bash
+bash scripts/rn-golden/generate.sh            # 对齐 main
+bash scripts/rn-golden/generate.sh rn-final   # 对齐迁移那一刻的实现
+```
+
+这就是「从 main 同步」的验证手段：先按 main 重新生成语料，Dart 测试会精确地在
+「main 修了、这边还没移植」的地方红，红的地方就是移植清单。
+
+**等 main 上的 Expo 代码也没了，这个脚本就跑不动了。** 到那时语料变成一份冻结的
+行为基线：仍然拦得住 Dart 侧漂移，但不能再生成，把 `scripts/rn-golden/` 删掉即可。
 
 ## 目录对照
 

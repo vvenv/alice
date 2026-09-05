@@ -91,8 +91,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      # 词表格式：`word | pos | meaning`，1 或 3 列。单字条目的 pos 必须是带声调
-      # 的拼音 —— 多音字候选过滤依赖声调符号。
+      # 词表格式：`word | pos | meaning`，1 或 3 列（全角 ｜ 也认），只有 word 必填。
       - name: Validate data files
         run: pnpm data:check
 

@@ -8,8 +8,9 @@ import 'dictation.dart';
 /// 离线英汉词条元数据（词性 + 释义），数据来自 ECDICT。
 ///
 /// 数据集：https://github.com/skywind3000/ECDICT (MIT)
-/// 由 RN 版的 `pnpm dict:build` → scripts/build-ecdict-meta.py 生成，
-/// 这里直接复用同一份 JSON（assets/data/ecdict-meta.json）。
+/// 由 `pnpm dict:build` → scripts/build-ecdict-meta.py 生成
+/// （assets/data/ecdict-meta.json）。词性缩写的识别与归一化和构建脚本共用
+/// 同一套规则，见 dictation.dart 的 posPrefixRe / normalizePos。
 ///
 /// 对应 RN 版 src/lib/dictionary.ts。
 class WordMeta {
@@ -35,11 +36,6 @@ Future<void> loadDictionary() async {
   _loaded = true;
 }
 
-final RegExp _posPrefixRe = RegExp(
-  r'^(n\.|v\.|vt\.|vi\.|adj\.|adv\.|prep\.|conj\.|pron\.|num\.|art\.|int\.|aux\.|abbr\.|contr\.|a\.)\s*',
-  caseSensitive: false,
-);
-
 /// 仅做清理，保留完整释义（含多义项）。多义项以「；」分隔，由构建脚本保证。
 String _normalizeMeaning(String raw) => raw.trim();
 
@@ -47,7 +43,7 @@ String _normalizeMeaning(String raw) => raw.trim();
 ///
 /// 返回的每行自带词性前缀（主词性组使用 mainPos）；无词性前缀的义项归入主词性组。
 List<String> splitSenses(String meaning, [String? mainPos]) {
-  final mainKey = (mainPos ?? '').toLowerCase();
+  final mainKey = normalizePos(mainPos ?? '');
   // LinkedHashMap 语义 —— Dart 的 Map 字面量保持插入顺序，与 JS Map 一致。
   final groups = <String, List<String>>{};
 
@@ -55,12 +51,11 @@ List<String> splitSenses(String meaning, [String? mainPos]) {
     final seg = raw.trim();
     if (seg.isEmpty) continue;
 
-    final m = _posPrefixRe.firstMatch(seg);
+    final m = posPrefixRe.firstMatch(seg);
     var key = mainKey;
     var text = seg;
     if (m != null) {
-      key = m.group(1)!.toLowerCase();
-      if (key == 'a.') key = 'adj.';
+      key = normalizePos(m.group(1)!);
       text = seg.substring(m.group(0)!.length).trim();
     }
     if (text.isEmpty) continue;
@@ -78,7 +73,7 @@ List<String> splitSenses(String meaning, [String? mainPos]) {
     final parts = groups[key]!.join('；');
     if (key == mainKey) {
       return (mainPos != null && mainPos.isNotEmpty)
-          ? '$mainPos $parts'
+          ? '${normalizePos(mainPos)} $parts'
           : parts;
     }
     return '$key $parts';
@@ -109,10 +104,9 @@ WordMeta? _splitPosMeaning(String raw) {
   if (text.startsWith('【')) return null;
 
   String? pos;
-  final posMatch = _posPrefixRe.firstMatch(text);
+  final posMatch = posPrefixRe.firstMatch(text);
   if (posMatch != null) {
-    pos = posMatch.group(1)!.toLowerCase();
-    if (pos == 'a.') pos = 'adj.';
+    pos = normalizePos(posMatch.group(1)!);
     text = text.substring(posMatch.group(0)!.length).trim();
   }
 

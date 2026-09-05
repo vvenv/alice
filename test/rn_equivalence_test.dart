@@ -6,14 +6,18 @@ import 'package:alice_dictation/services/dictionary.dart';
 import 'package:alice_dictation/services/ocr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// RN 版 ↔ Flutter 版的纯逻辑等价性测试。
+/// Expo 版 ↔ Flutter 版的纯逻辑等价性测试。
 ///
-/// `test/golden/rn_golden.json` 是**真的跑 RN 版的 TypeScript** 生成的
-/// （见 ../scripts/gen-rn-golden.md），不是手写的期望值。所以这里断言的是
-/// 「两版对同一输入给出同一输出」，而不是「我以为它应该输出什么」。
+/// `test/golden/rn_golden.json` 是**真的跑 Expo 版的 TypeScript** 生成的，
+/// 不是手写的期望值。所以这里断言的是「两版对同一输入给出同一输出」，
+/// 而不是「我以为它应该输出什么」。重新生成：
 ///
-/// 覆盖 src/lib/dictation.ts、dictionary.ts 和 ocr.ts 里
-/// extractWordsFromOcrText 的全部导出函数。
+/// ```bash
+/// bash scripts/rn-golden/generate.sh        # 对齐 main
+/// ```
+///
+/// 覆盖 src/lib/dictation.ts、dictionary.ts 的全部导出函数，以及 ocr.ts 里的
+/// extractWordsFromOcrText。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -84,6 +88,26 @@ void main() {
       for (final c in cases('speakTextFromEntry')) {
         expect(
           speakTextFromEntry(c['input'] as String),
+          equals(c['output']),
+          reason: 'input=${describe(c['input'])}',
+        );
+      }
+    });
+
+    test('normalizePos', () {
+      for (final c in cases('normalizePos')) {
+        expect(
+          normalizePos(c['input'] as String),
+          equals(c['output']),
+          reason: 'input=${describe(c['input'])}',
+        );
+      }
+    });
+
+    test('speakableMeaning', () {
+      for (final c in cases('speakableMeaning')) {
+        expect(
+          speakableMeaning(c['input'] as String?),
           equals(c['output']),
           reason: 'input=${describe(c['input'])}',
         );
