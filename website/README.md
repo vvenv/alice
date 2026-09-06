@@ -1,57 +1,24 @@
-# React + TypeScript + Vite
+# Alice 听写 · 官网
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<https://alice.edao.plus> —— 产品介绍与 APK 下载页。Vite + React 19 + Tailwind CSS v4
+的静态站，构建时用 Playwright 预渲染成纯 HTML（`scripts/prerender.mjs`），
+部署在 Cloudflare Pages。
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+pnpm install                    # 在仓库根目录跑
+pnpm --filter website dev       # 本地开发
+pnpm --filter website check     # 类型检查（CI 跑这条）
+pnpm --filter website lint      # ESLint
+pnpm --filter website build     # 预渲染产物到 dist/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+发版见仓库根目录的 `scripts/release-website.sh`。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 约定
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- **设计令牌全在 `src/index.css`**。Tailwind v4 用 `@theme` / `@utility` /
+  `@custom-variant` 声明颜色、字体、动画与 `container`，没有 `tailwind.config.js`。
+- **路径别名 `@/`** 指向 `src/`，由 `vite-tsconfig-paths` 从 `tsconfig.json` 读取。
+- **暗色模式走 `.dark` class**（`@custom-variant dark`），不是 `prefers-color-scheme`。
+- 站点文案、下载链接等集中在 `src/data/site.ts`；FAQ 在 `src/data/faq.ts`，
+  同时喂给页面和 `JsonLd` 的结构化数据。

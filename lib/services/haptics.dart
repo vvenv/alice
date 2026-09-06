@@ -16,12 +16,6 @@ class Haptics {
     HapticFeedback.lightImpact().catchError((Object _) {});
   }
 
-  /// 主操作（开始听写）的稍重反馈。
-  static void tapMedium() {
-    if (!_enabled) return;
-    HapticFeedback.mediumImpact().catchError((Object _) {});
-  }
-
   /// 听写完成时的庆祝反馈。
   ///
   /// Flutter 没有 iOS 的 notification feedback 直接映射，

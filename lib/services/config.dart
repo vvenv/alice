@@ -15,9 +15,4 @@ class AppConfig {
     'ZHIPU_BASE_URL',
     defaultValue: 'https://open.bigmodel.cn/api/paas/v4',
   );
-
-  static const String visionModel = String.fromEnvironment(
-    'VISION_MODEL',
-    defaultValue: 'glm-4v-flash',
-  );
 }

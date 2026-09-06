@@ -55,13 +55,6 @@ class OcrQuotaController extends ChangeNotifier {
     return next;
   }
 
-  Future<int> grantCredits(int amount) async {
-    final next = await addCredits(amount);
-    _credits = next;
-    _notify();
-    return next;
-  }
-
   /// OCR 跑完后把本地余额与内存缓存对齐。
   void syncFromCache() {
     _credits = getCachedCredits();

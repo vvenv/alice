@@ -9,6 +9,7 @@
     "data:check": "node --experimental-strip-types scripts/check-data.ts",
     "dict:build": "python3 scripts/build-ecdict-meta.py",
     "icons:build": "python3 scripts/gen-icons.py",
+    "qr:build": "python3 scripts/gen_qrcode.py",
     "release:android": "bash scripts/release.sh",
     "release:website": "bash scripts/release-website.sh",
     "release:webapp": "bash scripts/release-webapp.sh",
@@ -16,7 +17,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
-    "prettier": "^3.9.6",
     "typescript": "^6.0.3",
     "wrangler": "^4.123.0"
   }

@@ -74,11 +74,3 @@ void playChime() {
     0.6,
   );
 }
-
-/// 释放播放器（应用退出/测试清理时）。
-Future<void> disposeSoundPlayers() async {
-  await _tickPlayer?.dispose();
-  await _chimePlayer?.dispose();
-  _tickPlayer = null;
-  _chimePlayer = null;
-}

@@ -65,7 +65,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 64 个用例（含 198 个行为基线断言）
+flutter test                 # 104 个用例（含 198 个行为基线断言）
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```
@@ -92,7 +92,7 @@ flutter build apk --release --dart-define=ZHIPU_API_KEY=xxx
 
 **Web 构建绝不要传这个参数** —— Web 产物是公开 JS，内嵌共享密钥等于把它发出去。
 Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里还有
-`ZHIPU_BASE_URL` / `VISION_MODEL` 两个可选的编译期常量，有默认值。
+`ZHIPU_BASE_URL` 这个可选的编译期常量，有默认值。
 
 ## 发版
 

@@ -211,25 +211,6 @@ Future<void> addWordHistory(String text) async {
   }
 }
 
-/// 给某条*用户*历史挂上补全文本。词库条目直接忽略。
-Future<void> enrichHistoryEntry(
-  String originalText,
-  String enrichedText,
-) async {
-  try {
-    if (_matchesLibraryText(originalText)) return;
-    final users = await loadWordHistory();
-    final updated = users
-        .map((e) => !isLibraryId(e.id) && e.text == originalText
-            ? e.copyWith(enrichedText: enrichedText)
-            : e)
-        .toList();
-    await _persistHistory(updated);
-  } catch (_) {
-    // 忽略
-  }
-}
-
 Future<void> deleteWordHistory(String id) async {
   if (isLibraryId(id)) return;
   try {

@@ -44,7 +44,4 @@ class AppFonts {
 
   /// 中文衬线正文（Medium）。
   static const String serif = 'NotoSerifSC';
-
-  /// 系统无衬线（默认）—— 传 null 以使用平台默认字体。
-  static const String? sans = null;
 }
