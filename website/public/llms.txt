@@ -7,7 +7,7 @@
 - 网站: https://alice.edao.plus/
 - Web 应用: https://alice.edao.plus/app/
 - 开源仓库: https://github.com/vvenv/alice
-- Android 下载: https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.7.2-20260905-2333.apk
+- Android 下载: https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.7.3-20260906-0801.apk
 
 ## 产品要点
 

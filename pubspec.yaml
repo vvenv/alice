@@ -1,7 +1,7 @@
 name: alice_dictation
 description: Alice 听写 — 英文单词听写应用（Flutter 版）
 publish_to: "none"
-version: 0.7.2+14
+version: 0.7.3+15
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
