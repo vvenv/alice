@@ -47,7 +47,7 @@ class OcrRunner {
   }
 
   Future<void> _run(
-    Future<String?> Function() getPath,
+    Future<XFile?> Function() pick,
     OcrProgressPhase preparingPhase,
   ) async {
     // 重入锁在第一个 await 之前同步占位，见 [_running]。
@@ -64,15 +64,15 @@ class OcrRunner {
 
       _setUiState(const OcrUiState(busy: true, message: ''));
       try {
-        final path = await getPath();
-        if (path == null) {
+        final file = await pick();
+        if (file == null) {
           _setUiState(OcrUiState.idle);
           return;
         }
 
         _reportProgress(preparingPhase);
         final result =
-            await ocrWordsFromImage(path, onProgress: _reportProgress);
+            await ocrWordsFromImage(file, onProgress: _reportProgress);
 
         if (result.words.isEmpty) {
           onOutcome(

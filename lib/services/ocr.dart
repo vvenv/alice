@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +9,10 @@ import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import 'credits.dart';
 import 'ocr_config.dart';
+
+/// 拍照/选图的产物类型。OcrRunner 只 import 本文件，image_picker 是这里的
+/// 实现细节，所以把 XFile 顺带转出去。
+export 'package:image_picker/image_picker.dart' show XFile;
 
 /// 拍照识词。对应 RN 版 src/lib/ocr.ts。
 ///
@@ -65,20 +71,21 @@ class OcrUiState {
 
 final ImagePicker _picker = ImagePicker();
 
-Future<String?> takePhoto() async {
-  final file = await _picker.pickImage(
+/// 返回 XFile 而不是路径：Web 上 `XFile.path` 是个 blob: URL，只有 XFile
+/// 本身能读出字节。`imageQuality` 在 Web 上会被静默忽略（压缩交给下面的
+/// [_compressImageForOcr]），原生端保留原图质量。
+Future<XFile?> takePhoto() {
+  return _picker.pickImage(
     source: ImageSource.camera,
     imageQuality: 100,
   );
-  return file?.path;
 }
 
-Future<String?> pickFromAlbum() async {
-  final file = await _picker.pickImage(
+Future<XFile?> pickFromAlbum() {
+  return _picker.pickImage(
     source: ImageSource.gallery,
     imageQuality: 100,
   );
-  return file?.path;
 }
 
 class _CompressedImage {
@@ -88,16 +95,35 @@ class _CompressedImage {
   final String mimeType;
 }
 
-Future<_CompressedImage> _compressImageForOcr(String path) async {
-  final bytes = await FlutterImageCompress.compressWithFile(
-    path,
-    minWidth: _ocrMaxEdge,
-    minHeight: _ocrMaxEdge,
-    quality: _ocrJpegQuality,
-    format: CompressFormat.jpeg,
-  );
+/// 压到 [_ocrMaxEdge] 再转 base64。
+///
+/// 两条路径不是随手挑的，两边都只有一个能用：
+///  - Web：flutter_image_compress 的 Web 实现里 compressWithFile 直接抛
+///    `UnimplementedError('The method not support web')` —— 浏览器里压根没有
+///    真实文件可读。只有 compressWithList 有实现（canvas 缩放 + toDataURL）。
+///  - 原生：反过来走文件路径。把整张原图（拍照件动辄好几 MB）先读进 Dart 堆、
+///    再原样塞过 platform channel，是白白多两份大对象拷贝。
+Future<_CompressedImage> _compressImageForOcr(XFile file) async {
+  final Uint8List? bytes;
+  if (kIsWeb) {
+    bytes = await FlutterImageCompress.compressWithList(
+      await file.readAsBytes(),
+      minWidth: _ocrMaxEdge,
+      minHeight: _ocrMaxEdge,
+      quality: _ocrJpegQuality,
+      format: CompressFormat.jpeg,
+    );
+  } else {
+    bytes = await FlutterImageCompress.compressWithFile(
+      file.path,
+      minWidth: _ocrMaxEdge,
+      minHeight: _ocrMaxEdge,
+      quality: _ocrJpegQuality,
+      format: CompressFormat.jpeg,
+    );
+  }
 
-  if (bytes == null) {
+  if (bytes == null || bytes.isEmpty) {
     throw Exception('读取图片失败');
   }
   return _CompressedImage(base64Encode(bytes), 'image/jpeg');
@@ -177,11 +203,11 @@ const String _ocrPrompt = '这是一张包含英文单词列表的图片。'
     '不要用逗号连接、不要编号、不要输出其他标点或解释。';
 
 Future<OcrResult> ocrWordsFromImage(
-  String imagePath, {
+  XFile file, {
   void Function(OcrProgressPhase phase)? onProgress,
 }) async {
   onProgress?.call(OcrProgressPhase.compressing);
-  final image = await _compressImageForOcr(imagePath);
+  final image = await _compressImageForOcr(file);
   final dataUrl = 'data:${image.mimeType};base64,${image.base64}';
 
   onProgress?.call(OcrProgressPhase.recognizing);

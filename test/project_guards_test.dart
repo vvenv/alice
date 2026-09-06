@@ -144,4 +144,48 @@ void main() {
       }
     });
   });
+
+  group('Web 兼容', () {
+    // 每一条都是 dart2js 照编不误、只有在浏览器里点下去才炸的那种。
+
+    test('lib/ 里没有裸的 dart:io import', () {
+      // dart:io 一进 lib/，整个 web 构建直接编译失败。落盘的实现只能藏在
+      // `if (dart.library.io)` 条件导入后面（见 tts_cache.dart）。
+      final offenders = <String>[];
+      for (final entity in Directory('lib').listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.endsWith('_io.dart')) continue; // 条件导入的原生侧
+        if (RegExp(r"^import 'dart:io'", multiLine: true)
+            .hasMatch(entity.readAsStringSync())) {
+          offenders.add(entity.path);
+        }
+      }
+      expect(offenders, isEmpty,
+          reason: '这些文件 import 了 dart:io，web 构建会编译失败：$offenders\n'
+              '把实现拆成 xxx_io.dart / xxx_noop.dart，用条件导入挑一个');
+    });
+
+    test('OCR 压缩没有无条件走 compressWithFile', () {
+      // flutter_image_compress 的 web 实现里 compressWithFile 是
+      // `throw UnimplementedError('The method not support web')` ——
+      // 编译没问题，浏览器里选完图走到「处理图片中…」就炸。
+      final ocr = File('lib/services/ocr.dart').readAsStringSync();
+      if (ocr.contains('compressWithFile')) {
+        expect(ocr, contains('kIsWeb'),
+            reason: 'ocr.dart 用了 compressWithFile，但没有 kIsWeb 分支 —— '
+                'Web 上它必抛 UnimplementedError，改用 compressWithList');
+        expect(ocr, contains('compressWithList'),
+            reason: 'ocr.dart 缺少 Web 侧的 compressWithList 分支');
+      }
+    });
+
+    test('OCR 入参是 XFile 而不是路径', () {
+      // Web 上 XFile.path 是 blob: URL，拿它当文件路径读必然失败。
+      final ocr = File('lib/services/ocr.dart').readAsStringSync();
+      expect(ocr, contains('Future<XFile?> takePhoto()'),
+          reason: 'takePhoto 必须返回 XFile —— Web 上没有真实文件路径');
+      expect(ocr, contains('Future<XFile?> pickFromAlbum()'),
+          reason: 'pickFromAlbum 必须返回 XFile —— Web 上没有真实文件路径');
+    });
+  });
 }
