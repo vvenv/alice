@@ -490,7 +490,8 @@ class _DictationScreenState extends State<DictationScreen>
             TextSpan(
               children: [
                 TextSpan(
-                  text: '${_playback.currentIndex + 1}',
+                  text:
+                      '${math.min(_playback.currentIndex + 1, _playback.wordList.length)}',
                   style: const TextStyle(
                     fontFamily: AppFonts.display,
                     fontSize: 17,
