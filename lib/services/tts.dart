@@ -155,6 +155,9 @@ Future<FlutterTts> _initTts() async {
     await tts.awaitSpeakCompletion(true);
     await _configureIosTts(tts);
     await tts.setLanguage(kLangEn);
+    // Android 引擎默认语速偏快；预热时先写进去，免得第一遍 TTS
+    // 还在用出厂值、第二遍才吃到用户设的 0.9x。
+    await tts.setSpeechRate(_normalizedRate(_currentSpeechRate));
     _tts = tts;
     return tts;
   } catch (_) {
@@ -270,7 +273,13 @@ Future<int> clearTtsCache() => _cache.clear();
 // ---------------------------------------------------------------------------
 
 /// 已在生成的片段最多等这么久，避免同一个词先用系统音、下一遍换服务商音。
-const Duration _providerWaitTimeout = Duration(milliseconds: 1500);
+const Duration _clipWaitTimeout = Duration(milliseconds: 1500);
+
+/// 同一个词两遍朗读锁定的音频通路。value 是本地文件路径，null 表示系统 TTS。
+///
+/// 不锁的话：第一遍缓存还没好 → 系统 TTS（Android 明显偏快），700ms 后
+/// 有道下完了 → 第二遍词典原速。听感就是「第一次快很多」。
+final Map<String, String?> _sourcePin = {};
 
 const int _minAudioBytes = 256;
 
@@ -457,9 +466,24 @@ Future<String?> _waitForProviderClip(String text, TtsProviderConfig cfg) async {
   final pending = _prefetchProviderAudio(text, cfg);
   await Future.any<Object?>([
     pending,
-    Future<Object?>.delayed(_providerWaitTimeout),
+    Future<Object?>.delayed(_clipWaitTimeout),
   ]);
   return _readyProviderClip(text, cfg);
+}
+
+/// 有道：已缓存立刻用；预取正在飞则最多等 1.5 秒。绝不在这里新开下载。
+Future<String?> _waitForYoudaoClip(String text) async {
+  final ready = await _cache.readyPath(text);
+  if (ready != null) return ready;
+
+  final pending = _pendingDownloads[_cacheKeyFor(text)];
+  if (pending == null) return null;
+
+  await Future.any<Object?>([
+    pending,
+    Future<Object?>.delayed(_clipWaitTimeout),
+  ]);
+  return _cache.readyPath(text);
 }
 
 /// 当前生效的服务商配置；没选自定义或配置不完整时返回 null。
@@ -500,6 +524,7 @@ void setSpeechRate(double rate) {
 Future<void> stopSpeech() async {
   _currentAbort?.abort();
   _currentAbort = null;
+  _sourcePin.clear();
   try {
     await _wordPlayer?.pause();
   } catch (_) {}
@@ -581,6 +606,7 @@ Future<bool> _playAudioFile(String path, AbortSignal signal) async {
   try {
     await player.setLoopMode(LoopMode.off);
     await player.setVolume(1);
+    await player.setSpeed(_currentSpeechRate.clamp(0.5, 2.0));
     await player.setFilePath(path);
     if (signal.aborted) {
       finish(false);
@@ -680,8 +706,9 @@ double _normalizedRate(double rate) {
   }
 }
 
-/// 只在已缓存时使用有道免费发音；播放开始时绝不等待下载，
-/// 直接回落到系统 TTS。`you're = you are` 这类条目读左侧。
+/// 优先有道 / 自定义服务商的缓存音频，同一词两遍锁定同一条通路。
+/// 预取还在飞时最多等 1.5 秒；等不到再回落系统 TTS。
+/// `you're = you are` 这类条目读左侧。
 ///
 /// [lang] 不传时按文本内容判定（含汉字即中文）—— 听写中文释义时调用方
 /// 会显式传 [kLangZh]。
@@ -700,12 +727,21 @@ Future<bool> speakWord(String word, {String? lang}) async {
     await ensureTtsSettingsLoaded();
     final provider = _activeProviderConfig();
 
-    // 自定义服务商：中英文都由它生成，第一遍最多等 1.5 秒，
-    // 免得同一个词两遍用了两种嗓音。
-    // 有道：只有英文，且只用已经缓存好的，绝不在播放时等下载。
-    final path = provider != null
-        ? await _waitForProviderClip(text, provider)
-        : (speechLang == kLangEn ? await _cache.readyPath(text) : null);
+    // 同一个词的两遍必须走同一条通路，见 [_sourcePin]。
+    // 自定义服务商 / 有道：第一遍最多等 1.5 秒手头上已经在飞的预取。
+    final String? path;
+    if (_sourcePin.containsKey(text)) {
+      path = _sourcePin[text];
+    } else if (provider != null) {
+      path = await _waitForProviderClip(text, provider);
+      _sourcePin[text] = path;
+    } else if (speechLang == kLangEn) {
+      path = await _waitForYoudaoClip(text);
+      _sourcePin[text] = path;
+    } else {
+      path = null;
+      _sourcePin[text] = null;
+    }
 
     if (path != null) {
       final ok = await _playAudioFile(path, signal);

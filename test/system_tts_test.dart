@@ -57,6 +57,12 @@ void main() {
     expect(calls.indexOf('setLanguage'), greaterThan(0),
         reason: 'onInit 重放完队列后会把语言重置成设备默认音，'
             'setLanguage 必须排在预热之后才不会被盖掉');
+    expect(
+      calls.indexOf('setSpeechRate'),
+      greaterThan(calls.indexOf('setLanguage')),
+      reason: 'Android 默认语速偏快，预热就要把用户语速写进引擎，'
+          '否则第一遍 TTS 会明显快于第二遍',
+    );
   });
 
   test('preparePlayback 只激活会话和引擎，自己不发 speak', () async {
