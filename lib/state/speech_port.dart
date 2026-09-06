@@ -15,6 +15,9 @@ abstract class SpeechPort {
   /// 停掉当前朗读。调度器会 await 它再开下一段 —— 顺序反了会掐掉开头。
   Future<void> stop();
 
+  /// 开口前把音频会话激活、引擎就位。默认空操作，真实实现见 [SystemSpeechPort]。
+  Future<void> prepare() async {}
+
   /// 朗读一段文本，返回是否正常读完。[lang] 为空时按内容判定。
   Future<bool> speak(String text, {String? lang});
 
@@ -34,6 +37,9 @@ class SystemSpeechPort extends SpeechPort {
 
   @override
   Future<void> stop() => tts.stopSpeech();
+
+  @override
+  Future<void> prepare() => tts.preparePlayback();
 
   @override
   Future<bool> speak(String text, {String? lang}) =>

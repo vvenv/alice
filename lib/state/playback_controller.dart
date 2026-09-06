@@ -205,6 +205,11 @@ class PlaybackController extends ChangeNotifier {
       if (_isCancelled(gen)) return;
     }
 
+    // 进页第一句如果会话还没 setActive，会整句静音；暂停再继续却正常。
+    // 开口前再激活一次，把转场里丢掉的会话补回来。
+    await _speech.prepare();
+    if (_isCancelled(gen)) return;
+
     // 开关是异步从存储读的；等它一次，否则第一个词会按默认值（关）播。
     await _speech.loadReadTranslation();
     if (_isCancelled(gen)) return;

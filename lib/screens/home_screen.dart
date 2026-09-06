@@ -13,6 +13,7 @@ import '../services/library_data.dart';
 import '../services/ocr.dart';
 import '../services/ocr_runner.dart';
 import '../services/storage.dart';
+import '../services/tts.dart';
 import '../state/ocr_quota_controller.dart';
 import '../state/toast_controller.dart';
 import '../theme/theme_controller.dart';
@@ -235,6 +236,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _startIndex < allWords.length - 1 ? _startIndex : allWords.length - 1;
     var words = allWords.sublist(clampedStart);
     if (_shuffle) words = _shuffleList(words);
+
+    // 趁着点击手势还在：激活音频会话，并给前两个词开始预取。
+    // 进页后再开口会丢手势，第一句经常被 iOS 吃掉；下载也不挡播放，
+    // 只是转场这几百毫秒里能多抢到一点缓存。
+    unawaited(preparePlayback());
+    unawaited(prefetchWordAudio(speakTextFromEntry(words[0])));
+    if (words.length > 1) {
+      unawaited(prefetchWordAudio(speakTextFromEntry(words[1])));
+    }
 
     await addWordHistory(enriched);
     final history = await loadWordHistory();

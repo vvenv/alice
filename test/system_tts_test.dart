@@ -59,6 +59,13 @@ void main() {
             'setLanguage 必须排在预热之后才不会被盖掉');
   });
 
+  test('preparePlayback 只激活会话和引擎，自己不发 speak', () async {
+    calls.clear();
+    await preparePlayback();
+    expect(calls, isNot(contains('speak')),
+        reason: '点「开始听写」时的准备不能自己读出声');
+  });
+
   test('引擎丢掉这次朗读时，会 stop() 复位并按失败返回', () async {
     speakResult = 0;
     calls.clear();

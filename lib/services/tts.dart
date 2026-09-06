@@ -76,7 +76,7 @@ AbortSignal? _currentAbort;
 AudioPlayer? _wordPlayer;
 FlutterTts? _tts;
 Future<FlutterTts>? _ttsReady;
-Future<void>? _audioSessionReady;
+Future<void>? _audioSessionConfigured;
 final Map<String, Future<String?>> _pendingDownloads = {};
 
 // ---------------------------------------------------------------------------
@@ -85,8 +85,14 @@ final Map<String, Future<String?>> _pendingDownloads = {};
 
 /// 配置音频会话。对应 RN 版的 setAudioModeAsync：
 /// 静音键按下时也要出声、可后台播放、与其他音频不混音。
-Future<void> _ensureAudioSession() {
-  return _audioSessionReady ??= () async {
+///
+/// `configure` 只做一次；`setActive(true)` 每次开口都要再喊一遍。
+/// 进听写时第一句正好赶上页面转场，iOS 可能当时没激活成功，或转场结束
+/// 又把会话掐掉。以前把「配置 + 激活」缓存成一个 Future，失败也被
+/// catch 成成功，后面每一句都以为会话还在，表现就是「进页没声音，
+/// 暂停再继续就好了」（继续时播放器 / TTS 自己又把会话拉起来）。
+Future<void> _configureAudioSession() {
+  return _audioSessionConfigured ??= () async {
     try {
       final session = await AudioSession.instance;
       await session.configure(
@@ -104,11 +110,21 @@ Future<void> _ensureAudioSession() {
           androidWillPauseWhenDucked: false,
         ),
       );
-      await session.setActive(true);
     } catch (e) {
       _log.warn('配置音频会话失败: $e');
+      _audioSessionConfigured = null;
     }
   }();
+}
+
+Future<void> _ensureAudioSession() async {
+  await _configureAudioSession();
+  try {
+    final session = await AudioSession.instance;
+    await session.setActive(true);
+  } catch (e) {
+    _log.warn('激活音频会话失败: $e');
+  }
 }
 
 AudioPlayer _getPlayer() => _wordPlayer ??= AudioPlayer();
@@ -137,6 +153,7 @@ Future<FlutterTts> _initTts() async {
     // 排空 pendingMethodCalls。顺带打开「speak() 等到读完才返回」——
     // 调度器依赖这个语义。
     await tts.awaitSpeakCompletion(true);
+    await _configureIosTts(tts);
     await tts.setLanguage(kLangEn);
     _tts = tts;
     return tts;
@@ -144,6 +161,32 @@ Future<FlutterTts> _initTts() async {
     // 初始化失败就丢掉缓存，下一次朗读还能重来。
     _ttsReady = null;
     rethrow;
+  }
+}
+
+/// iOS 必须跟系统共用同一个 AVAudioSession，并且读完一句不要把会话停掉。
+/// 默认 `autoStopSharedSession = true`，第一句读完会话就被掐了，下一句
+/// （以及有道 mp3）都可能静音；我们自己用 audio_session 管激活。
+Future<void> _configureIosTts(FlutterTts tts) async {
+  if (kIsWeb) return;
+  if (defaultTargetPlatform != TargetPlatform.iOS &&
+      defaultTargetPlatform != TargetPlatform.macOS) {
+    return;
+  }
+  try {
+    await tts.setSharedInstance(true);
+    await tts.autoStopSharedSession(false);
+    await tts.setIosAudioCategory(
+      IosTextToSpeechAudioCategory.playback,
+      const [
+        IosTextToSpeechAudioCategoryOptions.duckOthers,
+        IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+        IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+      ],
+      IosTextToSpeechAudioMode.spokenAudio,
+    );
+  } catch (e) {
+    _log.warn('配置 iOS TTS 会话失败: $e');
   }
 }
 
@@ -156,6 +199,19 @@ Future<void> warmUpTts() async {
     await _getTts();
   } catch (e) {
     _log.warn('预热系统 TTS 失败: $e');
+  }
+}
+
+/// 在用户点「开始听写」时调用：趁着手势还在，把音频会话激活、引擎就位。
+///
+/// 进页后再开口会丢手势，iOS / Web 可能直接把第一句吃掉；点暂停再继续
+/// 却能出声，因为那一次点击本身就是新手势。这里不朗读，只做准备工作。
+Future<void> preparePlayback() async {
+  try {
+    await _ensureAudioSession();
+    await _getTts();
+  } catch (e) {
+    _log.warn('准备播放失败: $e');
   }
 }
 

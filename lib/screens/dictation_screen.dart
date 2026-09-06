@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -85,10 +86,35 @@ class _DictationScreenState extends State<DictationScreen>
     _playback.addListener(_onPlaybackChanged);
     _wrong.addListener(_onControllerChanged);
     _toast.addListener(_onControllerChanged);
-    // 挂载后启动一次播放。
+    // 等转场结束再开口。第一帧就朗读，iOS 会把第一句吃掉；
+    // 点暂停再继续之所以能出声，是因为那时页面已经停稳了。
+    // 不是在等单词音频下载 —— 下载仍然不挡播放。
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playback.startDictation(widget.words);
+      unawaited(_startWhenRouteReady());
     });
+  }
+
+  Future<void> _startWhenRouteReady() async {
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation != null && animation.status != AnimationStatus.completed) {
+      final done = Completer<void>();
+      void listener(AnimationStatus status) {
+        if ((status == AnimationStatus.completed ||
+                status == AnimationStatus.dismissed) &&
+            !done.isCompleted) {
+          done.complete();
+        }
+      }
+
+      animation.addStatusListener(listener);
+      if (animation.status != AnimationStatus.completed &&
+          animation.status != AnimationStatus.dismissed) {
+        await done.future;
+      }
+      animation.removeStatusListener(listener);
+    }
+    if (!mounted) return;
+    _playback.startDictation(widget.words);
   }
 
   void _onControllerChanged() {

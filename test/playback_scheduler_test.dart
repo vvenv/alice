@@ -32,8 +32,13 @@ class FakeSpeech extends SpeechPort {
   /// 一次 stop 耗时 —— 调大用来暴露 stop/speak 的竞态。
   Duration stopDuration;
 
-  /// 按发生顺序记下的事件：`stop`、`speak:<text>@<lang>`、`prefetch:<text>`。
+  /// 按发生顺序记下的事件：`stop`、`prepare`、`speak:<text>@<lang>`、`prefetch:<text>`。
   final List<String> events = [];
+
+  @override
+  Future<void> prepare() async {
+    events.add('prepare');
+  }
 
   List<String> get spoken => events
       .where((e) => e.startsWith('speak:'))
@@ -161,6 +166,13 @@ void main() {
       lessThan(firstSpeak),
       reason: 'stop 还没做完就开口了 —— 第一个词会被掐掉。事件序列：'
           '${speech.events}',
+    );
+    final prepared = speech.events.indexOf('prepare');
+    expect(prepared, greaterThan(stopDone));
+    expect(
+      prepared,
+      lessThan(firstSpeak),
+      reason: '开口前必须先激活音频会话，否则进页第一句会静音',
     );
   });
 
