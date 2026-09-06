@@ -58,6 +58,9 @@ const Map<ButtonSize, _SizeSpec> _sizeSpecs = {
   ),
 };
 
+/// 各尺寸按钮的最小高度 —— 给需要提前留位置的布局用。
+double buttonMinHeight(ButtonSize size) => _sizeSpecs[size]!.minHeight;
+
 class _Palette {
   const _Palette({required this.bg, required this.border, required this.text});
 
