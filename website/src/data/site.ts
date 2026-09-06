@@ -16,9 +16,9 @@ export const SITE_KEYWORDS = [
   "高考英语单词",
 ].join(",");
 export const GITHUB_URL = "https://github.com/vvenv/alice";
-export const APP_VERSION = "0.7.3";
+export const APP_VERSION = "0.7.4";
 export const APK_URL =
-  "https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.7.3-20260906-0801.apk";
+  "https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.7.4-20260906-0842.apk";
 /** Flutter Web build, hosted under the marketing site. */
 export const WEB_APP_URL = `${SITE_URL}/app/`;
 export const OG_IMAGE_URL = `${SITE_URL}/og.png`;
