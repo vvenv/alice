@@ -10,8 +10,8 @@
 
 官网与下载：**<https://alice.edao.plus>**
 
-> 0.6.3 之前的版本是 Expo / React Native 实现，已在本仓库移除。
-> 最后一个包含它的提交打了 tag `rn-final`，迁移记录见
+> 0.6.3 之前的版本是 Expo / React Native 实现，仍在 `main` 分支。
+> 本分支是 Flutter 重写；迁移那一刻的 RN 快照打了 tag `rn-final`，记录见
 > [`docs/migration-from-expo.md`](docs/migration-from-expo.md)。
 
 ## 截图

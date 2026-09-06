@@ -1,7 +1,7 @@
 # 从 Expo / React Native 迁到 Flutter
 
-0.6.3 之前，Alice 听写是 Expo (React Native) 应用。Flutter 版把它整个重写了一遍，
-行为对齐之后原实现从仓库里删除。**最后一个包含 RN 代码的提交打了 tag
+0.6.3 之前，Alice 听写是 Expo (React Native) 应用，代码仍在 `main` 分支。
+Flutter 版在本分支把它整个重写了一遍。**迁移那一刻的 RN 快照打了 tag
 `rn-final`** —— 要看历史实现从那里 checkout：
 
 ```bash
