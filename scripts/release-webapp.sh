@@ -5,7 +5,7 @@
 # app/, and this script only writes into …/app/.
 #
 # Flow:
-#   1. flutter build web --release, with no embedded OCR key
+#   1. flutter build web --release --base-href /app/, with no embedded OCR key
 #   2. rsync build/web/ to $REMOTE_DIR/app/
 #
 # Usage:
@@ -55,10 +55,15 @@ echo ""
 echo "▶ [1/2] Building Flutter Web (no embedded OCR key)..."
 # ★ 不要传 --dart-define=ZHIPU_API_KEY：Web 产物是公开的 JS，内嵌共享密钥等于
 #   把它发出去。Web 上 OCR 由用户在设置里自备 API Key。
-flutter build web --release
+# ★ 必须带 --base-href /app/：默认是 /，相对路径会打到官网根上，
+#   flutter_bootstrap.js / manifest.json 全部 404。
+flutter build web --release --base-href /app/
 
 if [ ! -f "$DIST_DIR/index.html" ]; then
   error "build did not produce dist/index.html"
+fi
+if ! grep -q '<base href="/app/">' "$DIST_DIR/index.html"; then
+  error "build/web/index.html 的 base href 不是 /app/ —— 资源会打到官网根路径 404"
 fi
 
 echo "▶ [2/2] Deploying to $SERVER:$APP_REMOTE..."

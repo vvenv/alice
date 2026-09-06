@@ -145,6 +145,17 @@ void main() {
     });
   });
 
+  group('Web 发版', () {
+    // 0.7.4 挂到 /app/ 之后，忘了 --base-href，bootstrap / manifest
+    // 全打到 alice.edao.plus/ 根路径 404。
+    test('发版脚本给 Flutter Web 设了 /app/ 的 base-href', () {
+      final script = File('scripts/release-webapp.sh').readAsStringSync();
+      expect(script, contains('--base-href /app/'),
+          reason: 'Web 挂在 alice.edao.plus/app/，不设 base-href 的话 '
+              'flutter_bootstrap.js / manifest.json 会打到官网根路径 404');
+    });
+  });
+
   group('Web 兼容', () {
     // 每一条都是 dart2js 照编不误、只有在浏览器里点下去才炸的那种。
 
