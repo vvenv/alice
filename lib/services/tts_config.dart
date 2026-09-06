@@ -7,7 +7,17 @@ import 'prefs.dart';
 /// 对应 Expo 版 src/lib/ttsConfig.ts。
 
 /// 单词音频从哪里来。
-enum TtsSource { youdao, custom }
+enum TtsSource { edge, youdao, custom }
+
+/// 没选过时用哪个。Edge 免费、不用配置、中英文都能读，所以是默认。
+const TtsSource kDefaultTtsSource = TtsSource.edge;
+
+TtsSource _sourceFromName(Object? name) => switch (name) {
+      'edge' => TtsSource.edge,
+      'youdao' => TtsSource.youdao,
+      'custom' => TtsSource.custom,
+      _ => kDefaultTtsSource,
+    };
 
 /// 已配置的 OpenAI 兼容 TTS 接口的两种形态：
 ///
@@ -99,6 +109,65 @@ class TtsProviderConfig {
   }
 }
 
+/// Edge 发音用的音色。中英文各一个 —— 听写里两种语言会交替出现。
+class EdgeVoiceConfig {
+  const EdgeVoiceConfig({
+    this.en = kDefaultEdgeVoiceEn,
+    this.zh = kDefaultEdgeVoiceZh,
+  });
+
+  final String en;
+  final String zh;
+
+  EdgeVoiceConfig copyWith({String? en, String? zh}) =>
+      EdgeVoiceConfig(en: en ?? this.en, zh: zh ?? this.zh);
+
+  Map<String, dynamic> toJson() => {'en': en, 'zh': zh};
+
+  static EdgeVoiceConfig fromJson(Map<String, dynamic> json) => EdgeVoiceConfig(
+        en: json['en'] is String && (json['en'] as String).trim().isNotEmpty
+            ? (json['en'] as String).trim()
+            : kDefaultEdgeVoiceEn,
+        zh: json['zh'] is String && (json['zh'] as String).trim().isNotEmpty
+            ? (json['zh'] as String).trim()
+            : kDefaultEdgeVoiceZh,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is EdgeVoiceConfig && other.en == en && other.zh == zh;
+
+  @override
+  int get hashCode => Object.hash(en, zh);
+}
+
+/// 音色名就是微软的 ShortName，写死一小撮常用的；列表随服务端变，
+/// 这里不去线上拉，省得多一次网络请求和一处会过期的解析。
+class EdgeVoiceOption {
+  const EdgeVoiceOption(this.name, this.label);
+
+  final String name;
+  final String label;
+}
+
+const String kDefaultEdgeVoiceEn = 'en-US-AriaNeural';
+const String kDefaultEdgeVoiceZh = 'zh-CN-XiaoxiaoNeural';
+
+const List<EdgeVoiceOption> kEdgeVoicesEn = [
+  EdgeVoiceOption('en-US-AriaNeural', 'Aria 美音·女'),
+  EdgeVoiceOption('en-US-GuyNeural', 'Guy 美音·男'),
+  EdgeVoiceOption('en-US-JennyNeural', 'Jenny 美音·女'),
+  EdgeVoiceOption('en-GB-SoniaNeural', 'Sonia 英音·女'),
+  EdgeVoiceOption('en-GB-RyanNeural', 'Ryan 英音·男'),
+];
+
+const List<EdgeVoiceOption> kEdgeVoicesZh = [
+  EdgeVoiceOption('zh-CN-XiaoxiaoNeural', '晓晓·女'),
+  EdgeVoiceOption('zh-CN-XiaoyiNeural', '晓伊·女'),
+  EdgeVoiceOption('zh-CN-YunxiNeural', '云希·男'),
+  EdgeVoiceOption('zh-CN-YunyangNeural', '云扬·男'),
+];
+
 class TtsProviderPreset {
   const TtsProviderPreset({
     required this.id,
@@ -182,9 +251,11 @@ const List<TtsProviderPreset> kTtsProviderPresets = [
 
 const String _ttsSourceKey = 'alice_tts_source';
 const String _ttsConfigKey = 'alice_tts_provider_config';
+const String _edgeVoicesKey = 'alice_tts_edge_voices';
 
-TtsSource _cachedSource = TtsSource.youdao;
+TtsSource _cachedSource = kDefaultTtsSource;
 TtsProviderConfig? _cachedConfig;
+EdgeVoiceConfig _cachedEdgeVoices = const EdgeVoiceConfig();
 bool _loaded = false;
 Future<TtsSettings>? _inflight;
 
@@ -192,10 +263,15 @@ Future<TtsSettings>? _inflight;
 int _saveGen = 0;
 
 class TtsSettings {
-  const TtsSettings({required this.source, required this.config});
+  const TtsSettings({
+    required this.source,
+    required this.config,
+    required this.edgeVoices,
+  });
 
   final TtsSource source;
   final TtsProviderConfig? config;
+  final EdgeVoiceConfig edgeVoices;
 }
 
 TtsProviderConfig? _parseStoredConfig(String raw) {
@@ -210,22 +286,44 @@ TtsProviderConfig? _parseStoredConfig(String raw) {
 
 Future<TtsSettings> _readFromStorage() async {
   final gen = _saveGen;
-  var source = TtsSource.youdao;
+  var source = kDefaultTtsSource;
   TtsProviderConfig? config;
+  var edgeVoices = const EdgeVoiceConfig();
   try {
     final storedSource = await Prefs.getString(_ttsSourceKey);
     final raw = await Prefs.getString(_ttsConfigKey);
-    source = storedSource == 'custom' ? TtsSource.custom : TtsSource.youdao;
+    final rawVoices = await Prefs.getString(_edgeVoicesKey);
+    source = _sourceFromName(storedSource);
     config = raw != null ? _parseStoredConfig(raw) : null;
+    edgeVoices = rawVoices != null
+        ? _parseStoredEdgeVoices(rawVoices)
+        : const EdgeVoiceConfig();
   } catch (_) {
     // 读不到就用默认值
   }
   if (gen == _saveGen) {
     _cachedSource = source;
     _cachedConfig = config;
+    _cachedEdgeVoices = edgeVoices;
     _loaded = true;
   }
-  return TtsSettings(source: _cachedSource, config: _cachedConfig);
+  return _snapshot();
+}
+
+TtsSettings _snapshot() => TtsSettings(
+      source: _cachedSource,
+      config: _cachedConfig,
+      edgeVoices: _cachedEdgeVoices,
+    );
+
+EdgeVoiceConfig _parseStoredEdgeVoices(String raw) {
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is! Map<String, dynamic>) return const EdgeVoiceConfig();
+    return EdgeVoiceConfig.fromJson(decoded);
+  } catch (_) {
+    return const EdgeVoiceConfig();
+  }
 }
 
 Future<TtsSettings> loadTtsSettings() {
@@ -238,19 +336,19 @@ Future<TtsSettings> loadTtsSettings() {
 
 /// 第一次读盘完成后 resolve；之后的调用几乎是同步的。
 Future<TtsSettings> ensureTtsSettingsLoaded() {
-  if (_loaded) {
-    return Future.value(
-      TtsSettings(source: _cachedSource, config: _cachedConfig),
-    );
-  }
+  if (_loaded) return Future.value(_snapshot());
   return loadTtsSettings();
 }
 
-/// 同步读取；首次加载完成之前一律是 [TtsSource.youdao]。
-TtsSource getCachedTtsSource() => _loaded ? _cachedSource : TtsSource.youdao;
+/// 同步读取；首次加载完成之前一律是 [kDefaultTtsSource]。
+TtsSource getCachedTtsSource() => _loaded ? _cachedSource : kDefaultTtsSource;
 
 /// 同步读取；首次加载完成之前是 null。
 TtsProviderConfig? getCachedTtsProviderConfig() => _loaded ? _cachedConfig : null;
+
+/// 同步读取；首次加载完成之前是默认音色。
+EdgeVoiceConfig getCachedEdgeVoices() =>
+    _loaded ? _cachedEdgeVoices : const EdgeVoiceConfig();
 
 /// 接口地址、密钥、模型三样都非空才算可用。
 bool isTtsProviderConfigSet(TtsProviderConfig? cfg) =>
@@ -267,6 +365,17 @@ Future<void> saveTtsSource(TtsSource source) async {
     await Prefs.setString(_ttsSourceKey, source.name);
   } catch (_) {
     // 存不下也不影响本次会话
+  }
+}
+
+Future<void> saveEdgeVoices(EdgeVoiceConfig voices) async {
+  _saveGen += 1;
+  _cachedEdgeVoices = voices;
+  _loaded = true;
+  try {
+    await Prefs.setString(_edgeVoicesKey, json.encode(voices.toJson()));
+  } catch (_) {
+    // 同上
   }
 }
 

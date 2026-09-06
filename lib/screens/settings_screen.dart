@@ -35,7 +35,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundOn = true;
   bool _readTranslationOn = false;
-  TtsSource _ttsSource = TtsSource.youdao;
+  TtsSource _ttsSource = kDefaultTtsSource;
+  EdgeVoiceConfig _edgeVoices = const EdgeVoiceConfig();
   TtsProviderConfig? _ttsConfig;
   double _speechRate = kDefaultSpeechRate;
   double _intervalSec = kDefaultIntervalSec;
@@ -72,6 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _soundOn = soundOn;
       _readTranslationOn = readTranslation;
       _ttsSource = tts.source;
+      _edgeVoices = tts.edgeVoices;
       _ttsConfig = tts.config;
       _speechRate = rate;
       _intervalSec = interval;
@@ -111,29 +113,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     saveIntervalSec(value);
   }
 
-  String get _ttsSourceDetail {
-    if (_ttsSource != TtsSource.custom) return '有道词典';
-    return isTtsProviderConfigSet(_ttsConfig) ? '自定义接口' : '未配置';
-  }
+  String get _ttsSourceDetail => switch (_ttsSource) {
+        TtsSource.edge => '微软 Edge',
+        TtsSource.youdao => '有道词典',
+        TtsSource.custom =>
+          isTtsProviderConfigSet(_ttsConfig) ? '自定义接口' : '未配置',
+      };
 
   Future<void> _openTtsSettings() async {
     final result = await showTtsSettingsModal(
       context,
       source: _ttsSource,
       config: _ttsConfig,
+      edgeVoices: _edgeVoices,
     );
     if (!mounted || result == null) return;
 
     setState(() {
       _ttsSource = result.source;
       _ttsConfig = result.config;
+      _edgeVoices = result.edgeVoices;
     });
     await saveTtsProviderConfig(result.config);
+    await saveEdgeVoices(result.edgeVoices);
     await saveTtsSource(result.source);
     if (!mounted) return;
-    _toast.show(
-      result.source == TtsSource.custom ? '已启用自定义发音服务' : '已切换为有道词典发音',
-    );
+    _toast.show(switch (result.source) {
+      TtsSource.edge => '已切换为微软 Edge 发音',
+      TtsSource.youdao => '已切换为有道词典发音',
+      TtsSource.custom => '已启用自定义发音服务',
+    });
   }
 
   Future<void> _openOcrSettings() async {

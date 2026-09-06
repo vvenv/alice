@@ -15,6 +15,7 @@ import 'prefs.dart';
 import 'storage.dart';
 import 'tts_cache.dart';
 import 'tts_config.dart';
+import 'tts_edge.dart';
 
 /// 单词发音。优先播放已缓存的有道词典音频，否则回落到系统 TTS。
 ///
@@ -25,6 +26,7 @@ import 'tts_config.dart';
 const _log = Logger('TTS');
 
 const TtsCacheApi _cache = TtsCache();
+const EdgeTtsApi _edge = EdgeTts();
 
 double _currentSpeechRate = kDefaultSpeechRate;
 
@@ -240,6 +242,13 @@ Future<String?> prefetchWordAudio(String word) async {
   await ensureTtsSettingsLoaded();
   final provider = _activeProviderConfig();
   if (provider != null) return _prefetchProviderAudio(text, provider);
+
+  // Edge 同样中英文都能读。生成不出来（断网 / 端点变了）就往下走，
+  // 英文还能回落有道，中文只剩系统 TTS。
+  if (_edgeEnabled()) {
+    final edgePath = await _prefetchEdgeAudio(text);
+    if (edgePath != null) return edgePath;
+  }
 
   // 有道 dictvoice 是英文词典发音（type=1/2 是英音/美音），拿中文去问它只会
   // 缓存下一段错的音频，而且会盖过系统中文 TTS。中文一律走系统 TTS。
@@ -514,6 +523,159 @@ Future<void> testTtsConfig(TtsProviderConfig cfg) async {
 }
 
 // ---------------------------------------------------------------------------
+// 微软 Edge TTS（免费，不需要账号）
+// ---------------------------------------------------------------------------
+
+final Map<String, Future<String?>> _pendingEdgeDownloads = {};
+
+/// 连续失败几次之后就先别试了。
+///
+/// 断网时每个词都要先等 1.5 秒才回落系统 TTS —— 一路听写下来就是每个词都
+/// 卡一下。连着失败 3 次判定「这会儿用不了」，冷静 3 分钟再试。
+const int _edgeFailureLimit = 3;
+const Duration _edgeCooldown = Duration(minutes: 3);
+
+int _edgeFailures = 0;
+DateTime? _edgeCooldownUntil;
+
+/// 当前是不是走 Edge。web 上 [EdgeTtsApi.isSupported] 为 false，
+/// 没有磁盘缓存就没地方放生成好的 mp3，两种情况都直接放弃。
+bool _edgeEnabled() {
+  if (getCachedTtsSource() != TtsSource.edge) return false;
+  if (!_edge.isSupported || !_cache.canUseDiskCache) return false;
+
+  final until = _edgeCooldownUntil;
+  if (until == null) return true;
+  if (DateTime.now().isBefore(until)) return false;
+  // 冷静期到了，给它一次机会。
+  _edgeCooldownUntil = null;
+  _edgeFailures = 0;
+  return true;
+}
+
+void _noteEdgeResult({required bool ok}) {
+  if (ok) {
+    _edgeFailures = 0;
+    _edgeCooldownUntil = null;
+    return;
+  }
+  _edgeFailures += 1;
+  if (_edgeFailures >= _edgeFailureLimit) {
+    _log.debug('Edge 连续失败 $_edgeFailures 次，暂停 ${_edgeCooldown.inMinutes} 分钟');
+    _edgeCooldownUntil = DateTime.now().add(_edgeCooldown);
+  }
+}
+
+String _edgeVoiceFor(String text) {
+  final voices = getCachedEdgeVoices();
+  return _isCjk(text) ? voices.zh : voices.en;
+}
+
+/// 缓存文件名里带音色哈希：换音色即换文件，老的自然失效。
+/// 语速不参与 —— Edge 一律按 +0% 合成，快慢由播放器调，见 edgeSsmlMessage。
+String _edgeClipName(String text, String voice) {
+  final trimmed = text.trim().toLowerCase();
+  final safe = Uri.encodeComponent(trimmed).replaceAll('%', '_');
+  var h = 5381;
+  for (final unit in voice.codeUnits) {
+    h = ((h << 5) + h + unit) & 0xffffffff;
+  }
+  final hash = h.toRadixString(16).padLeft(8, '0');
+  return '${safe.isEmpty ? 'unknown' : safe}.edge$hash.mp3';
+}
+
+Future<String?> _readyEdgeClip(String text, String voice) =>
+    _cache.readyClipPath(_edgeClipName(text, voice));
+
+Future<String?> _downloadEdgeAudio(
+  String text,
+  String voice,
+  AbortSignal signal, {
+  bool rethrowError = false,
+}) async {
+  final ready = await _readyEdgeClip(text, voice);
+  if (ready != null) return ready;
+
+  final Uint8List? bytes;
+  try {
+    bytes = await _edge.synthesize(
+      text,
+      voice: voice,
+      signal: signal,
+      rethrowError: rethrowError,
+    );
+  } catch (_) {
+    // 试听会走这条（rethrowError），照样记一笔失败。
+    if (!signal.aborted) _noteEdgeResult(ok: false);
+    rethrow;
+  }
+  // 被打断不算服务不可用。
+  if (signal.aborted) return null;
+  _noteEdgeResult(ok: bytes != null);
+  if (bytes == null) return null;
+  return _cache.writeClip(_edgeClipName(text, voice), bytes);
+}
+
+/// 预取一段 Edge 音频（不阻塞播放）。同一段文本并发只发一次请求。
+Future<String?> _prefetchEdgeAudio(String text) {
+  final voice = _edgeVoiceFor(text);
+  final key = _edgeClipName(text, voice);
+  final pending = _pendingEdgeDownloads[key];
+  if (pending != null) return pending;
+
+  final download = _downloadEdgeAudio(text, voice, AbortSignal())
+      .catchError((Object _) => null);
+  _pendingEdgeDownloads[key] = download;
+  unawaited(download.whenComplete(() {
+    if (identical(_pendingEdgeDownloads[key], download)) {
+      _pendingEdgeDownloads.remove(key);
+    }
+  }));
+  return download;
+}
+
+/// 与服务商那条一样：已缓存立刻用，正在飞最多等 1.5 秒，等不到就让调用方回落。
+Future<String?> _waitForEdgeClip(String text) async {
+  final voice = _edgeVoiceFor(text);
+  final ready = await _readyEdgeClip(text, voice);
+  if (ready != null) return ready;
+
+  final pending = _prefetchEdgeAudio(text);
+  await Future.any<Object?>([
+    pending,
+    Future<Object?>.delayed(_clipWaitTimeout),
+  ]);
+  return _readyEdgeClip(text, voice);
+}
+
+/// 这台设备能不能用 Edge 发音。web 上为 false。
+bool isEdgeTtsSupported() => _edge.isSupported && _cache.canUseDiskCache;
+
+/// 试听一段中英文，验证 Edge 能不能用。失败抛出带描述的异常。
+Future<void> testEdgeVoices(EdgeVoiceConfig voices) async {
+  if (!_edge.isSupported || !_cache.canUseDiskCache) {
+    throw Exception('当前平台不支持 Edge 发音');
+  }
+  var played = false;
+  for (final sample in [
+    (text: 'apple', voice: voices.en),
+    (text: '苹果，一种很常见的水果', voice: voices.zh),
+  ]) {
+    final path = await _downloadEdgeAudio(
+      sample.text,
+      sample.voice,
+      AbortSignal(),
+      rethrowError: true,
+    );
+    if (path == null) throw Exception('无法生成试听音频');
+    final ok =
+        await _playAudioFile(path, AbortSignal()).catchError((Object _) => false);
+    if (ok) played = true;
+  }
+  if (!played) throw Exception('音频已生成，但本机播放失败');
+}
+
+// ---------------------------------------------------------------------------
 // 播放
 // ---------------------------------------------------------------------------
 
@@ -735,6 +897,11 @@ Future<bool> speakWord(String word, {String? lang}) async {
     } else if (provider != null) {
       path = await _waitForProviderClip(text, provider);
       _sourcePin[text] = path;
+    } else if (_edgeEnabled()) {
+      // Edge 没生成出来时，英文还能捡一下有道的预取结果。
+      path = await _waitForEdgeClip(text) ??
+          (speechLang == kLangEn ? await _waitForYoudaoClip(text) : null);
+      _sourcePin[text] = path;
     } else if (speechLang == kLangEn) {
       path = await _waitForYoudaoClip(text);
       _sourcePin[text] = path;
@@ -747,7 +914,8 @@ Future<bool> speakWord(String word, {String? lang}) async {
       final ok = await _playAudioFile(path, signal);
       if (ok || signal.aborted) return ok;
       _log.debug(
-        '${provider != null ? '服务商' : '有道'}播放失败，回落到系统 TTS: $text',
+        '${provider != null ? '服务商' : (_edgeEnabled() ? 'Edge' : '有道')}'
+        '播放失败，回落到系统 TTS: $text',
       );
     }
 

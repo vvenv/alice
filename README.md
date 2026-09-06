@@ -23,7 +23,7 @@
 ## 功能
 
 - 粘贴英文单词列表 / 拍照 OCR 识别（内置智谱 GLM-4V 双档模型；支持自定义 OCR 服务商；Web 版需自备 API Key）
-- 发音源可选：有道词典发音（默认，免费）或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
+- 发音源可选：微软 Edge 朗读（默认，免费免配置，中英文都自然）、有道词典发音或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
 - 可选在两遍单词之间朗读中文释义（单词 → 释义 → 单词）
 - 识别模型分档：免费档（GLM-4V Flash）无限使用，高级档（GLM-4V Plus）消耗 Credits
 - Credits 充值：购买充值包，余额本地持久化，仅成功识别才扣减
@@ -38,7 +38,7 @@
 ## 技术栈
 
 - **Flutter** — 跨平台应用，仓库根目录就是 Flutter 工程
-- **有道发音 mp3 / OpenAI 兼容大模型 TTS / 系统 TTS** — 三级发音源，逐级兜底并本地缓存
+- **Edge 朗读 / 有道发音 mp3 / OpenAI 兼容大模型 TTS / 系统 TTS** — 多级发音源，逐级兜底并本地缓存
 - **智谱 GLM-4V** — 视觉 OCR 识别
 - **Vite + React + Tailwind CSS** — 官网（`website/` 子包）
 
@@ -218,27 +218,39 @@ Web 产物在浏览器里手动走过完整流程（首页 → 设置 → 听写
 （静音键 / 后台播放）、拍照与相册 OCR、老数据迁移。这些在 Web 上要么是空实现
 要么走不到，测试环境里插件直接抛 MissingPluginException。
 
-### 2. 自定义发音服务只在 Web 上不可用
+### 2. Edge / 自定义发音服务在 Web 上不可用
 
 `lib/services/tts_config.dart` 配的 OpenAI 兼容 TTS 需要把生成的音频落盘，
 而 Web 端的缓存实现是空操作，所以 Web 一律走系统 TTS。Expo 版在 Web 上用
 blob URL 顶了一下，这边没跟 —— 为一个次要目标改缓存接口形状不划算。
 
-### 3. TTS 语速需要真机校准
+Edge 发音在 Web 上还多一层拦路：浏览器不允许自定义 WebSocket 握手的
+Origin / User-Agent，而那正是服务端要校验的，所以 `tts_edge_noop.dart`
+在 Web 上直接报「不支持」，发音回落有道 / 系统 TTS。
+
+### 3. Edge 发音走的是非官方端点
+
+`lib/services/tts_edge_api.dart` 对接的是 Edge 浏览器「大声朗读」用的
+WebSocket 接口：免费、不需要账号，但没有公开文档、没有 SLA。微软改了握手
+要求（比如 2024 年底加的 `Sec-MS-GEC` 令牌、以及会被校验的 Chromium 版本号）
+这条路就会整条失效 —— 所以调用方永远保留回落：Edge → 有道 → 系统 TTS，
+协议细节也全部钉进了 `test/tts_edge_test.dart`。
+
+### 4. TTS 语速需要真机校准
 
 `lib/services/tts.dart` 的 `_normalizedRate()` 把用户的 0.5–1.5 区间映射到各
 平台：iOS 走 `AVSpeechUtterance` 的 0..1，Android 走
 `TextToSpeech.setSpeechRate` 的 1.0 = 正常。这组映射是按文档推的，没在真机上
 听过。
 
-### 4. 包名不能改
+### 5. 包名不能改
 
 `scripts/bootstrap.sh` 把 applicationId / bundleIdentifier 固定成
 `com.vvenv.alice`，与 Expo 版一致。**改了包名就是另一个沙箱**，
 `lib/services/legacy_migration_io.dart` 会读不到任何东西，从老版本升上来的
 用户，错词本 / 历史 / 收藏 / Credits 全部丢失。
 
-### 5. 签名还是 debug key
+### 6. 签名还是 debug key
 
 `android/app/build.gradle.kts` 的 release buildType 目前用 debug 签名
 （`flutter create` 的默认）。上架应用商店之前需要配真正的 keystore。

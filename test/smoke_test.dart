@@ -145,8 +145,10 @@ void main() {
     await tester.tap(find.text('发音源'));
     await tester.pumpAndSettle();
 
-    // 默认是有道，说明文案与服务商预设都还没出现
-    expect(find.text('当前使用有道词典发音'), findsOneWidget);
+    // 默认是 Edge：说明文案与音色选项是它的，服务商预设都还没出现
+    expect(find.text('当前使用微软 Edge 发音'), findsOneWidget);
+    expect(find.text('Aria 美音·女'), findsOneWidget);
+    expect(find.text('晓晓·女'), findsOneWidget);
     expect(find.text('小米 MiMo'), findsNothing);
 
     await tester.tap(find.text('自定义接口'));
@@ -158,6 +160,8 @@ void main() {
     expect(find.text('接口地址 (Base URL)'), findsOneWidget);
     expect(find.text('模型名称'), findsOneWidget);
     expect(find.text('英文音色'), findsOneWidget);
+    // Edge 的音色选项跟着源一起换掉了
+    expect(find.text('Aria 美音·女'), findsNothing);
 
     // 选预设会把地址/模型填好
     await tester.tap(find.text('小米 MiMo'));

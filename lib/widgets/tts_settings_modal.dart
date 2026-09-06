@@ -1,35 +1,48 @@
 import 'package:flutter/material.dart';
 
-import '../services/tts.dart' show testTtsConfig;
+import '../services/tts.dart'
+    show isEdgeTtsSupported, testEdgeVoices, testTtsConfig;
 import '../services/tts_config.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_icons.dart';
 
-/// 发音源设置：有道词典发音 / 自定义 OpenAI 兼容 TTS 接口。
+/// 发音源设置：微软 Edge / 有道词典发音 / 自定义 OpenAI 兼容 TTS 接口。
 ///
 /// 对应 Expo 版 src/components/TtsSettingsModal.tsx。
 
 /// 用户在弹窗里做出的选择。
 class TtsSettingsResult {
-  const TtsSettingsResult({required this.source, required this.config});
+  const TtsSettingsResult({
+    required this.source,
+    required this.config,
+    required this.edgeVoices,
+  });
 
   final TtsSource source;
 
-  /// 自定义配置；选有道时保持原样不动。
+  /// 自定义配置；选别的源时保持原样不动。
   final TtsProviderConfig? config;
+
+  /// Edge 音色；同样只在选中时才会变。
+  final EdgeVoiceConfig edgeVoices;
 }
 
 Future<TtsSettingsResult?> showTtsSettingsModal(
   BuildContext context, {
   required TtsSource source,
   required TtsProviderConfig? config,
+  required EdgeVoiceConfig edgeVoices,
 }) {
   return showDialog<TtsSettingsResult>(
     context: context,
     barrierColor: context.themeController.colors.overlay,
-    builder: (_) => _TtsSettingsModal(source: source, config: config),
+    builder: (_) => _TtsSettingsModal(
+      source: source,
+      config: config,
+      edgeVoices: edgeVoices,
+    ),
   );
 }
 
@@ -56,10 +69,15 @@ class _TestError extends _TestState {
 }
 
 class _TtsSettingsModal extends StatefulWidget {
-  const _TtsSettingsModal({required this.source, required this.config});
+  const _TtsSettingsModal({
+    required this.source,
+    required this.config,
+    required this.edgeVoices,
+  });
 
   final TtsSource source;
   final TtsProviderConfig? config;
+  final EdgeVoiceConfig edgeVoices;
 
   @override
   State<_TtsSettingsModal> createState() => _TtsSettingsModalState();
@@ -67,6 +85,7 @@ class _TtsSettingsModal extends StatefulWidget {
 
 class _TtsSettingsModalState extends State<_TtsSettingsModal> {
   late TtsSource _source = widget.source;
+  late EdgeVoiceConfig _edgeVoices = widget.edgeVoices;
   late TtsApiKind _api = widget.config?.api ?? TtsApiKind.speech;
   late final TextEditingController _baseUrlController =
       TextEditingController(text: widget.config?.baseUrl ?? '');
@@ -104,14 +123,15 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
       );
 
   bool get _canSave =>
-      _source == TtsSource.youdao || isTtsProviderConfigSet(_draft);
+      _source != TtsSource.custom || isTtsProviderConfigSet(_draft);
 
-  String get _statusLine {
-    if (widget.source == TtsSource.youdao) return '当前使用有道词典发音';
-    return isTtsProviderConfigSet(widget.config)
-        ? '当前使用自定义发音服务'
-        : '保存后启用自定义发音';
-  }
+  String get _statusLine => switch (widget.source) {
+        TtsSource.edge => '当前使用微软 Edge 发音',
+        TtsSource.youdao => '当前使用有道词典发音',
+        TtsSource.custom => isTtsProviderConfigSet(widget.config)
+            ? '当前使用自定义发音服务'
+            : '保存后启用自定义发音',
+      };
 
   void _applyPreset(TtsProviderPreset preset) {
     setState(() {
@@ -129,10 +149,21 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
     Navigator.of(context).pop(
       TtsSettingsResult(
         source: _source,
-        // 选回有道时不要抹掉已填好的自定义配置 —— 用户多半只是想临时切回去。
+        // 切走时不要抹掉已填好的自定义配置 —— 用户多半只是想临时换一下。
         config: _source == TtsSource.custom ? _draft : widget.config,
+        edgeVoices: _edgeVoices,
       ),
     );
+  }
+
+  Future<void> _handleEdgeTest() async {
+    setState(() => _test = const _TestTesting());
+    try {
+      await testEdgeVoices(_edgeVoices);
+      if (mounted) setState(() => _test = const _TestOk());
+    } catch (e) {
+      if (mounted) setState(() => _test = _TestError(_errorMessage(e)));
+    }
   }
 
   Future<void> _handleTest() async {
@@ -197,12 +228,15 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
                           const EdgeInsets.symmetric(vertical: Spacing.xs),
                       child: Row(
                         children: [
+                          _sourceChip('微软 Edge', TtsSource.edge, colors),
+                          const SizedBox(width: Spacing.xs),
                           _sourceChip('有道词典', TtsSource.youdao, colors),
                           const SizedBox(width: Spacing.xs),
                           _sourceChip('自定义接口', TtsSource.custom, colors),
                         ],
                       ),
                     ),
+                    if (_source == TtsSource.edge) ..._buildEdge(colors),
                     if (_source == TtsSource.youdao)
                       _infoCard(
                         colors,
@@ -219,6 +253,61 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildEdge(AppColors colors) {
+    if (!isEdgeTtsSupported()) {
+      return [
+        _infoCard(
+          colors,
+          '当前平台（网页版）用不了 Edge 发音，会自动回落到有道 / 系统 TTS。'
+          '手机与桌面版可用。',
+        ),
+      ];
+    }
+    return [
+      _infoCard(
+        colors,
+        '微软 Edge 浏览器的朗读服务：免费、不用注册，中英文都自然，'
+        '生成后本地缓存。接口非官方公开，失败时自动回落有道 / 系统 TTS。',
+      ),
+      _fieldLabel('英文音色', colors),
+      Wrap(
+        spacing: Spacing.xs,
+        runSpacing: Spacing.xs,
+        children: [
+          for (final voice in kEdgeVoicesEn)
+            _voiceChip(
+              voice,
+              active: _edgeVoices.en == voice.name,
+              colors: colors,
+              onTap: () => setState(() {
+                _edgeVoices = _edgeVoices.copyWith(en: voice.name);
+                _test = const _TestIdle();
+              }),
+            ),
+        ],
+      ),
+      _fieldLabel('中文音色', colors),
+      Wrap(
+        spacing: Spacing.xs,
+        runSpacing: Spacing.xs,
+        children: [
+          for (final voice in kEdgeVoicesZh)
+            _voiceChip(
+              voice,
+              active: _edgeVoices.zh == voice.name,
+              colors: colors,
+              onTap: () => setState(() {
+                _edgeVoices = _edgeVoices.copyWith(zh: voice.name);
+                _test = const _TestIdle();
+              }),
+            ),
+        ],
+      ),
+      _hint('中文音色用于朗读释义；换音色后已缓存的发音会重新生成。', colors),
+      ..._testWidgets(colors, enabled: true, run: _handleEdgeTest),
+    ];
   }
 
   List<Widget> _buildCustom(AppColors colors) {
@@ -317,6 +406,21 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
         ],
       ),
       _hint('留空使用服务商默认音色；修改音色或语速后会重新生成发音。', colors),
+      ..._testWidgets(
+        colors,
+        enabled: isTtsProviderConfigSet(_draft),
+        run: _handleTest,
+      ),
+    ];
+  }
+
+  /// 试听按钮 + 结果提示。Edge 与自定义接口共用。
+  List<Widget> _testWidgets(
+    AppColors colors, {
+    required bool enabled,
+    required Future<void> Function() run,
+  }) {
+    return [
       if (_test is _TestOk)
         _testResult(
           icon: AppIcons.checkmarkCircle,
@@ -336,12 +440,10 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
       Padding(
         padding: const EdgeInsets.only(top: Spacing.sm),
         child: GestureDetector(
-          onTap: (isTtsProviderConfigSet(_draft) && _test is! _TestTesting)
-              ? _handleTest
-              : null,
+          onTap: (enabled && _test is! _TestTesting) ? run : null,
           behavior: HitTestBehavior.opaque,
           child: Opacity(
-            opacity: isTtsProviderConfigSet(_draft) ? 1 : 0.4,
+            opacity: enabled ? 1 : 0.4,
             child: Container(
               constraints: const BoxConstraints(minHeight: 38),
               alignment: Alignment.center,
@@ -366,6 +468,42 @@ class _TtsSettingsModalState extends State<_TtsSettingsModal> {
         ),
       ),
     ];
+  }
+
+  Widget _voiceChip(
+    EdgeVoiceOption voice, {
+    required bool active,
+    required AppColors colors,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      selected: active,
+      label: voice.label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.sm + 2,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: active ? colors.primarySoft : colors.surface,
+            borderRadius: BorderRadius.circular(Radii.control),
+            border: Border.all(color: active ? colors.primary : colors.border),
+          ),
+          child: Text(
+            voice.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: active ? colors.primary : colors.foreground,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildHeader(AppColors colors) {

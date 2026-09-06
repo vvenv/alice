@@ -69,6 +69,38 @@ void main() {
 
       await saveTtsSource(TtsSource.youdao);
       expect((await loadTtsSettings()).source, TtsSource.youdao);
+
+      await saveTtsSource(TtsSource.edge);
+      expect((await loadTtsSettings()).source, TtsSource.edge);
+    });
+
+    test('从没选过时是 Edge —— 免费、免配置，所以是默认', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      await Prefs.init();
+
+      final settings = await loadTtsSettings();
+      expect(settings.source, TtsSource.edge);
+      expect(settings.edgeVoices.en, kDefaultEdgeVoiceEn);
+      expect(settings.edgeVoices.zh, kDefaultEdgeVoiceZh);
+    });
+
+    test('Edge 音色能读回，坏值回落到默认音色', () async {
+      await saveEdgeVoices(
+        const EdgeVoiceConfig(en: 'en-GB-SoniaNeural', zh: 'zh-CN-YunxiNeural'),
+      );
+      final back = (await loadTtsSettings()).edgeVoices;
+      expect(back.en, 'en-GB-SoniaNeural');
+      expect(back.zh, 'zh-CN-YunxiNeural');
+
+      // 空音色会让 SSML 里的 voice name 为空，服务端直接报错 —— 挡在这里。
+      expect(
+        EdgeVoiceConfig.fromJson(const {'en': '  ', 'zh': 42}).en,
+        kDefaultEdgeVoiceEn,
+      );
+      expect(
+        EdgeVoiceConfig.fromJson(const {'en': '  ', 'zh': 42}).zh,
+        kDefaultEdgeVoiceZh,
+      );
     });
 
     test('服务商配置逐字段往返', () async {
@@ -215,6 +247,7 @@ void main() {
     // 新增条目前先确认一遍：RN 版真的没写过这个 key 吗？
     const flutterOnly = <String>{
       'alice_camera_button_pos', // 拍照按钮拖到哪儿了，RN 版的按钮不能拖
+      'alice_tts_edge_voices', // Edge 发音是 Flutter 版才有的
     };
 
     final missing = <String>[];
