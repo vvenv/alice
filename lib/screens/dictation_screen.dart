@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../services/audio_interruptions.dart';
 import '../services/dictation.dart';
 import '../services/dictionary.dart';
 import '../services/haptics.dart';
@@ -36,18 +37,22 @@ class DictationScreen extends StatefulWidget {
     required this.words,
     required this.intervalSec,
     required this.autoNext,
+    this.interruptions,
   });
 
   final List<String> words;
   final double intervalSec;
   final bool autoNext;
 
+  /// 音频中断事件源。为空时用真实的（来电/抢焦点、拔耳机），测试注入假流。
+  final Stream<PlaybackInterruption>? interruptions;
+
   @override
   State<DictationScreen> createState() => _DictationScreenState();
 }
 
 class _DictationScreenState extends State<DictationScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final PlaybackController _playback = PlaybackController(
     intervalSec: widget.intervalSec,
     autoNext: widget.autoNext,
@@ -90,6 +95,10 @@ class _DictationScreenState extends State<DictationScreen>
   int? _prevTickMs;
   int _prevIndex = 0;
   bool _keepAwake = false;
+  StreamSubscription<PlaybackInterruption>? _interruptionSub;
+
+  /// 切后台时自动暂停留下的话，等用户回来再说。
+  String? _resumeNotice;
 
   @override
   void initState() {
@@ -97,6 +106,9 @@ class _DictationScreenState extends State<DictationScreen>
     _playback.addListener(_onPlaybackChanged);
     _wrong.addListener(_onControllerChanged);
     _toast.addListener(_onControllerChanged);
+    WidgetsBinding.instance.addObserver(this);
+    _interruptionSub = (widget.interruptions ?? audioInterruptions())
+        .listen(_handleInterruption);
     unawaited(_loadSpeechSettings());
     // 等转场结束再开口。第一帧就朗读，iOS 会把第一句吃掉；
     // 点暂停再继续之所以能出声，是因为那时页面已经停稳了。
@@ -141,6 +153,45 @@ class _DictationScreenState extends State<DictationScreen>
 
   void _onControllerChanged() {
     if (mounted) setState(() {});
+  }
+
+  /// 切后台就暂停。
+  ///
+  /// 调度器本来完全不理会前后台：切去看一眼消息、锁屏、点开一条通知，
+  /// 计时器和朗读都继续跑（能跑多久看系统脸色），回来时进度已经往前走了
+  /// 几个词 —— 而那几个词没人听见。
+  ///
+  /// 回到前台不自动续播：用户未必已经拿起笔，让他自己按「继续」。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
+
+    if (state == AppLifecycleState.resumed) {
+      final notice = _resumeNotice;
+      if (notice != null) {
+        _resumeNotice = null;
+        _toast.show(notice);
+      }
+      return;
+    }
+
+    if (_playback.playState != PlayState.playing) return;
+    _playback.pauseDictation();
+    _resumeNotice = '切到后台时已暂停';
+  }
+
+  /// 来电/别的 App 抢走音频焦点，或者耳机被拔掉。
+  ///
+  /// 两种都会让接下来的朗读白读：一种是根本听不见，一种是从外放喇叭喊出来。
+  /// 用户这时人就在屏幕前，直接给提示。
+  void _handleInterruption(PlaybackInterruption reason) {
+    if (!mounted || _playback.playState != PlayState.playing) return;
+    _playback.pauseDictation();
+    _toast.show(switch (reason) {
+      PlaybackInterruption.focusLost => '音频被打断，已暂停',
+      PlaybackInterruption.becameNoisy => '耳机已断开，已暂停',
+    });
   }
 
   void _onPlaybackChanged() {
@@ -242,6 +293,8 @@ class _DictationScreenState extends State<DictationScreen>
   void dispose() {
     // 无条件放开：页面没了就不该再有常亮，哪怕状态没同步上。
     unawaited(KeepAwake.disable());
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_interruptionSub?.cancel());
     _playback.removeListener(_onPlaybackChanged);
     _wrong.removeListener(_onControllerChanged);
     _toast.removeListener(_onControllerChanged);
