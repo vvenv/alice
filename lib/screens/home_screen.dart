@@ -339,6 +339,61 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _intervalSec = sec);
   }
 
+  /// 删掉一行之后给一次撤销。
+  ///
+  /// 那个删除按钮是列表行里一个 20px 的 ✕，误触代价不小 —— 刚 OCR 识出来
+  /// 三十个词，误删一个就得重拍。错词删除一直有撤销，这里没有说不过去。
+  void _handleWordDeleted(int index, String line) {
+    final word = parseWordLine(line).word;
+    _toast.show(
+      '已删除 $word',
+      action: ToastAction(
+        label: '撤销',
+        onPressed: () {
+          final entries = parseWords(_wordInput);
+          entries.insert(index.clamp(0, entries.length), line);
+          final restored = entries.join('\n');
+          setState(() {
+            _wordInput = restored;
+            _isDisplayMode = true;
+            _clampStartIndex();
+          });
+          _debounce?.cancel();
+          unawaited(saveWordInput(restored));
+        },
+      ),
+    );
+  }
+
+  /// 清空词表 —— 换一份词表以前要全选删。同样给一次撤销。
+  void _handleClearWordInput() {
+    final previous = _wordInput;
+    if (parseWords(previous).isEmpty) return;
+
+    setState(() {
+      _wordInput = '';
+      _isDisplayMode = false;
+      _startIndex = 0;
+    });
+    _debounce?.cancel();
+    unawaited(saveWordInput(''));
+
+    _toast.show(
+      '已清空词表',
+      action: ToastAction(
+        label: '撤销',
+        onPressed: () {
+          setState(() {
+            _wordInput = previous;
+            _isDisplayMode = true;
+            _clampStartIndex();
+          });
+          unawaited(saveWordInput(previous));
+        },
+      ),
+    );
+  }
+
   /// 一键填入示例词表，让首启的用户能直接走通一轮听写。
   Future<void> _handleLoadSample() async {
     await loadDictionary();
@@ -832,6 +887,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     setState(() => _startIndex = i),
                                 isDisplayMode: _isDisplayMode,
                                 onToggleDisplayMode: _handleToggleDisplayMode,
+                                onWordDeleted: _handleWordDeleted,
+                                onClearAll: _handleClearWordInput,
                                 overlayActionSize: cameraSize,
                                 overlayAlignment: _cameraAlignment,
                                 onOverlayAlignmentChanged: _handleCameraMoved,

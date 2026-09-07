@@ -19,6 +19,8 @@ class WordInputSection extends StatefulWidget {
     required this.onStartIndexChanged,
     required this.isDisplayMode,
     this.onToggleDisplayMode,
+    this.onWordDeleted,
+    this.onClearAll,
     this.overlayAction,
     this.overlayActionSize = 0,
     this.overlayAlignment = Alignment.bottomRight,
@@ -36,6 +38,15 @@ class WordInputSection extends StatefulWidget {
 
   /// 有词之后卡片自己带「完成 / 编辑」。空卡片不出现，避免先看见一条空工具栏。
   final VoidCallback? onToggleDisplayMode;
+
+  /// 删掉某一行之后回调（行号 + 原文），供上层给一次撤销。
+  ///
+  /// 删除按钮是个 20px 的 ✕，误触代价不小 —— 刚 OCR 识出来三十个词，
+  /// 误删一个就得重拍。
+  final void Function(int index, String line)? onWordDeleted;
+
+  /// 「清空」被点击。清空本身由上层执行，好把撤销一并给了。
+  final VoidCallback? onClearAll;
 
   /// 浮在卡片上的操作按钮（首页放的是拍照识词）。
   final Widget? overlayAction;
@@ -164,8 +175,9 @@ class _WordInputSectionState extends State<WordInputSection> {
   void _handleDeleteWord(int index) {
     final entries = parseWordEntries(widget.value);
     if (index < 0 || index >= entries.length) return;
-    entries.removeAt(index);
+    final removed = entryToLine(entries.removeAt(index));
     widget.onChanged(entries.map(entryToLine).join('\n'));
+    widget.onWordDeleted?.call(index, removed);
 
     // 删除后平移展开态索引，避免串到相邻词条
     setState(() {
@@ -279,6 +291,15 @@ class _WordInputSectionState extends State<WordInputSection> {
               ),
             ),
           ),
+          if (widget.onClearAll != null) ...[
+            AppButton(
+              label: '清空',
+              variant: ButtonVariant.ghost,
+              size: ButtonSize.sm,
+              onPressed: widget.onClearAll,
+            ),
+            const SizedBox(width: Spacing.xs),
+          ],
           AppButton(
             label: display ? '编辑' : '完成',
             icon: display ? AppIcons.createOutline : AppIcons.checkmark,
