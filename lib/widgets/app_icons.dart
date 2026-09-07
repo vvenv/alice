@@ -35,6 +35,11 @@ class AppIcons {
   static const IconData skipBack = Icons.skip_previous;
   static const IconData skipForward = Icons.skip_next;
   static const IconData refresh = Icons.refresh;
+  static const IconData replay = Icons.replay;
+  static const IconData wrongWords = Icons.rule_folder_outlined;
+  static const IconData phonePortrait = Icons.phone_iphone;
+  static const IconData openOutside = Icons.open_in_new;
+  static const IconData sparkles = Icons.auto_awesome_outlined;
   static const IconData arrowBack = Icons.arrow_back;
   static const IconData eye = Icons.visibility;
   static const IconData eyeOff = Icons.visibility_off;
