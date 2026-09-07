@@ -26,6 +26,7 @@ class PlaybackControls extends StatelessWidget {
     this.onShuffleChanged,
     this.wordCount,
     this.trailing,
+    this.busy = false,
   });
 
   final double intervalSec;
@@ -44,11 +45,14 @@ class PlaybackControls extends StatelessWidget {
   /// 正好放语速入口。
   final Widget? trailing;
 
+  /// 正在准备（首次要等词典资源），主按钮变暗并改文案。
+  final bool busy;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     // 0 词时仍可点击，好让 toast 解释为什么没开始。
-    final playLooksDisabled = wordCount == 0;
+    final playLooksDisabled = wordCount == 0 || busy;
     final showPlay = showPlayButton && onPlayToggle != null;
 
     return Column(
@@ -118,7 +122,7 @@ class PlaybackControls extends StatelessWidget {
         if (showPlay) ...[
           const SizedBox(height: Spacing.sm),
           AppButton(
-            label: '开始听写',
+            label: busy ? '正在准备…' : '开始听写',
             variant: ButtonVariant.primary,
             size: ButtonSize.lg,
             onPressed: onPlayToggle,

@@ -84,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _shuffle = false;
   bool _isDisplayMode = false;
   OcrUiState _ocrUi = OcrUiState.idle;
+  bool _starting = false;
   Alignment _cameraAlignment = kDefaultCameraButtonAlignment;
 
   List<WordHistoryEntry> _history = <WordHistoryEntry>[];
@@ -299,8 +300,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleStart() async {
+    if (_starting) return;
+
     // 即使用户从编辑模式直接开始，也保证补全过、去过重。
-    await loadDictionary();
+    //
+    // 词典是 3.4MB 的资源，Web 上第一次要现拉。以前这里干等着，用户点了
+    // 「开始听写」什么也不会发生 —— 现在按钮进入准备态，并挡住重复点击。
+    if (!isDictionaryLoaded) setState(() => _starting = true);
+    try {
+      await loadDictionary();
+    } finally {
+      if (mounted && _starting) setState(() => _starting = false);
+    }
     if (!mounted) return;
     final enriched = enrichWordListText(_wordInput);
     if (enriched != _wordInput) {
@@ -1224,6 +1235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shuffle: _shuffle,
                 onShuffleChanged: (v) => setState(() => _shuffle = v),
                 wordCount: parsedWordCount,
+                busy: _starting,
               ),
             ],
           ),

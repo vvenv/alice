@@ -26,13 +26,32 @@ class WordMeta {
 /// 紧凑映射：小写单词 → `"pos|meaning"`（pos 可能为空）。
 Map<String, String> _meta = const {};
 bool _loaded = false;
+Future<void>? _loading;
+
+/// 词典是否已经就绪。没就绪时补全会静默跳过（词照样能听，只是没有释义）。
+bool get isDictionaryLoaded => _loaded;
 
 /// 在启动时载入词典资源。3.4MB JSON，解析一次常驻内存。
-Future<void> loadDictionary() async {
-  if (_loaded) return;
-  final raw = await rootBundle.loadString('assets/data/ecdict-meta.json');
-  final decoded = json.decode(raw) as Map<String, dynamic>;
-  _meta = decoded.map((k, v) => MapEntry(k, v as String));
+///
+/// 共享同一个 Future：main() 启动时来一发，首页 _bootstrap 一发，
+/// 「开始听写」还有一发 —— 各自 `await` 的话会并发地把 3.4MB 解析三遍，
+/// 首屏白白多卡几百毫秒。
+///
+/// 失败不抛给调用方。此前异常会一路冒到「开始听写」里，表现是点了没反应；
+/// 资源读不到时更该让用户听没有释义的词，而不是根本听不了。
+Future<void> loadDictionary() {
+  if (_loaded) return Future.value();
+  return _loading ??= _loadDictionary().whenComplete(() => _loading = null);
+}
+
+Future<void> _loadDictionary() async {
+  try {
+    final raw = await rootBundle.loadString('assets/data/ecdict-meta.json');
+    final decoded = json.decode(raw) as Map<String, dynamic>;
+    _meta = decoded.map((k, v) => MapEntry(k, v as String));
+  } catch (_) {
+    _meta = const {};
+  }
   _loaded = true;
 }
 
