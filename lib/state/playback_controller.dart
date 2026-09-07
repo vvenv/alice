@@ -24,6 +24,13 @@ enum _WordPhase { speak1, speakMeaning, speak2, interval }
 
 const int _repeatGapMs = 700;
 
+/// 连续多少个词一个音都没发出来，就停下来告诉用户。
+///
+/// 1 个词失败可能只是这一条音频的问题（网络抖动、缓存缺失），调度器本来就
+/// 会往下走；连着 2 个词两遍都哑，那就是发音源整体不可用了 —— 再往下走
+/// 只会得到一屏「怀表在转、倒计时在跳、一个音都没有」。
+const int _maxSpeechFailStreak = 2;
+
 class _Scheduler {
   _Scheduler({
     required this.gen,
@@ -72,6 +79,8 @@ class PlaybackController extends ChangeNotifier {
   bool _autoNext;
 
   int _playGen = 0;
+  int _speechFailStreak = 0;
+  bool _speechFailed = false;
   _Scheduler? _scheduler;
   AbortSignal? _cycleAbort;
   Timer? _countdownTimer;
@@ -83,6 +92,12 @@ class PlaybackController extends ChangeNotifier {
   int? get remainingMs => _remainingMs;
   double get intervalSec => _intervalSec;
   bool get autoNext => _autoNext;
+
+  /// 连续多个词都没发出声、已经自动暂停 —— 等界面取走并提示用户。
+  bool get speechFailed => _speechFailed;
+
+  /// 界面提示过了就把标记清掉，免得每次重建都再弹一次。
+  void acknowledgeSpeechFailure() => _speechFailed = false;
 
   bool get isActive =>
       _playState == PlayState.playing || _playState == PlayState.paused;
@@ -255,6 +270,18 @@ class PlaybackController extends ChangeNotifier {
         return;
       }
 
+      // 只有第二遍也哑了才算这个词彻底失败 —— speak1 失败时 speak2 就是重试。
+      if (ok) {
+        _speechFailStreak = 0;
+      } else if (phase == _WordPhase.speak2) {
+        _speechFailStreak += 1;
+        if (_speechFailStreak >= _maxSpeechFailStreak) {
+          _speechFailed = true;
+          pauseDictation();
+          return;
+        }
+      }
+
       if (phase == _WordPhase.speak1) {
         final gapOk = await _waitMs(_repeatGapMs, signal);
         if (_isCancelled(gen) || !gapOk) return;
@@ -352,6 +379,8 @@ class PlaybackController extends ChangeNotifier {
 
     _wordList = List<String>.from(words);
     _currentIndex = 0;
+    _speechFailStreak = 0;
+    _speechFailed = false;
 
     if (words.isEmpty) {
       _updatePlayState(PlayState.idle);

@@ -194,10 +194,21 @@ class _DictationScreenState extends State<DictationScreen>
     });
   }
 
+  /// 发音源整体不可用时给个说法。
+  ///
+  /// 以前朗读失败只用来防死循环，然后静静往下走 —— 表现是怀表在转、
+  /// 倒计时在跳、一个音都没有，用户不知道是手机静音了还是应用坏了。
+  void _syncSpeechFailure() {
+    if (!_playback.speechFailed) return;
+    _playback.acknowledgeSpeechFailure();
+    _toast.show('连续几个词都没发出声，已暂停。检查网络，或到设置里换个发音源。');
+  }
+
   void _onPlaybackChanged() {
     if (!mounted) return;
 
     _syncKeepAwake();
+    _syncSpeechFailure();
     _syncProgressBar();
     _syncCountdown();
     _syncTickSound();

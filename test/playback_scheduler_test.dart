@@ -176,15 +176,48 @@ void main() {
     );
   });
 
-  test('朗读失败不会卡住，词表照样走完', () async {
+  // 一次 TTS 故障不该变成无限循环（以及一个卡死的 App）：同一个词最多两遍。
+  test('朗读失败不会卡在同一个词上重试', () async {
     final speech = FakeSpeech(speakSucceeds: false);
     final c = make(speech);
     addTearDown(c.dispose);
 
     c.startDictation(['apple', 'banana']);
-    await until(() => c.playState == PlayState.idle);
+    await until(() => c.playState == PlayState.paused);
 
-    expect(c.playState, PlayState.idle);
+    expect(speech.spoken.where((e) => e.startsWith('apple')), hasLength(2));
+  });
+
+  // 以前失败只用来防死循环，然后静静往下走 —— 表现是怀表在转、倒计时在跳、
+  // 一个音都没有，用户不知道是手机静音了还是应用坏了。
+  test('连续两个词都没发出声就自动暂停并报错', () async {
+    final speech = FakeSpeech(speakSucceeds: false);
+    final c = make(speech);
+    addTearDown(c.dispose);
+
+    c.startDictation(['apple', 'banana', 'cat']);
+    await until(() => c.speechFailed);
+
+    expect(c.playState, PlayState.paused);
+    expect(c.currentIndex, lessThan(2), reason: '不该把整张词表哑着跑完');
+
+    c.acknowledgeSpeechFailure();
+    expect(c.speechFailed, isFalse, reason: '提示过一次就别反复弹');
+  });
+
+  test('偶尔一个词失败不打断听写', () async {
+    final speech = FakeSpeech();
+    final c = make(speech);
+    addTearDown(c.dispose);
+
+    c.startDictation(['apple', 'banana']);
+    await until(() => speech.spoken.length >= 2);
+    speech.speakSucceeds = false;
+    await until(() => speech.spoken.length >= 4);
+    speech.speakSucceeds = true;
+
+    await until(() => c.playState == PlayState.idle);
+    expect(c.speechFailed, isFalse);
   });
 
   test('autoNext 关掉时，第二遍读完就停住不前进', () async {
