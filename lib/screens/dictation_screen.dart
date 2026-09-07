@@ -265,6 +265,14 @@ class _DictationScreenState extends State<DictationScreen>
 
   bool get _previousEnabled => _playback.isActive && _playback.currentIndex > 0;
 
+  bool get _replayEnabled => _markEnabled;
+
+  void _handleReplay() {
+    if (!_replayEnabled) return;
+    Haptics.tapLight();
+    _playback.replayCurrentWord();
+  }
+
   void _handleMarkWrong() {
     if (!_markEnabled) return;
     final word = speakTextFromEntry(_playback.wordList[_playback.currentIndex]);
@@ -690,6 +698,8 @@ class _DictationScreenState extends State<DictationScreen>
         _playback.isActive && _autoNext && _playback.remainingMs != null;
 
     return GestureDetector(
+      // 表盘单击 = 再读一遍。这块最大的可点区域以前完全没有行为。
+      onTap: _handleReplay,
       // 表盘左滑标记错词，右滑跳过 —— 与 RN 版的 PanResponder 一致。
       onHorizontalDragEnd: (details) {
         if (!_markEnabled && !_skipEnabled) return;
@@ -703,8 +713,9 @@ class _DictationScreenState extends State<DictationScreen>
       },
       behavior: HitTestBehavior.opaque,
       child: Semantics(
+        button: true,
         label: '听写表盘',
-        hint: '向左滑标记错词，向右滑跳过',
+        hint: '点按再读一遍，向左滑标记错词，向右滑跳过',
         child: Container(
           width: dialInner,
           height: dialInner,
@@ -1079,17 +1090,21 @@ class _DictationScreenState extends State<DictationScreen>
     final playing = _playback.playState == PlayState.playing;
 
     // 间距均分而不是写死 —— 系统字号放大后文字变宽，写死会撑破一行。
+    //
+    // 这一格原先是「结束」，与页头左上角的关闭按钮（以及系统返回键）完全重复，
+    // 而「再读一遍」——听写里最高频的动作——反倒没有入口。换掉了。
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         item(
-          AppIcons.stop,
-          '结束',
+          AppIcons.replay,
+          '重听',
           48,
-          IconButtonVariant.danger,
-          _requestStop,
-          disabled: !_playback.isActive,
+          IconButtonVariant.surface,
+          _handleReplay,
+          disabled: !_replayEnabled,
+          haptic: false,
         ),
         item(
           AppIcons.skipBack,

@@ -227,6 +227,59 @@ void main() {
     expect(c.playState, PlayState.playing);
   });
 
+  // 「再读一遍」是听写里最高频的动作，以前没有入口，只能靠「暂停 → 继续」
+  // 凑（恢复播放本来就是从 speak1 重来）。现在是明确的一档操作，别再退化成
+  // 「跳到下一个词」或者「什么都没发生」。
+  test('重听会重新从第一遍开始读当前词，且不改变词序', () async {
+    final speech = FakeSpeech(speakDuration: const Duration(seconds: 5));
+    final c = make(speech);
+    addTearDown(c.dispose);
+
+    c.startDictation(['apple', 'banana']);
+    await until(() => speech.spoken.isNotEmpty);
+    expect(c.currentIndex, 0);
+
+    c.replayCurrentWord();
+    await until(() => speech.spoken.length >= 2);
+
+    expect(c.currentIndex, 0, reason: '重听不该走到下一个词');
+    expect(speech.spoken, ['apple@auto', 'apple@auto']);
+    expect(c.playState, PlayState.playing);
+  });
+
+  test('暂停中重听会恢复播放', () async {
+    final speech = FakeSpeech(speakDuration: const Duration(seconds: 5));
+    final c = make(speech);
+    addTearDown(c.dispose);
+
+    c.startDictation(['apple', 'banana']);
+    await until(() => speech.spoken.isNotEmpty);
+    c.pauseDictation();
+    expect(c.playState, PlayState.paused);
+
+    c.replayCurrentWord();
+    await until(() => speech.spoken.length >= 2);
+
+    expect(c.playState, PlayState.playing);
+    expect(c.currentIndex, 0);
+  });
+
+  test('听写结束后重听不做任何事', () async {
+    final speech = FakeSpeech();
+    final c = make(speech);
+    addTearDown(c.dispose);
+
+    c.startDictation(['apple']);
+    await until(() => c.playState == PlayState.idle);
+    final before = speech.spoken.length;
+
+    c.replayCurrentWord();
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    expect(c.playState, PlayState.idle);
+    expect(speech.spoken, hasLength(before));
+  });
+
   test('暂停会停掉朗读并保持在原词', () async {
     final speech = FakeSpeech(speakDuration: const Duration(seconds: 5));
     final c = make(speech);

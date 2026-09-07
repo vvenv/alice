@@ -416,6 +416,28 @@ class PlaybackController extends ChangeNotifier {
     _startFrom(nextIndex, _WordPhase.speak1);
   }
 
+  /// 从头再读一遍当前词（单词 →〔释义〕→ 单词）。
+  ///
+  /// 听写场景里「再读一遍」是最高频的诉求，以前只能靠「暂停 → 继续」凑
+  /// —— 那条路能走通纯属实现细节（恢复播放本来就是从 speak1 重来），
+  /// 没人猜得到。暂停中调用会顺手恢复播放，与跳词一致。
+  void replayCurrentWord() {
+    if (!isActive) return;
+
+    final index = _currentIndex;
+    if (index >= _wordList.length) return;
+
+    _playGen += 1;
+    _abortCycle();
+    _clearCountdown();
+    _stopping = _speech.stop();
+
+    if (_playState == PlayState.paused) {
+      _updatePlayState(PlayState.playing);
+    }
+    _startFrom(index, _WordPhase.speak1);
+  }
+
   void goToPreviousWord() {
     if (!isActive) return;
 
