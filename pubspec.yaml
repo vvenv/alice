@@ -50,10 +50,19 @@ dependencies:
   # 应用版本号 — 对应 Constants.expoConfig.version
   package_info_plus: ^10.2.1
 
+  # 听写过程中保持屏幕常亮 — 对应 expo-keep-awake
+  wakelock_plus: ^1.8.0
+
+  # 打开反馈页 — 对应 expo-linking
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+  # 屏幕常亮的测试把平台实现换成假的（test/keep_awake_test.dart）
+  wakelock_plus_platform_interface: ^1.7.0
 
 flutter:
   uses-material-design: true
