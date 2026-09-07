@@ -27,6 +27,7 @@
 - 发音源可选：微软 Edge 朗读（默认，免费免配置，中英文都自然）、有道词典发音或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
 - 可选在两遍单词之间朗读中文释义（单词 → 释义 → 单词）
 - 识别模型分档：免费档（GLM-4V Flash）无限使用，高级档（GLM-4V Plus）消耗 Credits
+- 识别有 60s 超时，进行中点顶栏的进度胶囊即可取消
 - Credits：演示积分，点领取即到账、暂不扣款；仅高级识别成功才扣减
 - AI 识图可能存在误差，识别入口均有提示
 - 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
@@ -72,7 +73,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 185 个用例
+flutter test                 # 192 个用例
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```
