@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import 'abort.dart';
 import 'config.dart';
 import 'credits.dart';
 import 'ocr_config.dart';
@@ -19,11 +21,24 @@ export 'package:image_picker/image_picker.dart' show XFile;
 /// - expo-image-picker      → image_picker
 /// - expo-image-manipulator → flutter_image_compress
 /// - fetch                  → package:http
+/// 识别请求的上限。
+///
+/// 此前一个 timeout 都没有：网络「连上了但零字节」地挂住时，顶栏那个
+/// 「识别中…」会永远转下去，没有出口，只能杀掉应用。一张压到 1600px 的图
+/// 慢的时候也就十几秒，60s 已经很宽。
+const Duration _ocrRequestTimeout = Duration(seconds: 60);
+
+/// 配置自检那一发只是打个「hi」，不该等这么久。
+const Duration _ocrProbeTimeout = Duration(seconds: 15);
+
 const int _ocrMaxEdge = 1600;
 const int _ocrJpegQuality = 82;
 
 /// OCR 入口处统一展示的免责声明，让用户知道结果可能有误。
 const String kOcrDisclaimer = 'AI 识图可能存在误差，请核对识别结果';
+
+/// 用户主动取消识别时的标记文案 —— 调用方据此不弹「失败」。
+const String kOcrCancelled = '已取消识别';
 
 /// 选中高级内置模型但余额不足时抛出。
 /// UI 捕获它来打开充值流程，而不是弹一个通用错误 toast。
@@ -205,6 +220,7 @@ const String _ocrPrompt = '这是一张包含英文单词列表的图片。'
 Future<OcrResult> ocrWordsFromImage(
   XFile file, {
   void Function(OcrProgressPhase phase)? onProgress,
+  AbortSignal? signal,
 }) async {
   onProgress?.call(OcrProgressPhase.compressing);
   final image = await _compressImageForOcr(file);
@@ -215,9 +231,15 @@ Future<OcrResult> ocrWordsFromImage(
   final cfg = await _resolveOcrRequest();
   final endpoint = buildChatCompletionsUrl(cfg.baseUrl);
 
+  // 用自己的 Client：取消时直接把它关掉，挂住的连接立刻断开
+  // （与 tts.dart 下载音频的做法一致）。
+  final client = http.Client();
+  void closeOnAbort() => client.close();
+  signal?.addListener(closeOnAbort);
+
   http.Response response;
   try {
-    response = await http.post(
+    response = await client.post(
       Uri.parse(endpoint),
       headers: {
         'Authorization': 'Bearer ${cfg.apiKey}',
@@ -239,10 +261,18 @@ Future<OcrResult> ocrWordsFromImage(
           },
         ],
       }),
-    );
+    ).timeout(_ocrRequestTimeout);
+  } on TimeoutException {
+    throw Exception('识别超时，请检查网络后重试');
   } catch (_) {
+    if (signal?.aborted ?? false) throw Exception(kOcrCancelled);
     throw Exception('网络请求失败，请检查网络后重试');
+  } finally {
+    signal?.removeListener(closeOnAbort);
+    client.close();
   }
+
+  if (signal?.aborted ?? false) throw Exception(kOcrCancelled);
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
     final detail = utf8.decode(response.bodyBytes, allowMalformed: true);
@@ -294,7 +324,9 @@ Future<void> testOcrConfig({
           {'role': 'user', 'content': 'hi'},
         ],
       }),
-    );
+    ).timeout(_ocrProbeTimeout);
+  } on TimeoutException {
+    throw Exception('连接超时，请检查 URL 与网络');
   } catch (_) {
     throw Exception('网络请求失败，请检查 URL 与网络');
   }

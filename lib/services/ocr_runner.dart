@@ -1,5 +1,13 @@
 import '../services/credits.dart';
+import 'abort.dart';
 import 'ocr.dart';
+
+/// [ocrWordsFromImage] 的形状，供 [OcrRunner] 替换。
+typedef OcrRecognize = Future<OcrResult> Function(
+  XFile file, {
+  void Function(OcrProgressPhase phase)? onProgress,
+  AbortSignal? signal,
+});
 
 /// 拍照/相册 → 识别 → 回调的一次完整流程。
 ///
@@ -13,7 +21,20 @@ class OcrRunner {
     required this.onOutcome,
     required this.onInsufficientCredits,
     required this.onNeedsOcrConfig,
-  });
+    Future<XFile?> Function()? pickPhoto,
+    Future<XFile?> Function()? pickAlbum,
+    OcrRecognize? recognize,
+  })  : _pickPhoto = pickPhoto ?? takePhoto,
+        _pickAlbum = pickAlbum ?? pickFromAlbum,
+        _recognize = recognize ?? ocrWordsFromImage;
+
+  /// 拍照 / 相册 / 识别这三步都能换掉。
+  ///
+  /// 不是为了「可测试性」而抽象：取消与超时这条路径在真机之外没别的地方能
+  /// 走到，插件在测试环境里直接抛 MissingPluginException。
+  final Future<XFile?> Function() _pickPhoto;
+  final Future<XFile?> Function() _pickAlbum;
+  final OcrRecognize _recognize;
 
   /// 识别出的单词列表。
   final void Function(List<String> words) onResult;
@@ -31,6 +52,7 @@ class OcrRunner {
   final void Function() onNeedsOcrConfig;
 
   bool _busy = false;
+  AbortSignal? _signal;
 
   /// runOcr 的同步重入锁。
   ///
@@ -40,6 +62,15 @@ class OcrRunner {
   bool _running = false;
 
   bool get busy => _busy;
+
+  /// 中止正在进行的识别。
+  ///
+  /// 请求本身现在有超时兜底，但 60 秒对着一个转圈等下去仍然是坏体验 ——
+  /// 用户往往当场就知道自己拍糊了。
+  void cancel() {
+    _signal?.abort();
+    _signal = null;
+  }
 
   void _setUiState(OcrUiState state) {
     _busy = state.busy;
@@ -78,8 +109,13 @@ class OcrRunner {
         }
 
         _reportProgress(preparingPhase);
-        final result =
-            await ocrWordsFromImage(file, onProgress: _reportProgress);
+        final signal = AbortSignal();
+        _signal = signal;
+        final result = await _recognize(
+          file,
+          onProgress: _reportProgress,
+          signal: signal,
+        );
 
         if (result.words.isEmpty) {
           onOutcome(
@@ -95,8 +131,12 @@ class OcrRunner {
       } on InsufficientCreditsError {
         onInsufficientCredits();
       } catch (error) {
-        onOutcome(_message(error));
+        // 用户自己按的取消，不算失败，也不用再提示一次
+        // —— 取消那一下已经给过反馈了。
+        final message = _message(error);
+        if (message != kOcrCancelled) onOutcome(message);
       } finally {
+        _signal = null;
         _setUiState(OcrUiState.idle);
       }
     } finally {
@@ -111,8 +151,8 @@ class OcrRunner {
   }
 
   Future<void> processPhoto() =>
-      _run(takePhoto, OcrProgressPhase.preparingPhoto);
+      _run(_pickPhoto, OcrProgressPhase.preparingPhoto);
 
   Future<void> processAlbum() =>
-      _run(pickFromAlbum, OcrProgressPhase.preparingAlbum);
+      _run(_pickAlbum, OcrProgressPhase.preparingAlbum);
 }

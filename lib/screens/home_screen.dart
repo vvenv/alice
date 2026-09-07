@@ -1075,42 +1075,61 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (showOcrProgress)
                 Flexible(
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 32),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.md,
-                      vertical: Spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.primarySoft,
-                      borderRadius: BorderRadius.circular(Radii.full),
-                      border: Border.all(color: colors.primary),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colors.primary,
-                          ),
+                  // 整个胶囊就是取消按钮。此前识别中没有任何出口 ——
+                  // 网络挂住时只能等（现在有 60s 超时，但那也太久了）。
+                  child: Semantics(
+                    button: true,
+                    label: '取消识别',
+                    child: GestureDetector(
+                      onTap: () {
+                        _ocr.cancel();
+                        _toast.show(kOcrCancelled);
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 32),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.md,
+                          vertical: Spacing.xs,
                         ),
-                        const SizedBox(width: Spacing.xs),
-                        Flexible(
-                          child: Text(
-                            _ocrUi.message,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                        decoration: BoxDecoration(
+                          color: colors.primarySoft,
+                          borderRadius: BorderRadius.circular(Radii.full),
+                          border: Border.all(color: colors.primary),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                            Flexible(
+                              child: Text(
+                                _ocrUi.message,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                            Icon(
+                              AppIcons.close,
+                              size: 14,
                               color: colors.primary,
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
