@@ -6,7 +6,9 @@
 #
 # Flow:
 #   1. flutter build web --release --base-href /app/, with no embedded OCR key
-#   2. rsync build/web/ to $REMOTE_DIR/app/
+#      (try --wasm first; fall back to canvaskit if that fails)
+#   2. replace Noto Serif SC with the pre-generated web subset
+#   3. rsync build/web/ to $REMOTE_DIR/app/
 #
 # Usage:
 #   pnpm release:webapp
@@ -24,6 +26,37 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 error() { echo "ERROR: $*" >&2; exit 1; }
+
+replace_web_fonts() {
+  local src="$ROOT/assets/fonts/web"
+  local count=0
+  [ -d "$src" ] || error "缺少 Web 字体子集 $src —— 先跑 pnpm fonts:subset"
+  while IFS= read -r -d '' dest; do
+    local base
+    base="$(basename "$dest")"
+    if [ -f "$src/$base" ]; then
+      cp "$src/$base" "$dest"
+      count=$((count + 1))
+      echo "  font: $base ← subset ($(du -h "$src/$base" | cut -f1))"
+    fi
+  done < <(find "$DIST_DIR" -name 'NotoSerifSC*.ttf' -print0)
+  [ "$count" -gt 0 ] || error "build/web 里找不到 NotoSerifSC*.ttf，无法替换子集"
+}
+
+build_web() {
+  # ★ 不要传 --dart-define=ZHIPU_API_KEY：Web 产物是公开的 JS，内嵌共享密钥等于
+  #   把它发出去。Web 上 OCR 由用户在设置里自备 API Key。
+  # ★ 必须带 --base-href /app/：默认是 /，相对路径会打到官网根上，
+  #   flutter_bootstrap.js / manifest.json 全部 404。
+  # ★ 优先 wasm（skwasm 远小于 CanvasKit）；插件或产物不过关再回退。
+  if flutter build web --wasm --release --base-href /app/; then
+    echo "  renderer: wasm"
+    return 0
+  fi
+  echo "  wasm 构建失败，回退 canvaskit"
+  flutter build web --release --base-href /app/
+  echo "  renderer: canvaskit"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -52,12 +85,8 @@ DIST_DIR="$ROOT/build/web"
 echo "▶ Releasing web app → $SERVER:$APP_REMOTE"
 echo ""
 
-echo "▶ [1/2] Building Flutter Web (no embedded OCR key)..."
-# ★ 不要传 --dart-define=ZHIPU_API_KEY：Web 产物是公开的 JS，内嵌共享密钥等于
-#   把它发出去。Web 上 OCR 由用户在设置里自备 API Key。
-# ★ 必须带 --base-href /app/：默认是 /，相对路径会打到官网根上，
-#   flutter_bootstrap.js / manifest.json 全部 404。
-flutter build web --release --base-href /app/
+echo "▶ [1/3] Building Flutter Web (no embedded OCR key)..."
+build_web
 
 if [ ! -f "$DIST_DIR/index.html" ]; then
   error "build did not produce dist/index.html"
@@ -66,7 +95,10 @@ if ! grep -q '<base href="/app/">' "$DIST_DIR/index.html"; then
   error "build/web/index.html 的 base href 不是 /app/ —— 资源会打到官网根路径 404"
 fi
 
-echo "▶ [2/2] Deploying to $SERVER:$APP_REMOTE..."
+echo "▶ [2/3] Replacing Noto Serif SC with web subset..."
+replace_web_fonts
+
+echo "▶ [3/3] Deploying to $SERVER:$APP_REMOTE..."
 ssh -o BatchMode=yes "$SERVER" "mkdir -p '$APP_REMOTE'"
 # --partial + SSH keepalive: see release.sh for rationale (prevents mid-transfer
 #   drops and lets retries resume).

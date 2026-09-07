@@ -24,8 +24,8 @@ const FEATURES: Feature[] = [
   },
   {
     icon: Volume2,
-    title: "纯正系统发音",
-    desc: "纯正美音逐词朗读，间隔可调、自动连播，像一位老师在身边领读。",
+    title: "自然美音朗读",
+    desc: "Android 默认微软 Edge 朗读，失败自动回落有道或系统语音。间隔可调、自动连播。",
     tag: "语音朗读",
   },
   {

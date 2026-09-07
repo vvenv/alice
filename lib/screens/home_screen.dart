@@ -11,6 +11,7 @@ import '../services/dictation.dart';
 import '../services/dictionary.dart';
 import '../services/library_data.dart';
 import '../services/ocr.dart';
+import '../services/ocr_config.dart';
 import '../services/ocr_runner.dart';
 import '../services/storage.dart';
 import '../services/tts.dart';
@@ -26,6 +27,7 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/favorites_drawer.dart';
 import '../widgets/history_drawer.dart';
 import '../widgets/library_drawer.dart';
+import '../widgets/ocr_settings_modal.dart';
 import '../widgets/playback_controls.dart';
 import '../widgets/recharge_modal.dart';
 import '../widgets/word_input_section.dart';
@@ -83,6 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
     onInsufficientCredits: () {
       if (mounted) _openRecharge();
     },
+    onNeedsOcrConfig: () {
+      if (mounted) _openOcrSettings();
+    },
   );
 
   OcrQuotaController get _quota => context.read<OcrQuotaController>();
@@ -121,6 +126,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _cameraAlignment = results[5] as Alignment;
       _ready = true;
     });
+    unawaited(_enrichWhenDictionaryReady());
+  }
+
+  Future<void> _enrichWhenDictionaryReady() async {
+    await loadDictionary();
+    if (!mounted || _wordInput.isEmpty) return;
+    final enriched = enrichWordListText(_wordInput);
+    if (enriched != _wordInput) {
+      setState(() => _wordInput = enriched);
+    }
   }
 
   @override
@@ -218,6 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleStart() async {
     // 即使用户从编辑模式直接开始，也保证补全过、去过重。
+    await loadDictionary();
+    if (!mounted) return;
     final enriched = enrichWordListText(_wordInput);
     if (enriched != _wordInput) {
       setState(() {
@@ -324,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
       credits: _quota.credits,
       onPurchase: (pack) async {
         await _quota.recharge(pack);
-        _toast.show('充值成功 +${pack.total} credits');
+        _toast.show('已领取 +${pack.total} credits');
       },
     );
   }
@@ -390,6 +407,39 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _intervalSec = sec);
   }
 
+  Future<void> _openOcrSettings() async {
+    final custom = await loadOcrProviderConfig();
+    if (!mounted) return;
+    final result = await showOcrSettingsModal(
+      context,
+      value: custom,
+      credits: _quota.credits,
+    );
+    if (!mounted || result == null) return;
+
+    switch (result) {
+      case OcrSettingsSaveCustom(config: final cfg):
+        await saveOcrProviderConfig(cfg);
+        if (cfg != null) {
+          _toast.show('已保存自定义 OCR 服务配置');
+        } else if (requiresCustomOcrConfig()) {
+          _toast.show('已清除 OCR 服务配置');
+        } else {
+          _toast.show('已恢复默认 OCR 服务配置');
+        }
+        await _quota.refresh();
+
+      case OcrSettingsSelectModel(modelId: final id):
+        await saveSelectedModelId(id);
+        await saveOcrProviderConfig(null);
+        _toast.show('已切换到 ${getBuiltinModel(id).label}');
+        await _quota.refresh();
+
+      case OcrSettingsOpenRecharge():
+        await _openRecharge();
+    }
+  }
+
   Future<void> _openFavorites() => showFavoritesDrawer(
         context,
         favorites: _favorites,
@@ -426,6 +476,46 @@ class _HomeScreenState extends State<HomeScreen> {
         listenable: quota,
         builder: (context, _) {
           final colors = context.colors;
+          final needsKey = requiresCustomOcrConfig() && !quota.hasCustomConfig;
+
+          if (needsKey) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.md,
+                    vertical: Spacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(Radii.surface),
+                    border: Border.all(color: colors.borderSubtle),
+                  ),
+                  child: Text(
+                    'Web 版没有内置识别服务。请先在设置中填入自己的 OCR API Key，'
+                    '粘贴词表和内置词库不需要这一步。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: colors.muted,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: Spacing.sm),
+                SheetRow(
+                  icon: AppIcons.scan,
+                  label: '去配置 OCR 服务',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _openOcrSettings();
+                  },
+                ),
+                const SizedBox(height: Spacing.sm),
+              ],
+            );
+          }
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -461,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       GestureDetector(
                         onTap: () {
                           Navigator.of(sheetContext).pop();
-                          _openSettings();
+                          _openOcrSettings();
                         },
                         behavior: HitTestBehavior.opaque,
                         child: Text(
@@ -512,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Semantics(
                       button: true,
-                      label: '充值',
+                      label: '领取演示积分',
                       child: GestureDetector(
                         onTap: () {
                           Navigator.of(sheetContext).pop();
@@ -520,7 +610,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         behavior: HitTestBehavior.opaque,
                         child: Text(
-                          '充值',
+                          '领取',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -587,6 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final quota = context.watch<OcrQuotaController>();
 
     if (!_ready) {
       return Scaffold(
@@ -600,6 +691,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final parsedWordCount = parseWords(_wordInput).length;
     final showOcrProgress = _ocrUi.busy && _ocrUi.message.isNotEmpty;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final showOcrSetupBanner =
+        requiresCustomOcrConfig() && !quota.hasCustomConfig;
     // 拍照识词在打字时也留着 —— 「正在敲词表，想拍张照片导进来」恰恰是它最该
     // 出现的时候。只是键盘把列表压扁了，按钮跟着小一号，别盖住仅剩的输入区。
     final cameraSize = keyboardOpen ? 44.0 : 56.0;
@@ -638,6 +731,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 _buildHeader(showOcrProgress),
+                if (showOcrSetupBanner) _buildOcrSetupBanner(),
                 Expanded(
                   child: Center(
                     child: ConstrainedBox(
@@ -684,6 +778,65 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           AppToast(toast: _toast.toast, onActionPressed: _toast.hide),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOcrSetupBanner() {
+    final colors = context.colors;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.lg,
+            0,
+            Spacing.lg,
+            Spacing.sm,
+          ),
+          child: Semantics(
+            button: true,
+            label: '配置 OCR 服务',
+            child: GestureDetector(
+              onTap: _openOcrSettings,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.md,
+                  vertical: Spacing.sm + 2,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.primarySoft,
+                  borderRadius: BorderRadius.circular(Radii.surface),
+                  border: Border.all(color: colors.primary),
+                ),
+                child: Row(
+                  children: [
+                    Icon(AppIcons.scan, size: 16, color: colors.primary),
+                    const SizedBox(width: Spacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Web 版拍照识词需自备 API Key，点此配置。词库与粘贴不需要。',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      AppIcons.chevronForward,
+                      size: 16,
+                      color: colors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -772,6 +925,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               const SizedBox(width: Spacing.sm),
+              AppIconButton(
+                icon: AppIcons.library,
+                onPressed: _openLibrary,
+                semanticLabel: '词库',
+              ),
+              const SizedBox(width: Spacing.xs),
               AppIconButton(
                 icon: AppIcons.menu,
                 onPressed: _openMenu,

@@ -3,7 +3,7 @@ export const SITE_NAME = "Alice 听写";
 export const SITE_TAGLINE = "拍照即听写";
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const SITE_DESCRIPTION =
-  "Alice 听写 — 拍照即听写。专为英语学习者打造的单词听写应用，支持拍照识别、纯正发音与错词追踪。内置中考高考与教材词库，数据本地保存。";
+  "Alice 听写 — 拍照即听写。单词听写应用：拍照识别、Edge 朗读、错词追踪。内置中考高考与教材词库，数据保存在本机。";
 export const SITE_KEYWORDS = [
   "Alice听写",
   "英语听写",

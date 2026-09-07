@@ -39,10 +39,10 @@ Future<void> main() async {
   // 只在首次启动时真正做事，失败不阻塞启动。
   await migrateLegacyAsyncStorage();
 
-  await Future.wait([
-    loadDictionary(),
-    loadLibrary(),
-  ]);
+  // 词库小，挡住首帧没问题。词典 JSON 约 3.3MB，Web 上按需 fetch+解析，
+  // 不该卡住第一屏；首页 / 开始听写会在需要时 await loadDictionary()。
+  await loadLibrary();
+  unawaited(loadDictionary());
 
   // 语速要在第一次朗读之前灌进 TTS 引擎。
   setSpeechRate(await loadSpeechRate());

@@ -60,8 +60,7 @@ class _RechargeModalState extends State<_RechargeModal> {
 
   static String _errorText(Object error) {
     final text = error.toString();
-    final message =
-        text.startsWith('Exception: ') ? text.substring(11) : text;
+    final message = text.startsWith('Exception: ') ? text.substring(11) : text;
     return message.isNotEmpty ? message : '充值失败，请重试';
   }
 
@@ -101,7 +100,7 @@ class _RechargeModalState extends State<_RechargeModal> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '充值 Credits',
+                    '领取演示积分',
                     style: TextStyle(
                       fontFamily: AppFonts.displayZh,
                       fontSize: 17,
@@ -187,23 +186,22 @@ class _RechargeModalState extends State<_RechargeModal> {
                         padding: const EdgeInsets.only(top: Spacing.xs),
                         child: Text(
                           _error,
-                          style:
-                              TextStyle(fontSize: 12, color: colors.danger),
+                          style: TextStyle(fontSize: 12, color: colors.danger),
                         ),
                       ),
                     Padding(
                       padding: const EdgeInsets.only(top: Spacing.xs),
                       child: Text(
-                        '高级识别每次扣除 1 credit（可配置）。充值后立即到账，永久有效。',
-                        style: TextStyle(fontSize: 12, color: colors.subtle),
+                        '当前为演示积分：点选套餐立即到账，暂不扣款。高级识别每次成功扣除 1 credit。',
+                        style: TextStyle(fontSize: 13, color: colors.muted),
                       ),
                     ),
                     Padding(
                       padding:
                           const EdgeInsets.only(top: 2, bottom: Spacing.sm),
                       child: Text(
-                        '演示版充值无需付费；正式版将接入应用内购买。',
-                        style: TextStyle(fontSize: 11, color: colors.subtle),
+                        '价格仅为将来接入应用内购买时的参考；现在领取不会产生费用。',
+                        style: TextStyle(fontSize: 12, color: colors.subtle),
                       ),
                     ),
                   ],
@@ -264,7 +262,7 @@ class _PackCard extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '${pack.label} ${pack.price}',
+      label: '领取 ${pack.label}，参考价 ${pack.price}',
       child: GestureDetector(
         onTap: buying ? null : onTap,
         behavior: HitTestBehavior.opaque,
@@ -350,6 +348,11 @@ class _PackCard extends StatelessWidget {
                         fontSize: 18,
                         color: colors.foreground,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '领取',
+                      style: TextStyle(fontSize: 11, color: colors.muted),
                     ),
                     if (pack.highlight) ...[
                       const SizedBox(height: 4),

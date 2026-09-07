@@ -72,3 +72,6 @@ CODE.md
 .env.development
 .env.production
 .env.test
+
+# Web 字体子集的中间字表（TTF 才提交）
+assets/fonts/web/charset.txt

@@ -13,7 +13,8 @@ void main() {
     // 0.6.3 之前发出去的包用的是 flutter create 铺的蓝色 F。
     test('五个密度的图标都在，而且不是 Flutter 默认图标', () {
       for (final d in densities) {
-        final webp = File('android/app/src/main/res/mipmap-$d/ic_launcher.webp');
+        final webp =
+            File('android/app/src/main/res/mipmap-$d/ic_launcher.webp');
         expect(webp.existsSync(), isTrue,
             reason: 'mipmap-$d/ic_launcher.webp 不见了，'
                 '跑一次 pnpm icons:build');
@@ -68,8 +69,7 @@ void main() {
     // 0.6.2 就栽在这里：manifest 声明的类不存在，R8 把它当死代码删了，
     // 编译期毫无征兆，装上必闪退。
     test('声明的启动 Activity 在 Kotlin 源码里真的存在', () {
-      final gradle =
-          File('android/app/build.gradle.kts').readAsStringSync();
+      final gradle = File('android/app/build.gradle.kts').readAsStringSync();
       final namespace =
           RegExp(r'namespace\s*=\s*"([^"]+)"').firstMatch(gradle)?.group(1);
       expect(namespace, isNotNull, reason: 'build.gradle.kts 里读不到 namespace');
@@ -99,8 +99,7 @@ void main() {
         'FOREGROUND_SERVICE',
         'FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       ]) {
-        expect(manifest, contains('android.permission.$p'),
-            reason: '缺权限 $p');
+        expect(manifest, contains('android.permission.$p'), reason: '缺权限 $p');
       }
     });
 
@@ -126,8 +125,8 @@ void main() {
     });
 
     test('声明的资源目录都存在', () {
-      for (final m
-          in RegExp(r'^\s+- (assets/[^\s]+)$', multiLine: true).allMatches(pubspec)) {
+      for (final m in RegExp(r'^\s+- (assets/[^\s]+)$', multiLine: true)
+          .allMatches(pubspec)) {
         final path = m.group(1)!;
         final exists = path.endsWith('/')
             ? Directory(path).existsSync()
@@ -153,6 +152,47 @@ void main() {
       expect(script, contains('--base-href /app/'),
           reason: 'Web 挂在 alice.edao.plus/app/，不设 base-href 的话 '
               'flutter_bootstrap.js / manifest.json 会打到官网根路径 404');
+      expect(script, contains('replace_web_fonts'),
+          reason: 'Web 发版必须把全量思源宋体换成子集，否则首屏约 28MB 字体');
+    });
+
+    test('index.html / manifest 不是 Flutter 模板', () {
+      final html = File('web/index.html').readAsStringSync();
+      expect(html, isNot(contains('A new Flutter project.')));
+      expect(html, contains('<title>Alice 听写</title>'));
+      expect(html, contains('id="app-loading"'));
+      expect(html, isNot(contains('#0175C2')));
+
+      final manifest = File('web/manifest.json').readAsStringSync();
+      expect(manifest, isNot(contains('alice_dictation')));
+      expect(manifest, contains('"name": "Alice 听写"'));
+      expect(manifest, contains('#1A2B4A'));
+    });
+
+    test('Web 思源宋体子集存在且明显小于全量', () {
+      for (final name in [
+        'NotoSerifSC_500Medium.ttf',
+        'NotoSerifSC_700Bold.ttf',
+      ]) {
+        final full = File('assets/fonts/$name');
+        final subset = File('assets/fonts/web/$name');
+        expect(full.existsSync(), isTrue, reason: '全量字体 $name 不见了');
+        expect(subset.existsSync(), isTrue,
+            reason: 'Web 子集 $name 不见了，跑一次 pnpm fonts:subset');
+        expect(
+          subset.lengthSync(),
+          lessThan(full.lengthSync() * 4 ~/ 10),
+          reason: '$name 子集没有明显小于全量（需要 < 40%）',
+        );
+      }
+    });
+  });
+
+  group('Android 发版', () {
+    test('release.sh 按 ABI 分包并上传 arm64', () {
+      final script = File('scripts/release.sh').readAsStringSync();
+      expect(script, contains('--split-per-abi'));
+      expect(script, contains('app-arm64-v8a-release.apk'));
     });
   });
 

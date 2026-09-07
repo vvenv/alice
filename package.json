@@ -9,6 +9,7 @@
     "data:check": "node --experimental-strip-types scripts/check-data.ts",
     "dict:build": "python3 scripts/build-ecdict-meta.py",
     "icons:build": "python3 scripts/gen-icons.py",
+    "fonts:subset": "python3 scripts/subset-web-fonts.py",
     "qr:build": "python3 scripts/gen_qrcode.py",
     "release:android": "bash scripts/release.sh",
     "release:website": "bash scripts/release-website.sh",

@@ -12,6 +12,7 @@ class OcrRunner {
     required this.onStateChange,
     required this.onOutcome,
     required this.onInsufficientCredits,
+    required this.onNeedsOcrConfig,
   });
 
   /// 识别出的单词列表。
@@ -25,6 +26,9 @@ class OcrRunner {
 
   /// 高级模型余额不足 —— 调用方应该打开充值流程。
   final void Function() onInsufficientCredits;
+
+  /// Web / 无内置密钥且未配置 BYOK —— 调用方应该打开 OCR 设置。
+  final void Function() onNeedsOcrConfig;
 
   bool _busy = false;
 
@@ -54,11 +58,14 @@ class OcrRunner {
     if (_running) return;
     _running = true;
     try {
-      // 预检：高级内置模型需要余额。余额不够时直接跳过整个拍照流程，
-      // 转交充值 UI，别让用户白拍一张。
+      // 预检：缺 OCR 配置或高级模型余额不够时跳过拍照，转交对应 UI。
       final gate = await canRunOcrNow();
       if (!gate.allowed) {
-        onInsufficientCredits();
+        if (gate.needsCustomConfig) {
+          onNeedsOcrConfig();
+        } else {
+          onInsufficientCredits();
+        }
         return;
       }
 

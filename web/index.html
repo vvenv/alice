@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,29 +18,74 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Alice 听写 — 拍照即听写。单词听写应用：拍照识别、Edge 朗读、错词追踪。内置中考高考与教材词库，数据保存在本机。">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="alice_dictation">
+  <meta name="apple-mobile-web-app-title" content="Alice 听写">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>alice_dictation</title>
+  <title>Alice 听写</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1A2B4A">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #1A2B4A;
+    }
+    #app-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1A2B4A;
+      color: #FAF6EE;
+      font-family: Georgia, "Noto Serif SC", serif;
+      z-index: 9999;
+    }
+    #app-loading .brand {
+      font-style: italic;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+    }
+    #app-loading .brand span {
+      font-style: normal;
+      color: #C45C6A;
+      margin-left: 0.25em;
+    }
+    #app-loading .status {
+      margin-top: 16px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: rgba(250, 246, 238, 0.65);
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="app-loading">
+    <div class="brand">Alice<span>听写</span></div>
+    <div class="status">正在加载</div>
+  </div>
+  <script>
+    {{flutter_js}}
+    {{flutter_build_config}}
+    _flutter.loader.load({
+      onEntrypointLoaded: async function(engineInitializer) {
+        const appRunner = await engineInitializer.initializeEngine();
+        await appRunner.runApp();
+        const loading = document.getElementById('app-loading');
+        if (loading) loading.remove();
+      }
+    });
+  </script>
 </body>
 </html>

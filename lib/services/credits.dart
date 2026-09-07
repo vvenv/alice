@@ -200,6 +200,7 @@ Future<void> saveSelectedModelId(String id) async {
 class OcrGateResult {
   const OcrGateResult.ok()
       : allowed = true,
+        needsCustomConfig = false,
         cost = 0,
         balance = 0,
         model = null;
@@ -208,9 +209,18 @@ class OcrGateResult {
     required this.cost,
     required this.balance,
     required this.model,
-  }) : allowed = false;
+  })  : allowed = false,
+        needsCustomConfig = false;
+
+  const OcrGateResult.needsCustomConfig()
+      : allowed = false,
+        needsCustomConfig = true,
+        cost = 0,
+        balance = 0,
+        model = null;
 
   final bool allowed;
+  final bool needsCustomConfig;
   final int cost;
   final int balance;
   final BuiltinModel? model;
@@ -218,14 +228,19 @@ class OcrGateResult {
 
 /// 打开相机/相册之前的预检。
 ///
-/// - BYOK（自定义配置）与 Web（无内置 key）一律放行 —— 真正的配置错误
-///   稍后由 OCR 调用本身报出来。
+/// - 已有 BYOK 自定义配置：放行。
+/// - 当前平台必须自备 OCR（Web）：未配置时拦截，别让用户白拍一张。
 /// - 高级内置模型需要足够余额；否则调用方应该提示充值，而不是先拍照。
-Future<OcrGateResult> canRunOcrNow() async {
+///
+/// [customConfigRequired] 仅供测试覆盖 Web 路径；生产代码不要传。
+Future<OcrGateResult> canRunOcrNow({bool? customConfigRequired}) async {
   final custom = await loadOcrProviderConfig();
   if (isCustomOcrConfigSet(custom)) return const OcrGateResult.ok();
-  if (requiresCustomOcrConfig()) return const OcrGateResult.ok();
-  if (AppConfig.zhipuApiKey.trim().isEmpty) return const OcrGateResult.ok();
+  final needsCustom = customConfigRequired ?? requiresCustomOcrConfig();
+  if (needsCustom) return const OcrGateResult.needsCustomConfig();
+  if (AppConfig.zhipuApiKey.trim().isEmpty) {
+    return const OcrGateResult.needsCustomConfig();
+  }
 
   final selected = getBuiltinModel(await loadSelectedModelId());
   if (selected.tier == ModelTier.premium) {

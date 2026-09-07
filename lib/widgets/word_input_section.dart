@@ -246,7 +246,8 @@ class _WordInputSectionState extends State<WordInputSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (showChrome) _buildCardChrome(context, wordCount: wordCount, display: raised),
+          if (showChrome)
+            _buildCardChrome(context, wordCount: wordCount, display: raised),
           Expanded(child: child),
         ],
       ),
@@ -309,7 +310,7 @@ class _WordInputSectionState extends State<WordInputSection> {
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,
-          hintText: '每行一个单词或词组\n例：apple\nactor / actress',
+          hintText: '每行一个单词或词组\n例：apple\nactor / actress\n或点右上角词库载入教材词表',
           hintStyle:
               TextStyle(fontSize: 16, height: 22 / 16, color: colors.subtle),
         ),
@@ -321,114 +322,113 @@ class _WordInputSectionState extends State<WordInputSection> {
     final colors = context.colors;
 
     return ListView.builder(
-        padding: EdgeInsets.only(
-          top: Spacing.sm,
-          bottom: Spacing.sm + _overlayBand,
-        ),
-        itemCount: parsedWords.length,
-        itemBuilder: (context, idx) {
-          final line = parsedWords[idx];
-          final isCursor = idx == widget.startIndex;
-          final entry = parseWordLine(line);
-          final senses = entry.hasMeta
-              ? splitSenses(entry.meaning ?? '', entry.pos)
-              : const <String>[];
-          final clampable = sensesClamped(senses, 2, 20);
-          final expanded = _expanded.contains(idx);
+      padding: EdgeInsets.only(
+        top: Spacing.sm,
+        bottom: Spacing.sm + _overlayBand,
+      ),
+      itemCount: parsedWords.length,
+      itemBuilder: (context, idx) {
+        final line = parsedWords[idx];
+        final isCursor = idx == widget.startIndex;
+        final entry = parseWordLine(line);
+        final senses = entry.hasMeta
+            ? splitSenses(entry.meaning ?? '', entry.pos)
+            : const <String>[];
+        final clampable = sensesClamped(senses, 2, 20);
+        final expanded = _expanded.contains(idx);
 
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              widget.onStartIndexChanged(idx);
-              if (clampable) _toggleExpand(idx);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.lg,
-                vertical: Spacing.md,
-              ),
-              decoration: BoxDecoration(
-                color: isCursor ? colors.primarySoft : null,
-                border: Border(
-                  bottom: BorderSide(color: colors.borderMuted, width: 0.5),
-                  left: BorderSide(
-                    color: isCursor ? colors.primary : Colors.transparent,
-                    width: 3,
-                  ),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            widget.onStartIndexChanged(idx);
+            if (clampable) _toggleExpand(idx);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.lg,
+              vertical: Spacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: isCursor ? colors.primarySoft : null,
+              border: Border(
+                bottom: BorderSide(color: colors.borderMuted, width: 0.5),
+                left: BorderSide(
+                  color: isCursor ? colors.primary : Colors.transparent,
+                  width: 3,
                 ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    child: Text(
-                      (idx + 1).toString().padLeft(2, '0'),
-                      style: TextStyle(
-                        fontFamily: AppFonts.serif,
-                        fontSize: 13,
-                        color: isCursor ? colors.primary : colors.subtle,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          entry.word,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color:
-                                isCursor ? colors.primary : colors.foreground,
-                          ),
-                        ),
-                        if (entry.hasMeta) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            senses.join('\n'),
-                            maxLines: expanded ? null : 2,
-                            overflow: expanded
-                                ? TextOverflow.clip
-                                : TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              height: 17 / 12,
-                              color: colors.subtle,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.md),
-                  Semantics(
-                    button: true,
-                    label: '删除 ${entry.word}',
-                    child: GestureDetector(
-                      onTap: () => _handleDeleteWord(idx),
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.all(Spacing.xs),
-                        child: Icon(
-                          AppIcons.closeCircle,
-                          size: 20,
-                          color: colors.subtle,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-          );
-        },
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: Text(
+                    (idx + 1).toString().padLeft(2, '0'),
+                    style: TextStyle(
+                      fontFamily: AppFonts.serif,
+                      fontSize: 13,
+                      color: isCursor ? colors.primary : colors.subtle,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Spacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        entry.word,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isCursor ? colors.primary : colors.foreground,
+                        ),
+                      ),
+                      if (entry.hasMeta) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          senses.join('\n'),
+                          maxLines: expanded ? null : 2,
+                          overflow: expanded
+                              ? TextOverflow.clip
+                              : TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 17 / 12,
+                            color: colors.subtle,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Spacing.md),
+                Semantics(
+                  button: true,
+                  label: '删除 ${entry.word}',
+                  child: GestureDetector(
+                    onTap: () => _handleDeleteWord(idx),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(Spacing.xs),
+                      child: Icon(
+                        AppIcons.closeCircle,
+                        size: 20,
+                        color: colors.subtle,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

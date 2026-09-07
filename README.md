@@ -26,7 +26,7 @@
 - 发音源可选：微软 Edge 朗读（默认，免费免配置，中英文都自然）、有道词典发音或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
 - 可选在两遍单词之间朗读中文释义（单词 → 释义 → 单词）
 - 识别模型分档：免费档（GLM-4V Flash）无限使用，高级档（GLM-4V Plus）消耗 Credits
-- Credits 充值：购买充值包，余额本地持久化，仅成功识别才扣减
+- Credits：演示积分，点领取即到账、暂不扣款；仅高级识别成功才扣减
 - AI 识图可能存在误差，识别入口均有提示
 - 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
 - 可调间隔、自动播放下一个
@@ -65,7 +65,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 104 个用例（含 198 个行为基线断言）
+flutter test                 # 123 个用例
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```
@@ -106,9 +106,8 @@ pnpm release:android major     # 0.7.2 → 1.0.0
 pnpm release:android 0.7.0     # 指定版本号
 ```
 
-流程：可选升版 → `flutter build apk --release` → **核对启动 Activity 在 dex 里**
-→ 上传到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
-详见 [`scripts/release.sh`](scripts/release.sh)。
+流程：可选升版 → `flutter build apk --release --split-per-abi` → 上传 **arm64-v8a** 到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
+详见 [`scripts/release.sh`](scripts/release.sh)。没有 `android/key.properties` 时会警告并继续用 debug 签名。
 
 版本号只有 `pubspec.yaml` 里 `version: 0.7.2+14` 这一处，
 `versionName` / `versionCode` 与 iOS 的 `MARKETING_VERSION` /
@@ -181,7 +180,10 @@ flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
 pnpm data:check      # 校验 data/ 的行格式
 pnpm data:gen        # data/**/*.txt        → assets/data/library.json（290 条词表）
 pnpm dict:build      # ECDICT（首次会下载）  → assets/data/ecdict-meta.json
+pnpm fonts:subset    # 全量思源宋体 → assets/fonts/web/（仅 Web 发版替换用）
 ```
+
+`pnpm fonts:subset` 需要 `fonttools`（`pip install fonttools`）。Android / iOS 仍打全量 TTF；Web 发版脚本会在 `flutter build web` 之后用子集覆盖产物里的同名文件。
 
 词表的行格式是 `word | pos | meaning`，1 列或 3 列（全角 `｜` 也认），只有 word
 必填。改了 `data/` 一定要重新生成并一起提交 —— CI 有一个 job 同时跑格式校验和
@@ -250,10 +252,11 @@ WebSocket 接口：免费、不需要账号，但没有公开文档、没有 SLA
 `lib/services/legacy_migration_io.dart` 会读不到任何东西，从老版本升上来的
 用户，错词本 / 历史 / 收藏 / Credits 全部丢失。
 
-### 6. 签名还是 debug key
+### 6. 正式签名要本地 keystore
 
-`android/app/build.gradle.kts` 的 release buildType 目前用 debug 签名
-（`flutter create` 的默认）。上架应用商店之前需要配真正的 keystore。
+`android/app/build.gradle.kts` 在存在 `android/key.properties` 时用正式签名，否则 release 仍走 debug 签名（方便 `flutter run --release`）。`pnpm release:android` 现在默认 `--split-per-abi`，上传 arm64-v8a。上架商店之前请在本机放好 keystore 与 `key.properties`（均已 gitignore）。
+
+真实应用内购买尚未接入：Credits 是演示积分，点领取即到账。
 
 ## 环境相关的坑（本机踩过，换机器不一定有）
 

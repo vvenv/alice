@@ -51,4 +51,5 @@ class AppIcons {
   static const IconData card = Icons.credit_card_outlined;
   static const IconData alertCircle = Icons.error;
   static const IconData pricetag = Icons.local_offer_outlined;
+  static const IconData chatbox = Icons.chat_bubble_outline;
 }

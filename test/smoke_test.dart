@@ -122,6 +122,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('首页：顶栏词库按钮能直接打开词库', (tester) async {
+    await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('词库'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('词库 ('), findsOneWidget);
+  });
+
   testWidgets('首页：写进存储的历史能在历史抽屉里看到', (tester) async {
     // 直接写存储，再让首页启动时把它读出来 —— 覆盖「保存了但看不见」这一半。
     await clearWordHistory();
@@ -237,7 +247,8 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'apple\nbanana\napple\nApple');
+    await tester.enterText(
+        find.byType(TextField), 'apple\nbanana\napple\nApple');
     await tester.pump();
     expect(find.text('4 个单词'), findsOneWidget);
 

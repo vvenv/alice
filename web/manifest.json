@@ -1,11 +1,11 @@
 {
-    "name": "alice_dictation",
-    "short_name": "alice_dictation",
+    "name": "Alice 听写",
+    "short_name": "Alice 听写",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#1A2B4A",
+    "theme_color": "#1A2B4A",
+    "description": "Alice 听写 — 拍照即听写。单词听写应用：拍照识别、Edge 朗读、错词追踪。",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

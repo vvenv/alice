@@ -43,9 +43,9 @@ class WrongWordsController extends ChangeNotifier {
     });
   }
 
-  /// 复制错词到剪贴板，返回给用户看的提示（无错词时返回空串）。
+  /// 复制错词到剪贴板，返回给用户看的提示。
   Future<String> exportWrong() async {
-    if (_wrongWords.isEmpty) return '';
+    if (_wrongWords.isEmpty) return '暂无错词可导出';
     await Clipboard.setData(ClipboardData(text: _wrongWords.join('\n')));
     return '已复制 ${_wrongWords.length} 个错词';
   }

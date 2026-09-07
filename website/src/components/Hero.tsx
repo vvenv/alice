@@ -75,7 +75,7 @@ export function Hero() {
               {[
                 { icon: Camera, label: "拍照识别", value: "拍照即用" },
                 { icon: Library, label: "内置词库", value: "教材同步" },
-                { icon: Volume2, label: "语音朗读", value: "纯正美音" },
+                { icon: Volume2, label: "语音朗读", value: "Edge 朗读" },
                 { icon: BookOpen, label: "错词追踪", value: "本地保存" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2.5">

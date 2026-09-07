@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +34,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _ready = false;
   bool _soundOn = true;
   bool _readTranslationOn = false;
   TtsSource _ttsSource = kDefaultTtsSource;
@@ -65,7 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final rate = await loadSpeechRate();
     final interval = await loadIntervalSec();
     final custom = await loadOcrProviderConfig();
-    final info = await PackageInfo.fromPlatform();
 
     setSpeechRate(rate);
     if (!mounted) return;
@@ -78,8 +79,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _speechRate = rate;
       _intervalSec = interval;
       _customOcrConfig = custom;
-      _appVersion = info.version;
+      _ready = true;
     });
+
+    // 版本号走插件，测试环境可能永远完不成；不要挡设置页出现。
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _appVersion = info.version);
+    } catch (_) {
+      // 忽略
+    }
   }
 
   @override
@@ -185,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       credits: _quota.credits,
       onPurchase: (pack) async {
         await _quota.recharge(pack);
-        _toast.show('充值成功 +${pack.total} credits');
+        _toast.show('已领取 +${pack.total} credits');
       },
     );
   }
@@ -208,6 +217,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _handleCopyFeedback() async {
+    const url = 'https://github.com/vvenv/alice/issues';
+    await Clipboard.setData(const ClipboardData(text: url));
+    if (mounted) _toast.show('已复制反馈地址');
+  }
+
   // --- 渲染 ---------------------------------------------------------------
 
   @override
@@ -215,6 +230,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colors = context.colors;
     final quota = context.watch<OcrQuotaController>();
     final themeController = context.watch<ThemeController>();
+
+    if (!_ready) {
+      return Scaffold(
+        backgroundColor: colors.surface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(colors),
+              Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: colors.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     final usingCustom = isCustomOcrConfigSet(_customOcrConfig);
     final ocrDetail = usingCustom
@@ -324,8 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 value: _speechRate,
                                 onChanged: _handleSpeechRateChanged,
                                 label: '朗读语速',
-                                formatValue: (v) =>
-                                    '${v.toStringAsFixed(1)} 倍',
+                                formatValue: (v) => '${v.toStringAsFixed(1)} 倍',
                               ),
                             ),
                           ]),
@@ -352,8 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 value: _intervalSec,
                                 onChanged: _handleIntervalChanged,
                                 label: '默认听写间隔秒数',
-                                formatValue: (v) =>
-                                    '${v.toStringAsFixed(1)} 秒',
+                                formatValue: (v) => '${v.toStringAsFixed(1)} 秒',
                               ),
                             ),
                           ]),
@@ -379,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _row(
                               colors,
                               icon: AppIcons.card,
-                              label: '充值',
+                              label: '领取演示积分',
                               onTap: _openRecharge,
                             ),
                           ]),
@@ -405,6 +436,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: AppIcons.infoOutline,
                               label: '版本',
                               detail: _appVersion,
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.chatbox,
+                              label: '反馈',
+                              detail: 'GitHub Issues',
+                              onTap: _handleCopyFeedback,
                             ),
                           ]),
                         ],
