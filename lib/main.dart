@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'services/dictionary.dart';
+import 'services/haptics.dart';
 import 'services/legacy_migration.dart';
 import 'services/library_data.dart';
 import 'services/prefs.dart';
+import 'services/sound.dart';
 import 'services/storage.dart';
 import 'services/tts.dart';
 import 'state/ocr_quota_controller.dart';
@@ -46,6 +48,11 @@ Future<void> main() async {
 
   // 语速要在第一次朗读之前灌进 TTS 引擎。
   setSpeechRate(await loadSpeechRate());
+
+  // 提示音 / 触感的开关也要在这里读回来。以前只有设置页读，于是关掉提示音
+  // 之后重启，在用户再次打开设置页之前又会响。
+  await loadSoundEnabled();
+  await Haptics.load();
 
   // 系统 TTS 引擎是异步初始化的，第一次朗读撞上这个窗口会被整段吃掉
   // （见 tts.dart 的 _getTts）。启动就把它拉起来，但不等它 —— 预热失败

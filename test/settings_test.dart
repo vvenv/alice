@@ -248,6 +248,9 @@ void main() {
     const flutterOnly = <String>{
       'alice_camera_button_pos', // 拍照按钮拖到哪儿了，RN 版的按钮不能拖
       'alice_tts_edge_voices', // Edge 发音是 Flutter 版才有的
+      // 核对过 rn-final 快照：src/lib/haptics.ts 里的震动没有开关，
+      // AsyncStorage 也从没写过这个 key。
+      'alice_haptics_enabled',
     };
 
     final missing = <String>[];

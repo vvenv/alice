@@ -65,6 +65,7 @@ void main() {
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('外观'), findsOneWidget);
       expect(find.text('发音源'), findsOneWidget);
+      expect(find.text('触感反馈'), findsOneWidget);
       expect(find.text('朗读中文释义'), findsOneWidget);
 
       // 下面这些分组在首屏之外，ListView 还没构建到 —— 逐个滚过去，

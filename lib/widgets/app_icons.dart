@@ -48,6 +48,7 @@ class AppIcons {
   static const IconData sunny = Icons.light_mode;
   static const IconData moon = Icons.dark_mode;
   static const IconData musicalNotes = Icons.music_note_outlined;
+  static const IconData vibration = Icons.vibration;
   static const IconData language = Icons.translate_outlined;
   static const IconData speedometer = Icons.speed_outlined;
   static const IconData timer = Icons.timer_outlined;

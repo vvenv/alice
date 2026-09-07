@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/credits.dart';
+import '../services/haptics.dart';
 import '../services/ocr.dart';
 import '../services/ocr_config.dart';
 import '../services/sound.dart';
@@ -37,6 +38,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _ready = false;
   bool _soundOn = true;
+  bool _hapticsOn = true;
   bool _readTranslationOn = false;
   TtsSource _ttsSource = kDefaultTtsSource;
   EdgeVoiceConfig _edgeVoices = const EdgeVoiceConfig();
@@ -63,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _bootstrap() async {
     final soundOn = await loadSoundEnabled();
+    final hapticsOn = await Haptics.load();
     final readTranslation = await loadReadTranslation();
     final tts = await loadTtsSettings();
     final rate = await loadSpeechRate();
@@ -73,6 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _soundOn = soundOn;
+      _hapticsOn = hapticsOn;
       _readTranslationOn = readTranslation;
       _ttsSource = tts.source;
       _edgeVoices = tts.edgeVoices;
@@ -104,6 +108,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _handleToggleSound(bool value) {
     setState(() => _soundOn = value);
     setSoundEnabled(value);
+  }
+
+  void _handleToggleHaptics(bool value) {
+    setState(() => _hapticsOn = value);
+    Haptics.setEnabled(value);
+    // 打开时立刻震一下，让用户知道这个开关管的是什么。
+    if (value) Haptics.tapLight();
   }
 
   void _handleToggleReadTranslation(bool value) {
@@ -347,6 +358,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               trailing: AppSwitch(
                                 value: _soundOn,
                                 onChanged: _handleToggleSound,
+                              ),
+                            ),
+                            _divider(colors),
+                            _row(
+                              colors,
+                              icon: AppIcons.vibration,
+                              label: '触感反馈',
+                              trailing: AppSwitch(
+                                value: _hapticsOn,
+                                onChanged: _handleToggleHaptics,
                               ),
                             ),
                             _divider(colors),
