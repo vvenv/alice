@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/dictation.dart';
 import '../services/dictionary.dart';
 import '../services/haptics.dart';
+import '../services/keep_awake.dart';
 import '../services/sound.dart';
 import '../services/storage.dart';
 import '../state/playback_controller.dart';
@@ -82,6 +83,7 @@ class _DictationScreenState extends State<DictationScreen>
   int? _prevRemainingMs;
   int? _prevTickMs;
   int _prevIndex = 0;
+  bool _keepAwake = false;
 
   @override
   void initState() {
@@ -127,6 +129,7 @@ class _DictationScreenState extends State<DictationScreen>
   void _onPlaybackChanged() {
     if (!mounted) return;
 
+    _syncKeepAwake();
     _syncProgressBar();
     _syncCountdown();
     _syncTickSound();
@@ -139,6 +142,18 @@ class _DictationScreenState extends State<DictationScreen>
     }
 
     setState(() {});
+  }
+
+  /// 听写进行中保持屏幕常亮 —— 人在纸上写字，一轮下来不会去碰屏幕，
+  /// 系统 30 秒就息屏：倒计时看不见、「标记错词」点不到。
+  ///
+  /// 跟着播放状态走而不是跟着页面生命周期：听完停在成绩单上就该放开，
+  /// 否则用户听完把手机一放，屏幕会一直亮着。
+  void _syncKeepAwake() {
+    final want = _playback.isActive;
+    if (want == _keepAwake) return;
+    _keepAwake = want;
+    unawaited(want ? KeepAwake.enable() : KeepAwake.disable());
   }
 
   void _syncProgressBar() {
@@ -208,6 +223,8 @@ class _DictationScreenState extends State<DictationScreen>
 
   @override
   void dispose() {
+    // 无条件放开：页面没了就不该再有常亮，哪怕状态没同步上。
+    unawaited(KeepAwake.disable());
     _playback.removeListener(_onPlaybackChanged);
     _wrong.removeListener(_onControllerChanged);
     _toast.removeListener(_onControllerChanged);
