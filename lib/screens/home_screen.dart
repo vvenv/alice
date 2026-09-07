@@ -901,31 +901,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
+              // 320px 宽的机型上这块标题正好差一点点放不下（放大系统字号后
+              // 差得更多），会被裁掉半个「写」字。整体等比缩，别拆开换行 ——
+              // 怀表 + Alice 听写 是一个整体的品牌锁定。
               Expanded(
-                child: Row(
-                  children: [
-                    Icon(AppIcons.time, size: 26, color: colors.gold),
-                    const SizedBox(width: Spacing.xs),
-                    Text(
-                      'Alice',
-                      style: TextStyle(
-                        fontFamily: AppFonts.displayItalic,
-                        fontSize: 24,
-                        letterSpacing: 0.3,
-                        color: colors.foreground,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(AppIcons.time, size: 26, color: colors.gold),
+                      const SizedBox(width: Spacing.xs),
+                      Text(
+                        'Alice',
+                        style: TextStyle(
+                          fontFamily: AppFonts.displayItalic,
+                          fontSize: 24,
+                          letterSpacing: 0.3,
+                          color: colors.foreground,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: Spacing.xs),
-                    Text(
-                      '听写',
-                      style: TextStyle(
-                        fontFamily: AppFonts.displayZh,
-                        fontSize: 24,
-                        letterSpacing: 0.3,
-                        color: colors.rose,
+                      const SizedBox(width: Spacing.xs),
+                      Text(
+                        '听写',
+                        style: TextStyle(
+                          fontFamily: AppFonts.displayZh,
+                          fontSize: 24,
+                          letterSpacing: 0.3,
+                          color: colors.rose,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               if (showOcrProgress)
