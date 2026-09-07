@@ -302,6 +302,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       AppIcons.moon,
                                     ),
                                   ),
+                                  const SizedBox(width: Spacing.sm),
+                                  Expanded(
+                                    child: _themeChip(
+                                      colors,
+                                      themeController,
+                                      ThemeModeSetting.system,
+                                      '跟随系统',
+                                      AppIcons.phonePortrait,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -621,21 +631,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: 1.5,
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 16, color: active ? colors.primary : colors.muted),
-              const SizedBox(width: Spacing.xs),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: active ? colors.primary : colors.foreground,
+          // 三档并排，「跟随系统」在窄屏 + 大号系统字体下会撑破自己那一格
+          // —— 整体缩放而不是换行/裁字。
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 16, color: active ? colors.primary : colors.muted),
+                const SizedBox(width: Spacing.xs),
+                Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: active ? colors.primary : colors.foreground,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
