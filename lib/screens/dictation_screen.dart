@@ -317,10 +317,33 @@ class _DictationScreenState extends State<DictationScreen>
     if (msg.isNotEmpty) _toast.show(msg);
   }
 
-  void _handleClearWrong() {
-    if (_wrong.wrongWords.isEmpty) return;
+  /// 清空是不可逆的（还会把这些词从累计错词本里一并撤掉），所以既要确认
+  /// 也留一手撤销 —— 删单个错词都有撤销，整批反而没有说不过去。
+  Future<void> _handleClearWrong() async {
+    final cleared = _wrong.wrongWords;
+    if (cleared.isEmpty) {
+      _toast.show('尚无错词');
+      return;
+    }
+
+    final confirmed = await showConfirmDialog(
+      context,
+      title: '清空错词',
+      message: '确定要清空本轮标记的 ${cleared.length} 个错词吗？'
+          '它们也会从错词本里移除。',
+      confirmLabel: '清空',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+
     _wrong.clearWrong();
-    _toast.show('已清空错词本');
+    _toast.show(
+      '已清空 ${cleared.length} 个错词',
+      action: ToastAction(
+        label: '撤销',
+        onPressed: () => _wrong.restoreWrongWords(cleared),
+      ),
+    );
   }
 
   void _handleRemoveWrongWord(String word) {
@@ -351,6 +374,9 @@ class _DictationScreenState extends State<DictationScreen>
       _showWord = false;
       _startTime = DateTime.now();
     });
+    // 重听的这一轮要自己攒一份成绩：本轮列表清零，重新标记。
+    // 累计错词本不动 —— 用户并没有说这些词已经掌握了。
+    _wrong.resetRound();
     _finishAnim.reset();
     _playback.startDictation(lines);
   }
@@ -937,6 +963,50 @@ class _DictationScreenState extends State<DictationScreen>
                       ],
                     ),
                   ),
+                  // 错了哪几个直接列在成绩单上 —— 只给个数字，用户还得去底部
+                  // 那块被压到 88~120px 的错词区里翻。
+                  if (wrongCount > 0) ...[
+                    const SizedBox(height: Spacing.md),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: Spacing.md),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: colors.borderMuted,
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: Spacing.sm,
+                        runSpacing: Spacing.sm,
+                        children: [
+                          for (final word in _wrong.wrongWords)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                                vertical: Spacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colors.dangerSoft,
+                                borderRadius:
+                                    BorderRadius.circular(Radii.full),
+                                border: Border.all(color: colors.danger),
+                              ),
+                              child: Text(
+                                word,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colors.danger,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1150,8 +1220,10 @@ class _DictationScreenState extends State<DictationScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // 叫「本轮错词」而不是「错词本」：首页菜单里那本是跨轮累计的，
+            // 两个都叫错词本，用户会以为完成页的成绩把历史也算进去了。
             Text(
-              '错词本 (${words.length})',
+              '本轮错词 (${words.length})',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

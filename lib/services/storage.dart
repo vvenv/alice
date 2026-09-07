@@ -84,11 +84,33 @@ Future<void> _persistHistory(List<WordHistoryEntry> entries) async {
 }
 
 // --- 错词本 ---------------------------------------------------------------
+//
+// 这里存的是**累计**错词本：跨轮次攒下来的、还没消化掉的词。
+// 单轮听写标记了哪些词是另一回事（见 WrongWordsController），完成页的成绩
+// 只看那一份。两边通过下面这几个增量操作保持同步。
 
 List<String> _cachedWrongWords = <String>[];
 
 /// 同步读取内存缓存 —— 对应 RN 版的 loadWrongWords()。
 List<String> loadWrongWords() => List.unmodifiable(_cachedWrongWords);
+
+/// 往累计错词本里加一个词（已存在则原样返回）。
+Future<void> addWrongWordToBook(String word) async {
+  if (word.isEmpty || _cachedWrongWords.contains(word)) return;
+  await saveWrongWords([..._cachedWrongWords, word]);
+}
+
+/// 从累计错词本里移除若干词。
+Future<void> removeWrongWordsFromBook(Iterable<String> words) async {
+  final drop = words.toSet();
+  if (drop.isEmpty) return;
+  final next = _cachedWrongWords.where((w) => !drop.contains(w)).toList();
+  if (next.length == _cachedWrongWords.length) return;
+  await saveWrongWords(next);
+}
+
+/// 清空累计错词本。
+Future<void> clearWrongWordsBook() => saveWrongWords(<String>[]);
 
 Future<List<String>> loadPersistedWrongWords() async {
   try {

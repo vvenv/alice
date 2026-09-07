@@ -91,7 +91,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('错词本 (0)'), findsOneWidget);
+      expect(find.text('本轮错词 (0)'), findsOneWidget);
       expect(find.text('尚无错词'), findsOneWidget);
       // 单词默认隐藏
       expect(find.text('•••••'), findsOneWidget);
