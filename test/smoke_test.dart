@@ -112,9 +112,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('菜单'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('词库'));
+    await tester.tap(find.bySemanticsLabel('词库'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('词库 ('), findsOneWidget);

@@ -375,15 +375,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: Spacing.sm),
           SheetRow(
-            icon: AppIcons.library,
-            label: '词库',
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              _openLibrary();
-            },
-          ),
-          const SizedBox(height: Spacing.sm),
-          SheetRow(
             icon: AppIcons.settings,
             label: '设置',
             onTap: () {
