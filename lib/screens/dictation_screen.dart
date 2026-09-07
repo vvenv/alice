@@ -9,14 +9,18 @@ import '../services/haptics.dart';
 import '../services/keep_awake.dart';
 import '../services/sound.dart';
 import '../services/storage.dart';
+import '../services/tts.dart';
 import '../state/playback_controller.dart';
 import '../state/toast_controller.dart';
 import '../state/wrong_words_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_icons.dart';
+import '../widgets/app_slider.dart';
+import '../widgets/app_switch.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/countdown_ring.dart';
@@ -53,6 +57,8 @@ class _DictationScreenState extends State<DictationScreen>
 
   late double _intervalSec = widget.intervalSec;
   late bool _autoNext = widget.autoNext;
+  double _speechRate = kDefaultSpeechRate;
+  bool _readTranslation = isReadTranslationEnabled();
 
   bool _showWord = false;
   bool _metaExpanded = false;
@@ -91,11 +97,22 @@ class _DictationScreenState extends State<DictationScreen>
     _playback.addListener(_onPlaybackChanged);
     _wrong.addListener(_onControllerChanged);
     _toast.addListener(_onControllerChanged);
+    unawaited(_loadSpeechSettings());
     // 等转场结束再开口。第一帧就朗读，iOS 会把第一句吃掉；
     // 点暂停再继续之所以能出声，是因为那时页面已经停稳了。
     // 不是在等单词音频下载 —— 下载仍然不挡播放。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_startWhenRouteReady());
+    });
+  }
+
+  Future<void> _loadSpeechSettings() async {
+    final rate = await loadSpeechRate();
+    final readTranslation = await loadReadTranslation();
+    if (!mounted) return;
+    setState(() {
+      _speechRate = rate;
+      _readTranslation = readTranslation;
     });
   }
 
@@ -379,6 +396,109 @@ class _DictationScreenState extends State<DictationScreen>
     _wrong.resetRound();
     _finishAnim.reset();
     _playback.startDictation(lines);
+  }
+
+  /// 听写中调语速。
+  ///
+  /// 以前语速只在设置页 —— 听到读太快，得先结束整轮听写才能改。间隔滑块就在
+  /// 手边，语速却要退两级页面，没有道理。「朗读中文释义」同理，顺手一起放进来
+  /// （调度器每个词都会重读一次开关，所以下一个词就生效）。
+  Future<void> _openSpeechSettings() async {
+    await showAppBottomSheet<void>(
+      context: context,
+      title: '朗读',
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final colors = context.colors;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(AppIcons.speedometer, size: 16, color: colors.secondary),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      '语速',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colors.foreground,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${_speechRate.toStringAsFixed(1)}x',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: colors.primary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.xs),
+              AppSlider(
+                min: kMinSpeechRate,
+                max: kMaxSpeechRate,
+                step: 0.1,
+                value: _speechRate,
+                onChanged: (v) {
+                  // 先更新外层状态，再让抽屉重建 —— 抽屉读的是 _speechRate。
+                  _handleSpeechRateChanged((v * 10).round() / 10);
+                  setSheetState(() {});
+                },
+                label: '朗读语速',
+                formatValue: (v) => '${v.toStringAsFixed(1)} 倍',
+              ),
+              const SizedBox(height: Spacing.md),
+              Row(
+                children: [
+                  Icon(AppIcons.language, size: 16, color: colors.secondary),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      '朗读中文释义',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colors.foreground,
+                      ),
+                    ),
+                  ),
+                  AppSwitch(
+                    value: _readTranslation,
+                    onChanged: (v) {
+                      _handleReadTranslationChanged(v);
+                      setSheetState(() {});
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.xs),
+              Text(
+                '改动从下一个词开始生效。',
+                style: TextStyle(fontSize: 12, color: colors.subtle),
+              ),
+              const SizedBox(height: Spacing.sm),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _handleSpeechRateChanged(double rate) {
+    setState(() => _speechRate = rate);
+    setSpeechRate(rate);
+    saveSpeechRate(rate);
+  }
+
+  void _handleReadTranslationChanged(bool value) {
+    setState(() => _readTranslation = value);
+    setReadTranslationEnabled(value);
   }
 
   // --- 渲染 ---------------------------------------------------------------
@@ -1102,6 +1222,7 @@ class _DictationScreenState extends State<DictationScreen>
             onIntervalChanged: _handleIntervalChanged,
             onAutoNextChanged: _handleAutoNextChanged,
             showPlayButton: false,
+            trailing: _buildSpeechRateEntry(colors),
           ),
           SizedBox(height: gap),
           _buildControlRow(colors),
@@ -1114,6 +1235,36 @@ class _DictationScreenState extends State<DictationScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSpeechRateEntry(AppColors colors) {
+    return Semantics(
+      button: true,
+      label: '朗读设置，当前语速 ${_speechRate.toStringAsFixed(1)} 倍',
+      child: GestureDetector(
+        onTap: _openSpeechSettings,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(AppIcons.speedometer, size: 15, color: colors.muted),
+              const SizedBox(width: Spacing.xs),
+              Text(
+                '语速 ${_speechRate.toStringAsFixed(1)}x',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.primary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

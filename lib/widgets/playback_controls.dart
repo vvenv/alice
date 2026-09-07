@@ -25,6 +25,7 @@ class PlaybackControls extends StatelessWidget {
     this.shuffle,
     this.onShuffleChanged,
     this.wordCount,
+    this.trailing,
   });
 
   final double intervalSec;
@@ -38,6 +39,10 @@ class PlaybackControls extends StatelessWidget {
 
   /// 传了就在主按钮里显示词数徽标，为 0 时按钮变暗（但仍可点）。
   final int? wordCount;
+
+  /// 开关行右端的附加控件。听写页没有「打乱顺序」，那半行本来是空的，
+  /// 正好放语速入口。
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +109,9 @@ class PlaybackControls extends StatelessWidget {
                   onChanged: onShuffleChanged!,
                   semanticLabel: '打乱播放顺序',
                   colors: colors,
-                ),
+                )
+              else if (trailing != null)
+                trailing!,
             ],
           ),
         ),
