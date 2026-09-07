@@ -109,6 +109,30 @@ src = re.sub(
     r'android:label="[^"]*"', f'android:label="{app_name}"', src, count=1
 )
 
+# url_launcher 在 Android 11+ 需要这条 package visibility 声明，
+# 否则设置页的「反馈」打不开浏览器。flutter create 只写 PROCESS_TEXT 那条。
+if 'android:scheme="https"' not in src:
+    view_intent = (
+        "    <queries>\n"
+        "        <intent>\n"
+        '            <action android:name="android.intent.action.VIEW"/>\n'
+        '            <data android:scheme="https"/>\n'
+        "        </intent>\n"
+        "    </queries>\n"
+    )
+    if "<queries>" in src:
+        src = src.replace(
+            "    </queries>",
+            "        <intent>\n"
+            '            <action android:name="android.intent.action.VIEW"/>\n'
+            '            <data android:scheme="https"/>\n'
+            "        </intent>\n"
+            "    </queries>",
+            1,
+        )
+    else:
+        src = src.replace("</manifest>", view_intent + "</manifest>", 1)
+
 # Android 7.1 的圆形图标槽位。flutter create 不写这一条。
 if "android:roundIcon" not in src:
     src = src.replace(

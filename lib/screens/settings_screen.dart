@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/credits.dart';
 import '../services/ocr.dart';
@@ -217,10 +218,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _handleCopyFeedback() async {
-    const url = 'https://github.com/vvenv/alice/issues';
-    await Clipboard.setData(const ClipboardData(text: url));
-    if (mounted) _toast.show('已复制反馈地址');
+  /// 反馈：直接打开 GitHub Issues。
+  ///
+  /// 以前只是把地址塞进剪贴板，用户得自己切浏览器再粘贴。打不开
+  /// （没有浏览器、Web 上被拦了弹窗）时仍然回落到复制，不至于什么都没发生。
+  Future<void> _handleFeedback() async {
+    final uri = Uri.parse('https://github.com/vvenv/alice/issues');
+    try {
+      final opened =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (opened) return;
+    } catch (_) {
+      // 落到下面的复制兜底
+    }
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    if (mounted) _toast.show('打不开浏览器，已复制反馈地址');
   }
 
   // --- 渲染 ---------------------------------------------------------------
@@ -453,7 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: AppIcons.chatbox,
                               label: '反馈',
                               detail: 'GitHub Issues',
-                              onTap: _handleCopyFeedback,
+                              onTap: _handleFeedback,
                             ),
                           ]),
                         ],

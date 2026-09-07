@@ -103,6 +103,13 @@ void main() {
       }
     });
 
+    // Android 11 起没有这条 package visibility 声明，url_launcher 就看不见
+    // 浏览器，设置页的「反馈」点了什么也不会发生。
+    test('声明了 https 的 VIEW intent，反馈链接才打得开', () {
+      expect(manifest, contains('android.intent.action.VIEW'));
+      expect(manifest, contains('android:scheme="https"'));
+    });
+
     test('包名固定为 com.vvenv.alice', () {
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
       expect(gradle, contains('applicationId = "com.vvenv.alice"'),

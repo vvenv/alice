@@ -48,5 +48,12 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- 设置页的「反馈」用 url_launcher 打开 GitHub Issues。Android 11
+             起没有这条声明就看不见浏览器，launchUrl 会直接失败（代码里会回落
+             到复制链接，但那不是我们想要的默认行为）。 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>
