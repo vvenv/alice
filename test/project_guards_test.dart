@@ -62,6 +62,14 @@ void main() {
     });
   });
 
+  // 听写页有一套横屏双栏布局（width >= 700 且宽大于高），iOS / Android
+  // 两边也都允许横屏 —— PWA 若锁死竖屏，装到桌面的用户永远看不到它。
+  test('Web manifest 不锁死竖屏', () {
+    final manifest = File('web/manifest.json').readAsStringSync();
+    expect(manifest, isNot(contains('portrait')),
+        reason: 'web/manifest.json 锁了竖屏，和听写页的横屏布局对不上');
+  });
+
   group('Android 清单', () {
     final manifest =
         File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
