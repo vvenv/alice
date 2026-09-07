@@ -31,6 +31,7 @@ import '../widgets/ocr_settings_modal.dart';
 import '../widgets/playback_controls.dart';
 import '../widgets/recharge_modal.dart';
 import '../widgets/word_input_section.dart';
+import '../widgets/wrong_words_drawer.dart';
 import 'dictation_screen.dart';
 import 'settings_screen.dart';
 
@@ -106,6 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _bootstrap() async {
     final results = await Future.wait([
       loadWordInput(),
+      // 结果用不上，但这一次是必需的：它把累计错词本读进内存缓存，
+      // 之后同步的 loadWrongWords() 才有东西可读（错词本抽屉靠它）。
       loadPersistedWrongWords(),
       loadWordHistory(),
       loadPersistedFavorites(),
@@ -254,6 +257,42 @@ class _HomeScreenState extends State<HomeScreen> {
     var words = allWords.sublist(clampedStart);
     if (_shuffle) words = _shuffleList(words);
 
+    await _launchDictation(words, historyText: enriched);
+  }
+
+  /// 从错词本直接开一轮听写。
+  ///
+  /// 顺手把首页的列表也换成这些词：听完返回时看到的就是刚练的那一份，
+  /// 而不是听写前那份不相干的列表。
+  Future<void> _handleStartWrongWords(List<String> wrongWords) async {
+    if (wrongWords.isEmpty) return;
+
+    await loadDictionary();
+    if (!mounted) return;
+
+    final enriched = enrichWordListText(wrongWords.join('\n'));
+    final words = parseWords(enriched);
+    if (words.isEmpty) return;
+
+    setState(() {
+      _wordInput = enriched;
+      _isDisplayMode = true;
+      _startIndex = 0;
+    });
+    _debounce?.cancel();
+    unawaited(saveWordInput(enriched));
+
+    await _launchDictation(
+      _shuffle ? _shuffleList(words) : words,
+      historyText: enriched,
+    );
+  }
+
+  /// 开始听写的公共尾段：预热音频、记历史、进页、回来后同步间隔。
+  Future<void> _launchDictation(
+    List<String> words, {
+    required String historyText,
+  }) async {
     // 趁着点击手势还在：激活音频会话，并给前两个词开始预取。
     // 进页后再开口会丢手势，第一句经常被 iOS 吃掉；下载也不挡播放，
     // 只是转场这几百毫秒里能多抢到一点缓存。
@@ -263,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
       unawaited(prefetchWordAudio(speakTextFromEntry(words[1])));
     }
 
-    await addWordHistory(enriched);
+    await addWordHistory(historyText);
     final history = await loadWordHistory();
     if (!mounted) return;
     setState(() => _history = history);
@@ -357,6 +396,15 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SheetRow(
+            icon: AppIcons.wrongWords,
+            label: '错词本',
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              _openWrongWords();
+            },
+          ),
+          const SizedBox(height: Spacing.sm),
+          SheetRow(
             icon: AppIcons.starOutline,
             label: '收藏',
             onTap: () {
@@ -430,6 +478,12 @@ class _HomeScreenState extends State<HomeScreen> {
         await _openRecharge();
     }
   }
+
+  Future<void> _openWrongWords() => showWrongWordsDrawer(
+        context,
+        onStartDictation: (words) => unawaited(_handleStartWrongWords(words)),
+        onMessage: _toast.show,
+      );
 
   Future<void> _openFavorites() => showFavoritesDrawer(
         context,
