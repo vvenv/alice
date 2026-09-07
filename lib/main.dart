@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'services/dictionary.dart';
+import 'services/logger.dart';
 import 'services/haptics.dart';
 import 'services/legacy_migration.dart';
 import 'services/library_data.dart';
@@ -17,6 +19,8 @@ import 'state/ocr_quota_controller.dart';
 import 'theme/theme_controller.dart';
 import 'theme/tokens.dart';
 import 'screens/home_screen.dart';
+
+const _log = Logger('App');
 
 /// 入口。对应 RN 版 App.tsx。
 ///
@@ -34,6 +38,20 @@ Future<void> main() async {
   // Flutter 的 SafeArea 只认 MediaQuery，所以这一句是必须的。）
   // AnnotatedRegion 里那套 SystemUiOverlayStyle 也要靠它才有意义。
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // 兜住渲染期异常。默认行为是一块灰底红字的错误框（release 下也一样），
+  // 对使用者毫无意义，还会让整页看着像坏了。换成一句人话，其余部分照常用。
+  ErrorWidget.builder = (details) {
+    _log.error('渲染异常：${details.exception}');
+    return const _RenderErrorFallback();
+  };
+
+  // 未捕获的异步异常。吞掉是为了不让一次网络/插件抖动把整个应用带走，
+  // 但一定要留下日志 —— 静默吞异常比崩溃更难查。
+  PlatformDispatcher.instance.onError = (error, stack) {
+    _log.error('未捕获异常：$error\n$stack');
+    return true;
+  };
 
   await Prefs.init();
 
@@ -60,6 +78,33 @@ Future<void> main() async {
   unawaited(warmUpTts());
 
   runApp(const AliceApp());
+}
+
+/// 渲染出错时顶上去的那一块。刻意朴素：不依赖主题（主题本身可能就是
+/// 出错的那个），也不试图解释技术细节。
+class _RenderErrorFallback extends StatelessWidget {
+  const _RenderErrorFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF1A2B4A),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            '这里出了点问题，返回上一页再试试。',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFFF3E9D2),
+              fontSize: 14,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AliceApp extends StatelessWidget {
