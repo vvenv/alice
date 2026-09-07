@@ -264,9 +264,11 @@ class _WordInputSectionState extends State<WordInputSection> {
       padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.sm, 0),
       child: Row(
         children: [
+          // 展示模式下点某一行会把它设为听写起点（那一行会高亮 + 左侧描边），
+          // 但此前没有任何文字说明，光看高亮猜不出来。
           Expanded(
             child: Text(
-              '$wordCount 个单词',
+              display ? '$wordCount 个单词 · 点词设为起点' : '$wordCount 个单词',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

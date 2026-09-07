@@ -17,6 +17,7 @@ import '../services/storage.dart';
 import '../services/tts.dart';
 import '../state/ocr_quota_controller.dart';
 import '../state/toast_controller.dart';
+import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_bottom_sheet.dart';
@@ -36,6 +37,22 @@ import 'dictation_screen.dart';
 import 'settings_screen.dart';
 
 const Duration _wordInputSaveDebounce = Duration(milliseconds: 500);
+
+/// 首启示例词表。
+///
+/// 空输入框 + 一句 hint 对新用户不够：点「开始听写」只会换来一句
+/// 「请先输入单词列表」，谁也没看见这个应用到底怎么运作。给一条一秒钟就能
+/// 走通全流程的路。词性与释义由 enrichWordListText 从内置词典补。
+const List<String> _sampleWords = [
+  'rabbit',
+  'garden',
+  'mirror',
+  'whisper',
+  'holiday',
+  'castle',
+  'brave',
+  'curious',
+];
 
 List<T> _shuffleList<T>(List<T> items) {
   final shuffled = List<T>.from(items);
@@ -320,6 +337,22 @@ class _HomeScreenState extends State<HomeScreen> {
     // 听写页里可能调过间隔 —— 回来时重新读一次（对应 RN 的 useFocusEffect）。
     final sec = await loadIntervalSec();
     if (mounted) setState(() => _intervalSec = sec);
+  }
+
+  /// 一键填入示例词表，让首启的用户能直接走通一轮听写。
+  Future<void> _handleLoadSample() async {
+    await loadDictionary();
+    if (!mounted) return;
+
+    final enriched = enrichWordListText(_sampleWords.join('\n'));
+    setState(() {
+      _wordInput = enriched;
+      _isDisplayMode = true;
+      _startIndex = 0;
+    });
+    _debounce?.cancel();
+    unawaited(saveWordInput(enriched));
+    _toast.show('已载入 ${_sampleWords.length} 个示例单词');
   }
 
   void _applyEntry(WordHistoryEntry entry, String toastMessage) {
@@ -996,6 +1029,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// 一个词都没有时的两条出路。
+  ///
+  /// 空输入框此前只有输入框里那句 hint；新用户点「开始听写」，得到的是
+  /// 「请先输入单词列表」—— 一次没有出口的挫败。
+  Widget _buildEmptyStateRow(AppColors colors) {
+    // Wrap 而不是 Row：说明 + 两颗按钮在 320px 宽的机型上正好差一点点
+    // （放大系统字号后差得更多），挤不下就换行，别去裁按钮。
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: Spacing.sm,
+      runSpacing: Spacing.xs,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(AppIcons.sparkles, size: 15, color: colors.gold),
+            const SizedBox(width: Spacing.xs),
+            Text(
+              '第一次用？',
+              style: TextStyle(fontSize: 13, color: colors.muted),
+            ),
+          ],
+        ),
+        AppButton(
+          label: '载入示例',
+          size: ButtonSize.sm,
+          variant: ButtonVariant.ghost,
+          onPressed: () => unawaited(_handleLoadSample()),
+        ),
+        AppButton(
+          label: '浏览词库',
+          size: ButtonSize.sm,
+          variant: ButtonVariant.ghost,
+          onPressed: () => unawaited(_openLibrary()),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBottomPanel(int parsedWordCount) {
     final colors = context.colors;
 
@@ -1012,15 +1084,25 @@ class _HomeScreenState extends State<HomeScreen> {
             top: Spacing.md,
             bottom: Spacing.md,
           ),
-          child: PlaybackControls(
-            intervalSec: _intervalSec,
-            autoNext: _autoNext,
-            onIntervalChanged: _handleIntervalChanged,
-            onAutoNextChanged: (v) => setState(() => _autoNext = v),
-            onPlayToggle: _handleStart,
-            shuffle: _shuffle,
-            onShuffleChanged: (v) => setState(() => _shuffle = v),
-            wordCount: parsedWordCount,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (parsedWordCount == 0) ...[
+                _buildEmptyStateRow(colors),
+                const SizedBox(height: Spacing.md),
+              ],
+              PlaybackControls(
+                intervalSec: _intervalSec,
+                autoNext: _autoNext,
+                onIntervalChanged: _handleIntervalChanged,
+                onAutoNextChanged: (v) => setState(() => _autoNext = v),
+                onPlayToggle: _handleStart,
+                shuffle: _shuffle,
+                onShuffleChanged: (v) => setState(() => _shuffle = v),
+                wordCount: parsedWordCount,
+              ),
+            ],
           ),
         ),
       ),

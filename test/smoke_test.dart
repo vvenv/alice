@@ -222,7 +222,8 @@ void main() {
     await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
 
-    expect(find.text('7 个单词'), findsOneWidget);
+    // 展示模式的卡片头会带上起点说明。
+    expect(find.text('7 个单词 · 点词设为起点'), findsOneWidget);
     expect(find.text('7 词'), findsOneWidget);
     expect(find.text('编辑'), findsOneWidget);
   });
@@ -253,7 +254,7 @@ void main() {
     await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
 
-    expect(find.text('2 个单词'), findsOneWidget);
+    expect(find.text('2 个单词 · 点词设为起点'), findsOneWidget);
     expect(find.text('2 词'), findsOneWidget);
     expect(find.text('apple'), findsOneWidget);
     expect(find.text('banana'), findsOneWidget);
