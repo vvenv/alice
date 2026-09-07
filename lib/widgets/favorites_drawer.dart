@@ -8,6 +8,7 @@ import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_bottom_sheet.dart';
 import 'app_icons.dart';
+import 'drawer_search_field.dart';
 
 /// 收藏抽屉。对应 RN 版 src/components/FavoritesDrawer.tsx。
 Future<void> showFavoritesDrawer(
@@ -93,8 +94,19 @@ class _FavoritesDrawerBody extends StatefulWidget {
   State<_FavoritesDrawerBody> createState() => _FavoritesDrawerBodyState();
 }
 
+/// 与历史抽屉同一个门槛：条目少时搜索框只是噪音。
+const int _searchThreshold = 6;
+
 class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
   late List<String> _favorites = List<String>.from(widget.initialFavorites);
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _remove(String id) {
     setState(() => _favorites = _favorites.where((x) => x != id).toList());
@@ -104,7 +116,12 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final items = _resolveFavorites(_favorites, widget.history);
+    final all = _resolveFavorites(_favorites, widget.history);
+    final q = _query.trim().toLowerCase();
+    // 标题（词库分类 / 历史正文首行）已经是用户能记住的那一串。
+    final items = q.isEmpty
+        ? all
+        : all.where((i) => i.label.toLowerCase().contains(q)).toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -113,7 +130,9 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
         Padding(
           padding: const EdgeInsets.only(bottom: Spacing.sm),
           child: Text(
-            '收藏 (${items.length})',
+            _query.isEmpty
+                ? '收藏 (${all.length})'
+                : '收藏 (${items.length}/${all.length})',
             style: TextStyle(
               fontFamily: AppFonts.displayZh,
               fontSize: 17,
@@ -121,6 +140,15 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
             ),
           ),
         ),
+        if (all.length >= _searchThreshold) ...[
+          DrawerSearchField(
+            controller: _searchController,
+            value: _query,
+            onChanged: (v) => setState(() => _query = v),
+            hintText: '搜索收藏',
+          ),
+          const SizedBox(height: Spacing.sm),
+        ],
         Flexible(
           child: items.isEmpty
               ? Container(
@@ -130,7 +158,7 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
                     borderRadius: BorderRadius.circular(Radii.surface),
                   ),
                   child: Text(
-                    '尚无收藏',
+                    _query.isEmpty ? '尚无收藏' : '没有匹配的收藏',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: colors.subtle),
                   ),

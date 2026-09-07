@@ -6,6 +6,7 @@ import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_bottom_sheet.dart';
 import 'app_icons.dart';
+import 'drawer_search_field.dart';
 
 /// 历史记录抽屉。对应 RN 版 src/components/HistoryDrawer.tsx。
 Future<void> showHistoryDrawer(
@@ -53,8 +54,29 @@ class _HistoryDrawerBody extends StatefulWidget {
   State<_HistoryDrawerBody> createState() => _HistoryDrawerBodyState();
 }
 
+/// 搜索框出现的门槛。条目少的时候它只是噪音；历史上限 50 条，多起来
+/// 只能一路滚。
+const int _searchThreshold = 6;
+
 class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
   late final Set<String> _favorites = widget.initialFavorites.toSet();
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// 按词表正文匹配 —— 用户记得的是「那份有 elephant 的词表」。
+  List<WordHistoryEntry> get _filtered {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return widget.history;
+    return widget.history
+        .where((e) => (e.enrichedText ?? e.text).toLowerCase().contains(q))
+        .toList();
+  }
 
   void _toggleFavorite(String id) {
     setState(() {
@@ -66,7 +88,8 @@ class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final history = widget.history;
+    final history = _filtered;
+    final total = widget.history.length;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -76,14 +99,16 @@ class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '历史记录 (${history.length})',
+              _query.isEmpty
+                  ? '历史记录 ($total)'
+                  : '历史记录 (${history.length}/$total)',
               style: TextStyle(
                 fontFamily: AppFonts.displayZh,
                 fontSize: 17,
                 color: colors.foreground,
               ),
             ),
-            if (history.isNotEmpty)
+            if (total > 0)
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).pop();
@@ -112,6 +137,15 @@ class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
           ],
         ),
         const SizedBox(height: Spacing.sm),
+        if (total >= _searchThreshold) ...[
+          DrawerSearchField(
+            controller: _searchController,
+            value: _query,
+            onChanged: (v) => setState(() => _query = v),
+            hintText: '搜索词表内容',
+          ),
+          const SizedBox(height: Spacing.sm),
+        ],
         Flexible(
           child: history.isEmpty
               ? Container(
@@ -121,7 +155,7 @@ class _HistoryDrawerBodyState extends State<_HistoryDrawerBody> {
                     borderRadius: BorderRadius.circular(Radii.surface),
                   ),
                   child: Text(
-                    '尚无历史记录',
+                    _query.isEmpty ? '尚无历史记录' : '没有匹配的历史记录',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: colors.subtle),
                   ),

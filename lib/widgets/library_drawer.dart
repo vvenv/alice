@@ -7,6 +7,7 @@ import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_bottom_sheet.dart';
 import 'app_icons.dart';
+import 'drawer_search_field.dart';
 
 /// 词库抽屉：按分类折叠、可搜索、可收藏。
 ///
@@ -140,53 +141,11 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
             ),
           ),
         ),
-        Container(
-          constraints: const BoxConstraints(minHeight: 36),
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.sm + 2),
-          decoration: BoxDecoration(
-            color: colors.surfaceSunken,
-            borderRadius: BorderRadius.circular(Radii.control),
-            border: Border.all(color: colors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(AppIcons.search, size: 16, color: colors.subtle),
-              const SizedBox(width: Spacing.xs),
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (v) => setState(() => _query = v),
-                  textInputAction: TextInputAction.search,
-                  autocorrect: false,
-                  style: TextStyle(fontSize: 14, color: colors.foreground),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: Spacing.sm),
-                    hintText: '搜索标题或分类',
-                    hintStyle: TextStyle(fontSize: 14, color: colors.subtle),
-                  ),
-                ),
-              ),
-              if (_query.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    _searchController.clear();
-                    setState(() => _query = '');
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      AppIcons.closeCircle,
-                      size: 16,
-                      color: colors.subtle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        DrawerSearchField(
+          controller: _searchController,
+          value: _query,
+          onChanged: (v) => setState(() => _query = v),
+          hintText: '搜索标题或分类',
         ),
         const SizedBox(height: Spacing.sm),
         // 用 Flexible 吃掉标题/搜索之外的剩余高度，避免再手算
