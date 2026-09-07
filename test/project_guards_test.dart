@@ -118,6 +118,29 @@ void main() {
       expect(manifest, contains('android:scheme="https"'));
     });
 
+    // 「分享到 Alice」这条链路横跨 manifest、Kotlin、Dart 三处，
+    // 少哪一处都是「分享菜单里没有 Alice」或者「点了没反应」，编译期无声。
+    test('分享意图三处齐全：intent-filter、MainActivity、通道名一致', () {
+      expect(manifest, contains('android.intent.action.SEND'),
+          reason: 'manifest 少了 SEND 的 intent-filter，分享菜单里不会出现 Alice');
+      expect(manifest, contains('android:mimeType="text/plain"'));
+
+      final activity = File(
+        'android/app/src/main/kotlin/com/vvenv/alice/MainActivity.kt',
+      ).readAsStringSync();
+      expect(activity, contains('ACTION_SEND'));
+      expect(activity, contains('takeSharedText'));
+
+      final dart =
+          File('lib/services/share_intake.dart').readAsStringSync();
+      for (final name in ["'alice/share'", 'takeSharedText', 'sharedText']) {
+        expect(activity, contains(name.replaceAll("'", '"')),
+            reason: 'MainActivity.kt 与 share_intake.dart 的 $name 对不上');
+        expect(dart, contains(name),
+            reason: 'share_intake.dart 缺 $name');
+      }
+    });
+
     test('包名固定为 com.vvenv.alice', () {
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
       expect(gradle, contains('applicationId = "com.vvenv.alice"'),

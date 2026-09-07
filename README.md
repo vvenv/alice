@@ -22,6 +22,7 @@
 
 ## 功能
 
+- 从别的应用「分享」一段文字过来直接成词表（Android；单行带逗号/顿号会自动拆行）
 - 粘贴英文单词列表 / 拍照 OCR 识别（内置智谱 GLM-4V 双档模型；支持自定义 OCR 服务商；Web 版需自备 API Key）
 - 发音源可选：微软 Edge 朗读（默认，免费免配置，中英文都自然）、有道词典发音或自定义 OpenAI 兼容大模型 TTS（如小米 MiMo）
 - 可选在两遍单词之间朗读中文释义（单词 → 释义 → 单词）
@@ -71,7 +72,7 @@ pnpm --filter website dev
 
 ```bash
 flutter analyze              # 0 issue
-flutter test                 # 175 个用例
+flutter test                 # 185 个用例
 pnpm lint                    # scripts/ 的 TypeScript
 pnpm --filter website check
 ```
@@ -145,6 +146,8 @@ aapt2 dump badging build/app/outputs/flutter-apk/app-release.apk | head
 - 包名 `com.vvenv.alice`、应用名「Alice 听写」、版本号与 `pubspec.yaml` 一致
 - 六个权限齐全：INTERNET / CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS /
   FOREGROUND_SERVICE / FOREGROUND_SERVICE_MEDIA_PLAYBACK
+- 分享意图在合并后的 manifest 里（`aapt2 dump xmltree --file AndroidManifest.xml <apk> | grep SEND`）——
+  少了它，别的应用的分享菜单里就没有 Alice
 - 图标是 Alice 的怀表，不是 Flutter 的蓝色 F
 
 体积构成里最大的两块是两个思源宋体（各 14.1 MB，Flutter 只对图标字体做
@@ -251,14 +254,21 @@ WebSocket 接口：免费、不需要账号，但没有公开文档、没有 SLA
 `TextToSpeech.setSpeechRate` 的 1.0 = 正常。这组映射是按文档推的，没在真机上
 听过。听写页底部现在有语速入口（改动下一个词生效），校准时不用来回退页面。
 
-### 5. 包名不能改
+### 5. iOS 没有「分享到 Alice」
+
+Android 侧靠 manifest 的 `ACTION_SEND` intent-filter + `MainActivity.kt` 接收，
+逻辑很薄。iOS 要一个独立的 Share Extension（自己的 target、App Group、
+签名配置），是另一件事，没做 —— `lib/services/share_intake.dart` 在 iOS 上
+拿不到通道，当作没有分享。
+
+### 6. 包名不能改
 
 `scripts/bootstrap.sh` 把 applicationId / bundleIdentifier 固定成
 `com.vvenv.alice`，与 Expo 版一致。**改了包名就是另一个沙箱**，
 `lib/services/legacy_migration_io.dart` 会读不到任何东西，从老版本升上来的
 用户，错词本 / 历史 / 收藏 / Credits 全部丢失。
 
-### 6. 正式签名要本地 keystore
+### 7. 正式签名要本地 keystore
 
 `android/app/build.gradle.kts` 在存在 `android/key.properties` 时用正式签名，否则 release 仍走 debug 签名（方便 `flutter run --release`）。`pnpm release:android` 现在默认 `--split-per-abi`，上传 arm64-v8a。上架商店之前请在本机放好 keystore 与 `key.properties`（均已 gitignore）。
 

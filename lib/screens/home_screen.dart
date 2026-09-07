@@ -13,6 +13,7 @@ import '../services/library_data.dart';
 import '../services/ocr.dart';
 import '../services/ocr_config.dart';
 import '../services/ocr_runner.dart';
+import '../services/share_intake.dart';
 import '../services/storage.dart';
 import '../services/tts.dart';
 import '../state/ocr_quota_controller.dart';
@@ -114,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _toast.addListener(_onToastChanged);
+    ShareIntake.listen(_applySharedText);
     _bootstrap();
   }
 
@@ -147,6 +149,50 @@ class _HomeScreenState extends State<HomeScreen> {
       _ready = true;
     });
     unawaited(_enrichWhenDictionaryReady());
+    unawaited(_consumePendingShare());
+  }
+
+  /// 冷启动是被分享拉起来的：原生侧先把文本存着，这里取一次。
+  Future<void> _consumePendingShare() async {
+    final text = await ShareIntake.takePending();
+    if (text == null || !mounted) return;
+    _applySharedText(text);
+  }
+
+  /// 把分享进来的文本当词表用。
+  ///
+  /// 直接覆盖当前列表 —— 用户刚从别处分享过来，要的就是这一份。原来那份
+  /// 已经在历史里（展示模式下输入就会同步进历史），撤销也留一手。
+  void _applySharedText(String text) {
+    final normalized = normalizeSharedText(text);
+    final words = parseWords(normalized);
+    if (words.isEmpty || !mounted) return;
+
+    final previous = _wordInput;
+    setState(() {
+      _wordInput = enrichWordListText(normalized);
+      _isDisplayMode = true;
+      _startIndex = 0;
+    });
+    _debounce?.cancel();
+    unawaited(saveWordInput(_wordInput));
+
+    _toast.show(
+      '已载入分享的 ${words.length} 个词',
+      action: previous.trim().isEmpty
+          ? null
+          : ToastAction(
+              label: '撤销',
+              onPressed: () {
+                setState(() {
+                  _wordInput = previous;
+                  _isDisplayMode = parseWords(previous).isNotEmpty;
+                  _clampStartIndex();
+                });
+                unawaited(saveWordInput(previous));
+              },
+            ),
+    );
   }
 
   Future<void> _enrichWhenDictionaryReady() async {
@@ -166,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     _debounce = null;
     unawaited(saveWordInput(_wordInput));
+    ShareIntake.stopListening();
     _toast.removeListener(_onToastChanged);
     _toast.dispose();
     super.dispose();

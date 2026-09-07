@@ -72,8 +72,15 @@ KOTLIN_ROOT="android/app/src/main/kotlin"
 OLD_PKG_DIR="$KOTLIN_ROOT/$(echo "$APP_ID" | tr . /)_dictation"
 NEW_PKG_DIR="$KOTLIN_ROOT/$(echo "$APP_ID" | tr . /)"
 if [ -f "$OLD_PKG_DIR/MainActivity.kt" ]; then
-  mkdir -p "$NEW_PKG_DIR"
-  mv "$OLD_PKG_DIR/MainActivity.kt" "$NEW_PKG_DIR/MainActivity.kt"
+  if [ -f "$NEW_PKG_DIR/MainActivity.kt" ]; then
+    # 目标位置已经有一份 —— 那是仓库里带逻辑的真身（分享意图的接收在里面）。
+    # flutter create 刚按 --project-name 铺了一个空壳到旧包名下，直接删掉，
+    # 别 mv 覆盖：覆盖是静默的，编译照过，只是分享突然不工作了。
+    rm -f "$OLD_PKG_DIR/MainActivity.kt"
+  else
+    mkdir -p "$NEW_PKG_DIR"
+    mv "$OLD_PKG_DIR/MainActivity.kt" "$NEW_PKG_DIR/MainActivity.kt"
+  fi
   rmdir "$OLD_PKG_DIR" 2>/dev/null || true
 fi
 [ -f "$NEW_PKG_DIR/MainActivity.kt" ] || error "找不到 MainActivity.kt"
@@ -108,6 +115,19 @@ if missing:
 src = re.sub(
     r'android:label="[^"]*"', f'android:label="{app_name}"', src, count=1
 )
+
+# 「分享到 Alice」的 intent-filter。flutter create 只写 MAIN/LAUNCHER 那条。
+if 'android.intent.action.SEND' not in src:
+    src = src.replace(
+        "            </intent-filter>",
+        "            </intent-filter>\n"
+        "            <intent-filter>\n"
+        '                <action android:name="android.intent.action.SEND"/>\n'
+        '                <category android:name="android.intent.category.DEFAULT"/>\n'
+        '                <data android:mimeType="text/plain"/>\n'
+        "            </intent-filter>",
+        1,
+    )
 
 # url_launcher 在 Android 11+ 需要这条 package visibility 声明，
 # 否则设置页的「反馈」打不开浏览器。flutter create 只写 PROCESS_TEXT 那条。

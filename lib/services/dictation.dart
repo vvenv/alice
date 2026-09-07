@@ -10,6 +10,27 @@ List<String> parseWords(String text) {
       .toList();
 }
 
+/// 「分享到 Alice」送进来的文本，归一成每行一个词。
+///
+/// 别的应用分享过来的多半是一整段，而不是排好的一行一个 —— 微信选中的
+/// 一句、网页里复制的一串。规则刻意保守：
+/// - 本来就是多行的，原样保留（那已经是词表的样子了）；
+/// - 只有一行、且带常见分隔符（中英文逗号、顿号、分号、制表符）时才拆开。
+///
+/// 不拆空格和斜杠：`actor / actress`、`you're = you are` 都是合法的单条，
+/// 拆了反而毁掉用户的词表。粘贴到输入框那条路不走这里，行为保持不变。
+String normalizeSharedText(String text) {
+  final lines = parseWords(text);
+  if (lines.length != 1) return lines.join('\n');
+
+  final parts = lines.first
+      .split(RegExp(r'[,，、;；\t]'))
+      .map((w) => w.trim())
+      .where((w) => w.isNotEmpty)
+      .toList();
+  return parts.join('\n');
+}
+
 /// 按朗读词头去重（大小写不敏感），保留首次出现的那一行。
 ///
 /// `apple` 与 `apple | n. | 苹果`、`Apple` 视为同一词；
