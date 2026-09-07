@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 
 import '../services/audio_interruptions.dart';
 import '../services/dictation.dart';
@@ -593,6 +594,35 @@ class _DictationScreenState extends State<DictationScreen>
     final isFinished =
         _playback.playState == PlayState.idle && _playback.wordList.isNotEmpty;
 
+    // 键盘快捷键。Web 是正式发布目标，坐在电脑前听写却只能用鼠标点；
+    // 外接键盘的平板同理。按钮都是 GestureDetector（不吃焦点），
+    // 所以空格不会被某颗按钮抢走。
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.space): _handlePlayToggle,
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): _handlePrevious,
+        const SingleActivator(LogicalKeyboardKey.arrowRight): _handleSkip,
+        const SingleActivator(LogicalKeyboardKey.keyR): _handleReplay,
+        const SingleActivator(LogicalKeyboardKey.keyM): _handleMarkWrong,
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            unawaited(_requestStop()),
+      },
+      child: Focus(
+        autofocus: true,
+        child: _buildScaffold(colors, dialSize, useCompactLayout,
+            useDualPane, isFinished, width),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(
+    AppColors colors,
+    double dialSize,
+    bool useCompactLayout,
+    bool useDualPane,
+    bool isFinished,
+    double width,
+  ) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -1290,6 +1320,15 @@ class _DictationScreenState extends State<DictationScreen>
           ),
           SizedBox(height: gap),
           _buildControlRow(colors),
+          // 够宽才提，窄屏上多半是手机，这一行只会挤掉错词区的高度。
+          if (MediaQuery.sizeOf(context).width >= 600) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              '空格 暂停 · ← → 切词 · R 重听 · M 标错词',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: colors.subtle),
+            ),
+          ],
           SizedBox(height: gap),
           Flexible(
             child: _buildWrongSection(
