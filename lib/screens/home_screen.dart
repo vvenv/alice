@@ -34,6 +34,7 @@ import '../widgets/recharge_modal.dart';
 import '../widgets/word_input_section.dart';
 import '../widgets/wrong_words_drawer.dart';
 import 'dictation_screen.dart';
+import 'image_edit_screen.dart';
 import 'settings_screen.dart';
 
 const Duration _wordInputSaveDebounce = Duration(milliseconds: 500);
@@ -91,7 +92,13 @@ class _HomeScreenState extends State<HomeScreen> {
     onNeedsOcrConfig: () {
       if (mounted) _openOcrSettings();
     },
+    editImage: _editOcrImage,
   );
+
+  Future<XFile?> _editOcrImage(XFile file) async {
+    if (!mounted) return null;
+    return openImageEditor(context, file);
+  }
 
   OcrQuotaController get _quota => context.read<OcrQuotaController>();
 
@@ -493,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
       credits: _quota.credits,
       onPurchase: (pack) async {
         await _quota.recharge(pack);
-        _toast.show('已领取 +${pack.total} credits');
+        _toast.show('已领取 +${pack.total} 积分');
       },
     );
   }
@@ -749,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: Spacing.xs),
                     Expanded(
                       child: Text(
-                        'Credits: ${quota.credits}',
+                        '积分: ${quota.credits}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1227,17 +1234,21 @@ class _ModelChip extends StatelessWidget {
                   color: active ? colors.primary : colors.foreground,
                 ),
               ),
-              if (model.tier == ModelTier.premium) ...[
-                const SizedBox(height: 2),
-                Text(
-                  '${model.creditCost} credit',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: active ? colors.gold : colors.subtle,
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                model.tier == ModelTier.premium
+                    ? '${model.creditCost} 积分'
+                    : '免费',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: active
+                      ? (model.tier == ModelTier.premium
+                            ? colors.gold
+                            : colors.primary)
+                      : colors.subtle,
                 ),
-              ],
+              ),
             ],
           ),
         ),

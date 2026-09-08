@@ -37,6 +37,7 @@ void main() {
   }) makeRunner(
     OcrRecognize recognize, {
     Future<XFile?> Function()? pickPhoto,
+    OcrEditImage? editImage,
   }) {
     final outcomes = <String>[];
     final results = <List<String>>[];
@@ -49,6 +50,7 @@ void main() {
       onInsufficientCredits: () => outcomes.add('__credits__'),
       onNeedsOcrConfig: () => outcomes.add('__config__'),
       pickPhoto: pickPhoto ?? () async => XFile('fake.jpg'),
+      editImage: editImage,
       recognize: recognize,
     );
     return (runner: runner, outcomes: outcomes, results: results, busy: busy);
@@ -115,6 +117,42 @@ void main() {
     h.runner.cancel();
     expect(h.runner.busy, isFalse);
     expect(h.outcomes, isEmpty);
+  });
+
+  test('编辑页取消等于没选图，不会去识别', () async {
+    var recognized = false;
+    final h = makeRunner(
+      (file, {onProgress, signal}) async {
+        recognized = true;
+        return const OcrResult(words: ['x'], rawText: 'x');
+      },
+      editImage: (file) async => null,
+    );
+
+    await h.runner.processPhoto();
+
+    expect(recognized, isFalse);
+    expect(h.results, isEmpty);
+    expect(h.outcomes, isEmpty);
+    expect(h.runner.busy, isFalse);
+  });
+
+  test('识别用的是编辑后的图，不是原图', () async {
+    XFile? seen;
+    final h = makeRunner(
+      (file, {onProgress, signal}) async {
+        seen = file;
+        return const OcrResult(words: ['apple'], rawText: 'apple');
+      },
+      editImage: (file) async => XFile('edited.jpg'),
+    );
+
+    await h.runner.processPhoto();
+
+    expect(seen?.path, 'edited.jpg');
+    expect(h.results, [
+      ['apple']
+    ]);
   });
 
   test('选图在预检的第一个 await 之前就启动，避免 Web 丢掉用户手势', () async {

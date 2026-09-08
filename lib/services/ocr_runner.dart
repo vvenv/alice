@@ -9,7 +9,10 @@ typedef OcrRecognize = Future<OcrResult> Function(
   AbortSignal? signal,
 });
 
-/// 拍照/相册 → 识别 → 回调的一次完整流程。
+/// 选图之后的裁切 / 旋转。返回 null 视为用户取消，不进入识别。
+typedef OcrEditImage = Future<XFile?> Function(XFile file);
+
+/// 拍照/相册 → 编辑 → 识别 → 回调的一次完整流程。
 ///
 /// 对应 Expo 版 src/components/OcrSection.tsx —— 那边是个「不渲染任何东西、
 /// 只通过 ref 暴露 processPhoto / processAlbum」的组件（hideActions 时直接
@@ -23,17 +26,20 @@ class OcrRunner {
     required this.onNeedsOcrConfig,
     Future<XFile?> Function()? pickPhoto,
     Future<XFile?> Function()? pickAlbum,
+    OcrEditImage? editImage,
     OcrRecognize? recognize,
   })  : _pickPhoto = pickPhoto ?? takePhoto,
         _pickAlbum = pickAlbum ?? pickFromAlbum,
+        _editImage = editImage,
         _recognize = recognize ?? ocrWordsFromImage;
 
-  /// 拍照 / 相册 / 识别这三步都能换掉。
+  /// 拍照 / 相册 / 编辑 / 识别都能换掉。
   ///
   /// 不是为了「可测试性」而抽象：取消与超时这条路径在真机之外没别的地方能
   /// 走到，插件在测试环境里直接抛 MissingPluginException。
   final Future<XFile?> Function() _pickPhoto;
   final Future<XFile?> Function() _pickAlbum;
+  final OcrEditImage? _editImage;
   final OcrRecognize _recognize;
 
   /// 识别出的单词列表。
@@ -122,11 +128,24 @@ class OcrRunner {
           return;
         }
 
+        // 编辑页是交互，不是识别。转圈文案先收起来，取消编辑等同没选图。
+        XFile ready = file;
+        final edit = _editImage;
+        if (edit != null) {
+          _setUiState(OcrUiState.idle);
+          final edited = await edit(file);
+          if (edited == null) {
+            _setUiState(OcrUiState.idle);
+            return;
+          }
+          ready = edited;
+        }
+
         _reportProgress(preparingPhase);
         final signal = AbortSignal();
         _signal = signal;
         final result = await _recognize(
-          file,
+          ready,
           onProgress: _reportProgress,
           signal: signal,
         );

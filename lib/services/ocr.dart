@@ -48,7 +48,7 @@ class InsufficientCreditsError implements Exception {
   final int cost;
 
   @override
-  String toString() => 'Credits 不足，请充值后使用高级识别';
+  String toString() => '积分不足，请充值后使用高级识别';
 }
 
 /// 进行中的阶段（顶栏）。终态文案在 OcrOutcomeMessages。
@@ -103,6 +103,14 @@ Future<XFile?> pickFromAlbum() {
   );
 }
 
+/// 原生 `compressWithFile` 只认磁盘路径。Web 的 blob:、编辑页的内存
+/// XFile（path 为空）走这条会炸或读到空文件。
+bool _hasRealFilePath(XFile file) {
+  final path = file.path;
+  if (path.isEmpty) return false;
+  return !path.startsWith('blob:') && !path.startsWith('data:');
+}
+
 class _CompressedImage {
   const _CompressedImage(this.base64, this.mimeType);
 
@@ -118,9 +126,11 @@ class _CompressedImage {
 ///    真实文件可读。只有 compressWithList 有实现（canvas 缩放 + toDataURL）。
 ///  - 原生：反过来走文件路径。把整张原图（拍照件动辄好几 MB）先读进 Dart 堆、
 ///    再原样塞过 platform channel，是白白多两份大对象拷贝。
+///  - 编辑页导出来的是内存 XFile（path 为空）。这时候没有文件可走，只能
+///    跟 Web 一样用 compressWithList。
 Future<_CompressedImage> _compressImageForOcr(XFile file) async {
   final Uint8List? bytes;
-  if (kIsWeb) {
+  if (kIsWeb || !_hasRealFilePath(file)) {
     bytes = await FlutterImageCompress.compressWithList(
       await file.readAsBytes(),
       minWidth: _ocrMaxEdge,

@@ -36,6 +36,8 @@ class AppIcons {
   static const IconData skipForward = Icons.skip_next;
   static const IconData refresh = Icons.refresh;
   static const IconData replay = Icons.replay;
+  static const IconData rotateLeft = Icons.rotate_90_degrees_ccw;
+  static const IconData rotateRight = Icons.rotate_90_degrees_cw;
   static const IconData wrongWords = Icons.rule_folder_outlined;
   static const IconData phonePortrait = Icons.phone_iphone;
   static const IconData openOutside = Icons.open_in_new;
