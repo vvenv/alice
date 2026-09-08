@@ -17,7 +17,7 @@ export function Footer() {
               "Down the rabbit-hole of words."
             </p>
             <p className="mt-3 text-sm leading-relaxed text-ink/55">
-              为英语学习者打造的单词听写应用。拍照识别，Edge 朗读，错词追踪。
+              为英语学习者打造的单词听写应用。拍照或分享成表，Edge 朗读，错词追踪。
             </p>
             <div className="mt-5 flex items-center gap-3 text-gold/40">
               <SuitHeart className="h-4 w-4" />

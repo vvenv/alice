@@ -1,11 +1,5 @@
 import { useReveal } from "../hooks/useReveal";
-import {
-  PhoneFrame,
-  DictationScreenMock,
-  FinishScreenMock,
-  HomeScreenMock,
-  LibraryScreenMock,
-} from "./PhoneMockup";
+import { PhoneScreenshot, type AppShot } from "./PhoneMockup";
 import { PocketWatch } from "./Decorations";
 
 interface ShowCaseItem {
@@ -13,39 +7,47 @@ interface ShowCaseItem {
   title: string;
   desc: string;
   points: string[];
-  mock: React.ReactNode;
+  shot: AppShot;
   reverse?: boolean;
 }
 
 const ITEMS: ShowCaseItem[] = [
   {
-    eyebrow: "Step 01 · 识别",
-    title: "拍一张照片，单词自动入列",
-    desc: "对准课本单词表，AI 数秒内完成识别，自动补全词性与释义，瞬间生成听写列表。",
-    points: ["AI 智能识别，印刷体与手写均可", "自动补全词性与中文释义", "识别结果可随时编辑"],
-    mock: <HomeScreenMock />,
+    eyebrow: "Step 01 · 入列",
+    title: "拍照、粘贴或分享，单词入列",
+    desc: "对准课本单词表拍照，AI 数秒内识别并补全词性与释义。也可以粘贴词表，或从别的应用直接分享过来。",
+    points: [
+      "拍照识别，印刷体与手写均可",
+      "粘贴词表，或 Android 分享即成表",
+      "识别与载入结果可随时编辑、撤销",
+    ],
+    shot: "home",
   },
   {
     eyebrow: "Step 02 · 词库",
-    title: "不想拍照？词库开箱即用",
-    desc: "内置中考 1600、高考 3500 与人教、外研、闽教版教材单元词表，搜索即达，点击即载入。",
-    points: ["中考 1600 · 高考 3500", "教材单元词表逐课收录", "标题、分类模糊搜索"],
-    mock: <LibraryScreenMock />,
+    title: "不想拍照？290 套词表开箱即用",
+    desc: "中考 1600、高考 3500，人教、外研、闽教、仁爱版单元词表逐课收录，搜索即达，点击即载入。",
+    points: ["290 套词表 · 中考 1600 · 高考 3500", "教材单元词表逐课收录，可收藏", "标题、分类模糊搜索"],
+    shot: "library",
     reverse: true,
   },
   {
     eyebrow: "Step 03 · 听写",
-    title: "逐词朗读，间隔随心",
-    desc: "怀表式倒计时逐词朗读，间隔可调、自动连播。单词可显示或隐藏，写错随手标记。",
-    points: ["怀表倒计时，节奏尽在掌握", "间隔 1–10s 可调 · 自动连播", "显示/隐藏切换 · 一键标记错词"],
-    mock: <DictationScreenMock />,
+    title: "逐词朗读，重听与语速都在手边",
+    desc: "怀表倒计时逐词朗读。听写中可重听、切词、调语速，也可打开中文释义。屏幕常亮，切后台会自动暂停。",
+    points: [
+      "点表盘或「重听」再听当前词",
+      "间隔 1–10s · 语速可调 · 可选朗读释义",
+      "显示/隐藏当前词 · 一键标记错词",
+    ],
+    shot: "dictation",
   },
   {
     eyebrow: "Step 04 · 回顾",
-    title: "错词留痕，有的放矢",
-    desc: "听写完成即出成绩单，错词自动收入错词本。一键再听一遍，或导出反复练习。",
-    points: ["单词 / 错词 / 用时统计", "错词再听一遍", "一键导出错词本"],
-    mock: <FinishScreenMock />,
+    title: "错词留在成绩单上，再听一遍",
+    desc: "听写完成即出成绩：单词、错词、用时，错了哪几个直接列在卡片上。可再听错词，或导出反复练习。",
+    points: ["单词 / 错词 / 用时，错词列在成绩单", "错词再听一遍", "错词本导出与清空"],
+    shot: "finish",
     reverse: true,
   },
 ];
@@ -119,8 +121,8 @@ function ShowcaseRow({ item }: { item: ShowCaseItem }) {
         style={{ transitionDelay: "250ms" }}
       >
         <div className="relative">
-          <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-gradient-to-tr from-gold/8 to-rose/8 blur-3xl" />
-          <PhoneFrame>{item.mock}</PhoneFrame>
+          <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-linear-to-tr from-gold/8 to-rose/8 blur-3xl" />
+          <PhoneScreenshot shot={item.shot} />
         </div>
       </div>
     </div>

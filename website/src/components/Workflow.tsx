@@ -4,8 +4,8 @@ import { PocketWatch } from "./Decorations";
 const STEPS = [
   {
     num: "I",
-    title: "拍照、词库或粘贴",
-    desc: "拍下课本单词表、从内置词库选择，或直接粘贴文本。",
+    title: "拍照、词库、粘贴或分享",
+    desc: "拍下课本、从 290 套词库选用，粘贴文本，或从别的应用分享过来。",
   },
   {
     num: "II",
@@ -15,7 +15,7 @@ const STEPS = [
   {
     num: "III",
     title: "逐词听写",
-    desc: "逐词朗读，你来书写。间隔可调，自动连播。",
+    desc: "逐词朗读，你来书写。间隔与语速可调，随时重听，写错随手标记。",
   },
   {
     num: "IV",

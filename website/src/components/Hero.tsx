@@ -6,7 +6,7 @@ import {
   BookOpen,
   Library,
 } from "lucide-react";
-import { PhoneFrame, DictationScreenMock } from "./PhoneMockup";
+import { PhoneScreenshot } from "./PhoneMockup";
 import { PocketWatch, GearCluster, SuitHeart, SuitSpade } from "./Decorations";
 
 export function Hero() {
@@ -28,7 +28,7 @@ export function Hero() {
               style={{ animation: "fadeUp 0.8s 0.1s forwards" }}
             >
               <SuitHeart className="h-3 w-3" />
-              拍照即听写 · 内置教材词库
+              拍照、分享或选词库 · 即开听写
             </div>
 
             <h1
@@ -50,7 +50,7 @@ export function Hero() {
               className="mt-6 text-base leading-relaxed text-ink/70 opacity-0"
               style={{ animation: "fadeUp 0.9s 0.5s forwards" }}
             >
-              拍照识别单词，内置教材词库，逐词朗读、错词留痕。 让听写回归语言本身。
+              拍课本、从别的应用分享，或打开 290 套教材词表。逐词朗读、听写中可调语速与重听，错词留在本机。
             </p>
 
             <div
@@ -104,9 +104,7 @@ export function Hero() {
             <div className="absolute inset-0 -z-10 bg-linear-to-tr from-rose/10 via-transparent to-gold/10 blur-3xl" />
 
             <div className="animate-float">
-              <PhoneFrame>
-                <DictationScreenMock />
-              </PhoneFrame>
+              <PhoneScreenshot shot="dictation" priority />
             </div>
           </div>
         </div>
