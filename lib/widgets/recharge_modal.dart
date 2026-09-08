@@ -151,7 +151,7 @@ class _RechargeModalState extends State<_RechargeModal> {
                     ),
                   ),
                   Semantics(
-                    label: '当前余额 $_credits credits',
+                    label: '当前余额 $_credits 积分',
                     child: Text(
                       '$_credits',
                       style: TextStyle(
@@ -192,7 +192,7 @@ class _RechargeModalState extends State<_RechargeModal> {
                     Padding(
                       padding: const EdgeInsets.only(top: Spacing.xs),
                       child: Text(
-                        '当前为演示积分：点选套餐立即到账，暂不扣款。高级识别每次成功扣除 1 credit。',
+                        '当前为演示积分：点选套餐立即到账，暂不扣款。高级识别每次成功扣除 1 积分。',
                         style: TextStyle(fontSize: 13, color: colors.muted),
                       ),
                     ),
@@ -321,7 +321,7 @@ class _PackCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '共 ${pack.total} credits',
+                      '共 ${pack.total} 积分',
                       style: TextStyle(fontSize: 12, color: colors.muted),
                     ),
                   ],

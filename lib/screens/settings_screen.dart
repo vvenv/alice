@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       credits: _quota.credits,
       onPurchase: (pack) async {
         await _quota.recharge(pack);
-        _toast.show('已领取 +${pack.total} credits');
+        _toast.show('已领取 +${pack.total} 积分');
       },
     );
   }
@@ -445,7 +445,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _row(
                               colors,
                               icon: AppIcons.wallet,
-                              label: 'Credits 余额',
+                              label: '积分余额',
                               detail: '${quota.credits}',
                             ),
                             _divider(colors),

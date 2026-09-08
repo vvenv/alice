@@ -336,7 +336,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
         badge: '高级',
         badgeColor: colors.gold,
         badgeBg: colors.goldSoft,
-        costText: '每次识别扣除 ${_premiumModel.creditCost} credit',
+        costText: '每次识别扣除 ${_premiumModel.creditCost} 积分',
       ),
       Container(
         margin: const EdgeInsets.only(top: Spacing.sm),
@@ -355,7 +355,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
             const SizedBox(width: Spacing.xs),
             Expanded(
               child: Text(
-                '余额 ${widget.credits} credits',
+                '余额 ${widget.credits} 积分',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

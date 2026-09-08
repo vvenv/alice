@@ -98,14 +98,14 @@ class CreditPack {
 const List<CreditPack> kCreditPacks = [
   CreditPack(
     id: 'pack_20',
-    label: '20 Credits',
+    label: '20 积分',
     credits: 20,
     bonus: 0,
     price: '¥6',
   ),
   CreditPack(
     id: 'pack_60',
-    label: '60 Credits',
+    label: '60 积分',
     credits: 60,
     bonus: 6,
     price: '¥15',
@@ -113,7 +113,7 @@ const List<CreditPack> kCreditPacks = [
   ),
   CreditPack(
     id: 'pack_200',
-    label: '200 Credits',
+    label: '200 积分',
     credits: 200,
     bonus: 30,
     price: '¥45',
