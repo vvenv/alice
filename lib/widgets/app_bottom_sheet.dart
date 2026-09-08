@@ -59,67 +59,67 @@ class _AppBottomSheet extends StatelessWidget {
     final bottomPad =
         media.padding.bottom > Spacing.xl ? media.padding.bottom : Spacing.xl;
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        width: double.infinity,
-        constraints: BoxConstraints(
-          maxWidth: 640,
-          maxHeight: sheetMaxHeight,
+    // 不要再套一层 Align 把自己撑成满屏高。
+    //
+    // showModalBottomSheet 本来就把内容贴在底部，而外面那层 Align 会让
+    // BottomSheet 的实际高度变成整块屏幕 —— 下拖收起的判定是按自身高度算的，
+    // 于是怎么拖都够不到阈值：抽屉纹丝不动。去掉之后高度等于内容高度，
+    // 下拖收起、拖到一半松手回弹都恢复正常。
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(maxWidth: 640, maxHeight: sheetMaxHeight),
+      padding: EdgeInsets.only(
+        left: Spacing.lg,
+        right: Spacing.lg,
+        top: Spacing.lg,
+        bottom: bottomPad,
+      ),
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(Radii.shell),
+          topRight: Radius.circular(Radii.shell),
         ),
-        padding: EdgeInsets.only(
-          left: Spacing.lg,
-          right: Spacing.lg,
-          top: Spacing.lg,
-          bottom: bottomPad,
+        border: Border(
+          top: BorderSide(color: colors.borderSubtle),
+          left: BorderSide(color: colors.borderSubtle),
+          right: BorderSide(color: colors.borderSubtle),
         ),
-        decoration: BoxDecoration(
-          color: colors.background,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(Radii.shell),
-            topRight: Radius.circular(Radii.shell),
-          ),
-          border: Border(
-            top: BorderSide(color: colors.borderSubtle),
-            left: BorderSide(color: colors.borderSubtle),
-            right: BorderSide(color: colors.borderSubtle),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: Spacing.md),
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(Radii.full),
-                ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: Spacing.md),
+              decoration: BoxDecoration(
+                color: colors.border,
+                borderRadius: BorderRadius.circular(Radii.full),
               ),
             ),
-            if (title != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title!,
-                    style: TextStyle(
-                      fontFamily: AppFonts.displayZh,
-                      fontSize: 17,
-                      color: colors.foreground,
-                    ),
+          ),
+          if (title != null) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title!,
+                  style: TextStyle(
+                    fontFamily: AppFonts.displayZh,
+                    fontSize: 17,
+                    color: colors.foreground,
                   ),
-                  if (headerRight != null) headerRight!,
-                ],
-              ),
-              const SizedBox(height: Spacing.sm),
-            ],
-            Flexible(child: builder(context)),
+                ),
+                if (headerRight != null) headerRight!,
+              ],
+            ),
+            const SizedBox(height: Spacing.sm),
           ],
-        ),
+          Flexible(child: builder(context)),
+        ],
       ),
     );
   }
