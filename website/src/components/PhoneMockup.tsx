@@ -22,7 +22,8 @@ const SHOTS: Record<AppShot, { src: string; alt: string }> = {
 };
 
 /**
- * 手机外框。截图已裁掉系统状态栏与手势条，由此外框提供刘海与边框。
+ * 手机外框。一圈等宽 border，四边同一粗细。
+ * 截图自带状态栏与手势条，不再另叠刘海。
  */
 export function PhoneFrame({
   children,
@@ -33,11 +34,8 @@ export function PhoneFrame({
 }) {
   return (
     <div className={`relative ${className}`}>
-      <div className="relative w-70 overflow-hidden rounded-[2.8rem] border-[3px] border-ink/80 bg-ink p-2 shadow-[0_30px_60px_-20px_rgba(26,43,74,0.4),0_0_0_1px_rgba(26,43,74,0.1)]">
-        <div className="relative overflow-hidden rounded-[2.2rem] bg-paper">
-          <div className="absolute left-1/2 top-0 z-10 h-6 w-28 -translate-x-1/2 rounded-b-2xl bg-ink" />
-          {children}
-        </div>
+      <div className="w-70 overflow-hidden rounded-[1.75rem] border-[10px] border-ink bg-paper shadow-[0_30px_60px_-20px_rgba(26,43,74,0.4)]">
+        {children}
       </div>
     </div>
   );
@@ -59,7 +57,7 @@ export function PhoneScreenshot({
         src={src}
         alt={alt}
         width={1080}
-        height={2204}
+        height={2424}
         className="block h-auto w-full"
         decoding="async"
         loading={priority ? "eager" : "lazy"}
