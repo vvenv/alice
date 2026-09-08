@@ -34,7 +34,10 @@ void main() {
     List<String> outcomes,
     List<List<String>> results,
     List<bool> busy,
-  }) makeRunner(OcrRecognize recognize) {
+  }) makeRunner(
+    OcrRecognize recognize, {
+    Future<XFile?> Function()? pickPhoto,
+  }) {
     final outcomes = <String>[];
     final results = <List<String>>[];
     final busy = <bool>[];
@@ -45,7 +48,7 @@ void main() {
       onOutcome: outcomes.add,
       onInsufficientCredits: () => outcomes.add('__credits__'),
       onNeedsOcrConfig: () => outcomes.add('__config__'),
-      pickPhoto: () async => XFile('fake.jpg'),
+      pickPhoto: pickPhoto ?? () async => XFile('fake.jpg'),
       recognize: recognize,
     );
     return (runner: runner, outcomes: outcomes, results: results, busy: busy);
@@ -112,5 +115,27 @@ void main() {
     h.runner.cancel();
     expect(h.runner.busy, isFalse);
     expect(h.outcomes, isEmpty);
+  });
+
+  test('选图在预检的第一个 await 之前就启动，避免 Web 丢掉用户手势', () async {
+    var pickCalled = false;
+    final h = makeRunner(
+      (file, {onProgress, signal}) async {
+        return const OcrResult(words: [], rawText: '');
+      },
+      pickPhoto: () {
+        pickCalled = true;
+        return Future<XFile?>.value(null);
+      },
+    );
+
+    final run = h.runner.processPhoto();
+    expect(
+      pickCalled,
+      isTrue,
+      reason: 'pick 必须在 processPhoto 回到事件循环之前启动，'
+          '否则 Web 浏览器会拦截文件选择框',
+    );
+    await run;
   });
 }

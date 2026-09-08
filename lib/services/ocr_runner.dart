@@ -89,9 +89,23 @@ class OcrRunner {
     if (_running) return;
     _running = true;
     try {
-      // 预检：缺 OCR 配置或高级模型余额不够时跳过拍照，转交对应 UI。
+      // 选图必须在任何 await 之前启动。
+      //
+      // Web 的 image_picker 是往 DOM 里插一个 <input type="file"> 再
+      // `input.click()`。浏览器要求这次 click 落在用户手势的同步调用栈里，
+      // 否则文件框被静默吞掉 —— 用户点了「拍摄照片 / 从相册选取」，
+      // 抽屉关上，然后什么都不发生。
+      //
+      // 预检（canRunOcrNow）自己就要 await，所以不能再放在选图前面。
+      // 抽屉已经把未配置 OCR 的入口换成「去配置」；真被预检拦下来，
+      // 就丢掉这次选图结果。
+      final pickFuture = pick();
+
       final gate = await canRunOcrNow();
       if (!gate.allowed) {
+        try {
+          await pickFuture;
+        } catch (_) {}
         if (gate.needsCustomConfig) {
           onNeedsOcrConfig();
         } else {
@@ -102,7 +116,7 @@ class OcrRunner {
 
       _setUiState(const OcrUiState(busy: true, message: ''));
       try {
-        final file = await pick();
+        final file = await pickFuture;
         if (file == null) {
           _setUiState(OcrUiState.idle);
           return;

@@ -809,8 +809,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: AppIcons.cameraOutline,
                 label: '拍摄照片',
                 onTap: () {
-                  Navigator.of(sheetContext).pop();
+                  // 先启动选图，再关抽屉。Web 的文件选择必须落在这次
+                  // 点击的同步调用栈里；原生上也能避开「关抽屉的同时
+                  // present 相机 / 相册」失败。
                   _ocr.processPhoto();
+                  Navigator.of(sheetContext).pop();
                 },
               ),
               const SizedBox(height: Spacing.sm),
@@ -818,8 +821,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: AppIcons.images,
                 label: '从相册选取',
                 onTap: () {
-                  Navigator.of(sheetContext).pop();
                   _ocr.processAlbum();
+                  Navigator.of(sheetContext).pop();
                 },
               ),
               const SizedBox(height: Spacing.sm),
