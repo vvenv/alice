@@ -108,7 +108,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('已载入分享'), findsNothing);
-      expect(find.text('第一次用？'), findsOneWidget);
+      expect(find.textContaining('每行一个单词'), findsOneWidget);
     });
 
     testWidgets('运行中收到分享会换掉当前词表，并留一手撤销', (tester) async {

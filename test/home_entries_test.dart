@@ -10,12 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 首页的两个新入口：空态引导与错词本。
+/// 首页的「错词本」入口。
 ///
-/// - 空输入框以前只有输入框里那一句 hint，点「开始听写」换来一句
-///   「请先输入单词列表」，新用户没有下一步可走。
-/// - 累计错词本一直是持久化的，却只有听写页里能看到 —— 想重听昨天的错词，
-///   得先随便开一轮听写。
+/// 累计错词本一直是持久化的，却只有听写页里能看到 —— 想重听昨天的错词，
+/// 得先随便开一轮听写。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -45,32 +43,6 @@ void main() {
       child: app,
     );
   }
-
-  testWidgets('空词表时给出「载入示例」，点了就有词可听', (tester) async {
-    await tester.pumpWidget(wrap(const HomeScreen()));
-    await tester.pumpAndSettle();
-
-    expect(find.text('第一次用？'), findsOneWidget);
-    expect(find.text('载入示例'), findsOneWidget);
-
-    await tester.tap(find.text('载入示例'));
-    await tester.pumpAndSettle();
-
-    // 载入之后卡片进展示模式，词数与起点说明出现在卡片头上，引导行随之消失。
-    expect(find.textContaining('个单词 · 点词设为起点'), findsOneWidget);
-    expect(find.text('rabbit'), findsOneWidget);
-    expect(find.text('第一次用？'), findsNothing);
-  });
-
-  testWidgets('有词表时不再显示空态引导', (tester) async {
-    await saveWordInput('apple\nbanana');
-
-    await tester.pumpWidget(wrap(const HomeScreen()));
-    await tester.pumpAndSettle();
-
-    expect(find.text('第一次用？'), findsNothing);
-    expect(find.text('载入示例'), findsNothing);
-  });
 
   testWidgets('菜单里能打开错词本，看到攒下来的错词', (tester) async {
     await addWrongWordToBook('castle');
@@ -126,8 +98,8 @@ void main() {
     expect(loadWrongWords(), ['whisper']);
   });
 
-  // 空态引导那一行是 图标 + 说明 + 两颗按钮，最窄的机型上最容易撑破。
-  testWidgets('窄屏上空态引导不溢出', (tester) async {
+  // 320px 宽是最挤的机型。品牌行曾经在这里溢出 0.1px，把「写」裁掉半个。
+  testWidgets('窄屏上首页不溢出', (tester) async {
     tester.view.physicalSize = const Size(320, 640) * 3;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -135,7 +107,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('载入示例'), findsOneWidget);
+    expect(find.text('开始听写'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

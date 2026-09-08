@@ -74,15 +74,14 @@ void main() {
 
     expect(find.text('apple'), findsNothing);
     expect(find.text('已清空词表'), findsOneWidget);
-    // 清空之后回到空态，引导跟着出现。
-    expect(find.text('第一次用？'), findsOneWidget);
+    // 清空之后回到编辑态，占位提示重新出现。
+    expect(find.textContaining('每行一个单词'), findsOneWidget);
 
     await tester.tap(find.text('撤销'));
     await tester.pumpAndSettle();
 
     expect(find.text('apple'), findsOneWidget);
     expect(find.text('cat'), findsOneWidget);
-    expect(find.text('第一次用？'), findsNothing);
   });
 
   testWidgets('空词表时卡片上没有清空按钮', (tester) async {
