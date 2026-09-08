@@ -151,13 +151,15 @@ echo ""
 TMP_DIR="$(mktemp -d)"
 TMP_APK="$TMP_DIR/alice.apk"
 trap 'rm -rf "$TMP_DIR"' EXIT
-echo "▶ [1/6] Building release APK (arm64 split)..."
+echo "▶ [1/6] Building release APK (arm64 only)..."
 # OCR 密钥走编译期常量。Web 构建不传（产物是公开 JS），这里必须传。
+# 只打 arm64：官网只挂这一个，v7a / x86_64 编了也只会丢掉。
 : "${ZHIPU_API_KEY:?ZHIPU_API_KEY not set — add it to .env (see .env.example)}"
 if [ ! -f "$ROOT/android/key.properties" ]; then
   echo "  ⚠ 未找到 android/key.properties，release APK 将使用 debug 签名"
 fi
-flutter build apk --release --split-per-abi --dart-define=ZHIPU_API_KEY="$ZHIPU_API_KEY"
+flutter build apk --release --split-per-abi --target-platform android-arm64 \
+  --dart-define=ZHIPU_API_KEY="$ZHIPU_API_KEY"
 BUILT_APK="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
 [ -f "$BUILT_APK" ] || error "flutter build 没有产出 $BUILT_APK（需要 arm64-v8a 分包）"
 cp "$BUILT_APK" "$TMP_APK"

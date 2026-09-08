@@ -114,7 +114,7 @@ pnpm release:android major     # 0.7.2 → 1.0.0
 pnpm release:android 0.7.0     # 指定版本号
 ```
 
-流程：可选升版 → `flutter build apk --release --split-per-abi` → 上传 **arm64-v8a** 到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
+流程：可选升版 → `flutter build apk --release --split-per-abi --target-platform android-arm64` → 上传 **arm64-v8a** 到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
 详见 [`scripts/release.sh`](scripts/release.sh)。没有 `android/key.properties` 时会警告并继续用 debug 签名。
 
 版本号只有 `pubspec.yaml` 里 `version: 0.7.2+14` 这一处，
@@ -152,11 +152,10 @@ aapt2 dump badging build/app/outputs/flutter-apk/app-release.apk | head
 - 图标是 Alice 的怀表，不是 Flutter 的蓝色 F
 
 体积构成里最大的两块是两个思源宋体（各 14.1 MB，Flutter 只对图标字体做
-tree-shaking，正文字体不裁剪）和三个架构的原生库（约 50 MB）。
-按架构分包能显著减小单设备体积：
+tree-shaking，正文字体不裁剪）和原生库。发版只打 arm64，官网也只挂这一个：
 
 ```bash
-flutter build apk --release --split-per-abi   # arm64 单包约 35 MB
+flutter build apk --release --split-per-abi --target-platform android-arm64
 ```
 
 ## 项目结构
@@ -271,7 +270,7 @@ Android 侧靠 manifest 的 `ACTION_SEND` intent-filter + `MainActivity.kt` 接�
 
 ### 7. 正式签名要本地 keystore
 
-`android/app/build.gradle.kts` 在存在 `android/key.properties` 时用正式签名，否则 release 仍走 debug 签名（方便 `flutter run --release`）。`pnpm release:android` 现在默认 `--split-per-abi`，上传 arm64-v8a。上架商店之前请在本机放好 keystore 与 `key.properties`（均已 gitignore）。
+`android/app/build.gradle.kts` 在存在 `android/key.properties` 时用正式签名，否则 release 仍走 debug 签名（方便 `flutter run --release`）。`pnpm release:android` 只打并上传 arm64-v8a。上架商店之前请在本机放好 keystore 与 `key.properties`（均已 gitignore）。
 
 真实应用内购买尚未接入：Credits 是演示积分，点领取即到账。
 

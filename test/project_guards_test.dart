@@ -227,9 +227,10 @@ void main() {
   });
 
   group('Android 发版', () {
-    test('release.sh 按 ABI 分包并上传 arm64', () {
+    test('release.sh 只打并上传 arm64', () {
       final script = File('scripts/release.sh').readAsStringSync();
       expect(script, contains('--split-per-abi'));
+      expect(script, contains('--target-platform android-arm64'));
       expect(script, contains('app-arm64-v8a-release.apk'));
     });
   });
