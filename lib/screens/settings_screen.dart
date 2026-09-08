@@ -236,8 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _handleFeedback() async {
     final uri = Uri.parse('https://github.com/vvenv/alice/issues');
     try {
-      final opened =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (opened) return;
     } catch (_) {
       // 落到下面的复制兜底
@@ -331,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       colors,
                                       themeController,
                                       ThemeModeSetting.system,
-                                      '跟随系统',
+                                      '系统',
                                       AppIcons.phonePortrait,
                                     ),
                                   ),
@@ -664,7 +663,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: 1.5,
             ),
           ),
-          // 三档并排，「跟随系统」在窄屏 + 大号系统字体下会撑破自己那一格
+          // 三档并排，窄屏 + 大号系统字体时仍可能撑破自己那一格
           // —— 整体缩放而不是换行/裁字。
           child: FittedBox(
             fit: BoxFit.scaleDown,
