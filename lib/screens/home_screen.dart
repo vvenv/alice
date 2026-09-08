@@ -890,53 +890,69 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildHeader(showOcrProgress),
                 if (showOcrSetupBanner) _buildOcrSetupBanner(),
+                // toast 放在这一层而不是整页最外层：它原先固定贴屏幕底，正好
+                // 压在「开始听写」上 —— 载入词表和开始听写是连着的两步，主按钮
+                // 恰好在这几秒里被盖住。挂在内容区里，它就浮在底部面板之上。
                 Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 720),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: Spacing.lg,
-                          right: Spacing.lg,
-                          bottom: Spacing.sm,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: WordInputSection(
-                                value: _wordInput,
-                                onChanged: _onWordInputChanged,
-                                startIndex: _startIndex,
-                                onStartIndexChanged: (i) =>
-                                    setState(() => _startIndex = i),
-                                isDisplayMode: _isDisplayMode,
-                                onToggleDisplayMode: _handleToggleDisplayMode,
-                                onWordDeleted: _handleWordDeleted,
-                                onClearAll: _handleClearWordInput,
-                                overlayActionSize: cameraSize,
-                                overlayAlignment: _cameraAlignment,
-                                onOverlayAlignmentChanged: _handleCameraMoved,
-                                overlayAction: AppIconButton(
-                                  icon: AppIcons.camera,
-                                  size: cameraSize,
-                                  variant: IconButtonVariant.gold,
-                                  onPressed: _openCameraSheet,
-                                  semanticLabel: '拍照识词',
-                                ),
-                              ),
+                  // fit: expand —— 外层 Column 给的是宽度松约束，Stack 默认按
+                  // 非定位子项定宽，而 toast 为空时是 0×0，整块会塌成 0 宽，
+                  // 画面照旧但点击全部落空。
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: Spacing.lg,
+                              right: Spacing.lg,
+                              bottom: Spacing.sm,
                             ),
-                          ],
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: WordInputSection(
+                                    value: _wordInput,
+                                    onChanged: _onWordInputChanged,
+                                    startIndex: _startIndex,
+                                    onStartIndexChanged: (i) =>
+                                        setState(() => _startIndex = i),
+                                    isDisplayMode: _isDisplayMode,
+                                    onToggleDisplayMode:
+                                        _handleToggleDisplayMode,
+                                    onWordDeleted: _handleWordDeleted,
+                                    onClearAll: _handleClearWordInput,
+                                    overlayActionSize: cameraSize,
+                                    overlayAlignment: _cameraAlignment,
+                                    onOverlayAlignmentChanged:
+                                        _handleCameraMoved,
+                                    overlayAction: AppIconButton(
+                                      icon: AppIcons.camera,
+                                      size: cameraSize,
+                                      variant: IconButtonVariant.gold,
+                                      onPressed: _openCameraSheet,
+                                      semanticLabel: '拍照识词',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      AppToast(
+                        toast: _toast.toast,
+                        onActionPressed: _toast.hide,
+                      ),
+                    ],
                   ),
                 ),
                 if (!keyboardOpen) _buildBottomPanel(parsedWordCount),
               ],
             ),
           ),
-          AppToast(toast: _toast.toast, onActionPressed: _toast.hide),
         ],
       ),
     );

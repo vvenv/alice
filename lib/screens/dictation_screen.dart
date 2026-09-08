@@ -609,8 +609,8 @@ class _DictationScreenState extends State<DictationScreen>
       },
       child: Focus(
         autofocus: true,
-        child: _buildScaffold(colors, dialSize, useCompactLayout,
-            useDualPane, isFinished, width),
+        child: _buildScaffold(
+            colors, dialSize, useCompactLayout, useDualPane, isFinished, width),
       ),
     );
   }
@@ -637,51 +637,66 @@ class _DictationScreenState extends State<DictationScreen>
                 children: [
                   _buildProgressBar(colors),
                   _buildHeader(colors, isFinished),
+                  // toast 挂在舞台这一层，不再固定贴屏幕底 —— 那里是控制行和
+                  // 错词区，正好被盖住。
                   Expanded(
-                    child: useDualPane
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: _buildWordStage(
-                                  colors,
-                                  dialSize,
-                                  useCompactLayout,
-                                  isFinished,
+                    // fit: expand —— 外层 Column 给的是宽度松约束，Stack 默认
+                    // 按非定位子项定宽，而 toast 为空时是 0×0，整块会塌成 0 宽，
+                    // 画面照旧但点击全部落空。
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Builder(
+                          builder: (context) => useDualPane
+                              ? Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildWordStage(
+                                        colors,
+                                        dialSize,
+                                        useCompactLayout,
+                                        isFinished,
+                                      ),
+                                    ),
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: math.min(380, width * 0.42),
+                                      ),
+                                      child: _buildBottomPanel(
+                                        colors,
+                                        useCompactLayout: useCompactLayout,
+                                        useDualPane: true,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: [
+                                    Expanded(
+                                      child: _buildWordStage(
+                                        colors,
+                                        dialSize,
+                                        useCompactLayout,
+                                        isFinished,
+                                      ),
+                                    ),
+                                    _buildBottomPanel(
+                                      colors,
+                                      useCompactLayout: useCompactLayout,
+                                      useDualPane: false,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: math.min(380, width * 0.42),
-                                ),
-                                child: _buildBottomPanel(
-                                  colors,
-                                  useCompactLayout: useCompactLayout,
-                                  useDualPane: true,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              Expanded(
-                                child: _buildWordStage(
-                                  colors,
-                                  dialSize,
-                                  useCompactLayout,
-                                  isFinished,
-                                ),
-                              ),
-                              _buildBottomPanel(
-                                colors,
-                                useCompactLayout: useCompactLayout,
-                                useDualPane: false,
-                              ),
-                            ],
-                          ),
+                        ),
+                        AppToast(
+                          toast: _toast.toast,
+                          onActionPressed: _toast.hide,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              AppToast(toast: _toast.toast, onActionPressed: _toast.hide),
             ],
           ),
         ),
@@ -1205,8 +1220,7 @@ class _DictationScreenState extends State<DictationScreen>
                               ),
                               decoration: BoxDecoration(
                                 color: colors.dangerSoft,
-                                borderRadius:
-                                    BorderRadius.circular(Radii.full),
+                                borderRadius: BorderRadius.circular(Radii.full),
                                 border: Border.all(color: colors.danger),
                               ),
                               child: Text(
