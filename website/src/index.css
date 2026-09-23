@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme {
   --color-paper: #faf6ee;
@@ -23,13 +23,23 @@
   --animate-shimmer: shimmer 3s ease-in-out infinite;
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-12px); }
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
   }
 
   @keyframes shimmer {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 0.9; }
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.9;
+    }
   }
 }
 
@@ -41,11 +51,19 @@
 
 @layer base {
   :root {
-    --paper: #faf6ee;
-    --ink: #1a2b4a;
-    --rose: #c44569;
-    --gold: #b8860b;
-    --parchment: #f2ebda;
+    color-scheme: light;
+  }
+
+  /* 跟随系统深色模式：切换为夜晚纸墨配色（工具类引用 var(--color-*)，自动全局生效） */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --color-paper: #162238;
+      --color-parchment: #0f1a2e;
+      --color-ink: #eae4d4;
+      --color-rose: #d56d8d;
+      --color-gold: #d4a24a;
+    }
   }
 
   html {
@@ -80,6 +98,14 @@
     opacity: 0.35;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0 0.15 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     mix-blend-mode: multiply;
+  }
+
+  /* 深色模式下改用 overlay，让噪点在夜色纸张上仍有质感 */
+  @media (prefers-color-scheme: dark) {
+    body::before {
+      opacity: 0.25;
+      mix-blend-mode: overlay;
+    }
   }
 
   ::selection {
