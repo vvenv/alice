@@ -1042,9 +1042,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
-              // 320px 宽的机型上这块标题正好差一点点放不下（放大系统字号后
-              // 差得更多），会被裁掉半个「写」字。整体等比缩，别拆开换行 ——
-              // 怀表 + Alice 听写 是一个整体的品牌锁定。
+              // 320px + 放大字号时标题会差几个像素，裁掉半个「写」。
+              // Alice / 听写 按一个字标整体缩，不换行。
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -1052,8 +1051,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(AppIcons.time, size: 26, color: colors.gold),
-                      const SizedBox(width: Spacing.xs),
                       Text(
                         'Alice',
                         style: TextStyle(

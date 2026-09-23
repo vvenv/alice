@@ -9,6 +9,7 @@
 #      (try --wasm first; fall back to canvaskit if that fails)
 #   2. replace Noto Serif SC with the pre-generated web subset
 #   3. rsync build/web/ to $REMOTE_DIR/app/
+#   4. 核对 main.dart.mjs 的 Content-Type（必须是 JS MIME，否则 wasm 入口加载失败）
 #
 # Usage:
 #   pnpm release:webapp
@@ -26,6 +27,26 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 error() { echo "ERROR: $*" >&2; exit 1; }
+
+# Flutter --wasm 用 <script type=module> 拉 main.dart.mjs。
+# nginx 若把它标成 application/octet-stream，再叠加 nosniff，浏览器会拒掉，
+# /app/ 永远停在「正在加载」。见 scripts/nginx-alice.edao.plus.conf。
+content_type() {
+  curl -sSI "$1" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}'
+}
+
+assert_js_mime() {
+  local url="$1" got
+  got="$(content_type "$url")"
+  case "$got" in
+    application/javascript*|text/javascript*)
+      echo "  MIME $url → $got"
+      ;;
+    *)
+      error "$url 的 Content-Type 是 '${got:-<empty>}'，浏览器会拒掉 wasm 入口。把 scripts/nginx-alice.edao.plus.conf 同步到服务器后再发。"
+      ;;
+  esac
+}
 
 replace_web_fonts() {
   local src="$ROOT/assets/fonts/web"
@@ -105,6 +126,11 @@ ssh -o BatchMode=yes "$SERVER" "mkdir -p '$APP_REMOTE'"
 rsync -avz --delete --partial \
   -e "ssh -o BatchMode=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o TCPKeepAlive=yes" \
   "$DIST_DIR/" "$SERVER:$APP_REMOTE/"
+
+if [ -f "$DIST_DIR/main.dart.mjs" ]; then
+  echo "▶ Verifying main.dart.mjs MIME..."
+  assert_js_mime "$PUBLIC_HOST/app/main.dart.mjs"
+fi
 
 echo ""
 echo "✓ Web app deployed"
