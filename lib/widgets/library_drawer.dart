@@ -279,61 +279,107 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
       shrinkWrap: true,
       padding: const EdgeInsets.only(bottom: Spacing.sm),
       itemCount: filteredGroups.length,
-      separatorBuilder: (_, __) => const SizedBox(height: Spacing.md),
+      separatorBuilder: (_, __) => const SizedBox(height: Spacing.lg),
       itemBuilder: (context, index) {
         final group = filteredGroups[index];
         final expanded = _isGroupExpanded(group.category);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              button: true,
-              expanded: expanded,
-              label: '${group.category}，${group.items.length} 个词表'
-                  '${expanded ? '，已展开' : '，已折叠'}',
-              child: GestureDetector(
-                onTap: _isFiltering ? null : () => _toggleGroup(group.category),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.xs,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        expanded
-                            ? AppIcons.chevronDown
-                            : AppIcons.chevronForward,
-                        size: 14,
-                        color: colors.subtle,
-                      ),
-                      const SizedBox(width: Spacing.xs),
-                      Expanded(
-                        child: Text(
-                          group.category,
-                          style: TextStyle(
-                            fontFamily: AppFonts.displayZh,
-                            fontSize: 12,
-                            color: colors.subtle,
+        // 展开时整块成一张卡：分类头抬起，词表沉进井底，格子再浮上来。
+        return Container(
+          decoration: expanded
+              ? BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(Radii.surface),
+                  border: Border.all(color: colors.borderSubtle),
+                )
+              : null,
+          clipBehavior: expanded ? Clip.antiAlias : Clip.none,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Semantics(
+                button: true,
+                expanded: expanded,
+                label: '${group.category}，${group.items.length} 个词表'
+                    '${expanded ? '，已展开' : '，已折叠'}',
+                child: GestureDetector(
+                  onTap:
+                      _isFiltering ? null : () => _toggleGroup(group.category),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: expanded ? Spacing.md : Spacing.xs,
+                      vertical: Spacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          expanded
+                              ? AppIcons.chevronDown
+                              : AppIcons.chevronForward,
+                          size: 16,
+                          color: expanded ? colors.muted : colors.subtle,
+                        ),
+                        const SizedBox(width: Spacing.sm),
+                        Expanded(
+                          child: Text(
+                            group.category,
+                            style: TextStyle(
+                              fontFamily: AppFonts.displayZh,
+                              fontSize: 15,
+                              color: expanded
+                                  ? colors.foreground
+                                  : colors.muted,
+                            ),
                           ),
                         ),
-                      ),
-                      Text(
-                        '${group.items.length}',
-                        style: TextStyle(fontSize: 11, color: colors.subtle),
-                      ),
-                    ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: expanded
+                                ? colors.surfaceSunken
+                                : colors.surface,
+                            borderRadius: BorderRadius.circular(Radii.full),
+                          ),
+                          child: Text(
+                            '${group.items.length}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: colors.subtle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            if (expanded) ...[
-              const SizedBox(height: Spacing.xs),
-              _buildGrid(context, group),
+              if (expanded)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(
+                    Spacing.sm,
+                    0,
+                    Spacing.sm,
+                    Spacing.sm,
+                  ),
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.sm,
+                    Spacing.sm,
+                    Spacing.sm,
+                    Spacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceSunken,
+                    borderRadius: BorderRadius.circular(Radii.control),
+                  ),
+                  child: _buildGrid(context, group),
+                ),
             ],
-          ],
+          ),
         );
       },
     );
@@ -364,14 +410,14 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
                 Padding(
                   padding: const EdgeInsets.only(
                     left: Spacing.xs,
-                    bottom: Spacing.xs + 2,
+                    bottom: Spacing.sm,
                   ),
                   child: Text(
                     section.title!,
                     style: TextStyle(
+                      fontFamily: AppFonts.serif,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: colors.muted,
+                      color: colors.subtle,
                     ),
                   ),
                 ),
@@ -447,7 +493,7 @@ class _LibraryCell extends StatelessWidget {
             bottom: Spacing.xs,
           ),
           decoration: BoxDecoration(
-            color: current ? colors.primarySoft : colors.surface,
+            color: current ? colors.primarySoft : colors.surfaceRaised,
             borderRadius: BorderRadius.circular(Radii.control),
             border: Border.all(
               color: current ? colors.primary : colors.borderSubtle,
