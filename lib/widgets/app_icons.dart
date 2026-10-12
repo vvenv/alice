@@ -22,6 +22,7 @@ class AppIcons {
   static const IconData close = Icons.close;
   static const IconData closeCircle = Icons.cancel;
   static const IconData closeCircleOutline = Icons.cancel_outlined;
+  static const IconData flagOutline = Icons.flag_outlined;
   static const IconData checkmark = Icons.check;
   static const IconData checkmarkCircle = Icons.check_circle;
   static const IconData createOutline = Icons.edit_outlined;

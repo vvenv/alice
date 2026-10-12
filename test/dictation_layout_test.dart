@@ -5,6 +5,8 @@ import 'package:alice_dictation/services/prefs.dart';
 import 'package:alice_dictation/state/ocr_quota_controller.dart';
 import 'package:alice_dictation/theme/theme_controller.dart';
 import 'package:alice_dictation/widgets/app_button.dart';
+import 'package:alice_dictation/widgets/app_icons.dart';
+import 'package:alice_dictation/widgets/countdown_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 听写页在真机上的排版：小屏 + 系统字号放大时也不能裁掉内容。
 ///
 /// 用户报过「标记错词」在真机上只显示了一半 —— 圆盘直径是按整块屏幕估的，
-/// 舞台实际拿到的高度更少，Column 溢出后就把按钮切掉了。
+/// 舞台实际拿到的高度更少，Column 溢出后就把按钮切掉了。现在整排操作键
+/// （重听 / 上一个 / 暂停 / 下一个 / 标记错词）都在表盘下面，一并钉住。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -77,7 +80,7 @@ void main() {
 
   devices.forEach((name, config) {
     for (final textScale in textScales) {
-      testWidgets('$name 字号 ${textScale}x：标记错词按钮完整可见', (tester) async {
+      testWidgets('$name 字号 ${textScale}x：表盘下的操作行完整可见', (tester) async {
         final (size, padding) = config;
         await pumpDictation(tester, size, padding, textScale);
 
@@ -88,13 +91,7 @@ void main() {
           expect(overflow, isNull, reason: '$name 有溢出');
         }
 
-        final button = tester.getRect(
-          find.ancestor(
-            of: find.text('标记错词'),
-            matching: find.byType(AppButton),
-          ),
-        );
-        // 舞台会裁掉超出的部分，所以按钮整块都得落在舞台可视区里。
+        // 舞台会裁掉超出的部分，所以操作行每一格都得整块落在舞台可视区里。
         final stage = tester.getRect(
           find
               .ancestor(
@@ -104,13 +101,25 @@ void main() {
               .first,
         );
 
-        expect(
-          button.bottom,
-          lessThanOrEqualTo(stage.bottom),
-          reason: '标记错词按钮底部超出舞台 ${button.bottom - stage.bottom}px，会被裁掉',
+        for (final label in ['重听', '上一个', '暂停', '下一个', '标记错词']) {
+          final text = tester.getRect(find.text(label));
+          expect(
+            text.bottom,
+            lessThanOrEqualTo(stage.bottom),
+            reason: '「$label」底部超出舞台 ${text.bottom - stage.bottom}px，会被裁掉',
+          );
+          expect(text.left, greaterThanOrEqualTo(stage.left));
+          expect(text.right, lessThanOrEqualTo(stage.right));
+        }
+
+        // 操作行在表盘下面，而且主按钮和表盘同一条中轴。
+        final dial = tester.getRect(find.byType(CountdownRing));
+        final play = tester.getRect(
+          find.widgetWithIcon(AppIconButton, AppIcons.pause),
         );
-        expect(button.top, greaterThanOrEqualTo(stage.top));
-        expect(button.height, greaterThanOrEqualTo(buttonMinHeight(ButtonSize.sm)));
+        expect(dial.top, greaterThanOrEqualTo(stage.top));
+        expect(play.top, greaterThanOrEqualTo(dial.bottom));
+        expect(play.center.dx, moreOrLessEquals(dial.center.dx, epsilon: 1));
       });
     }
   });

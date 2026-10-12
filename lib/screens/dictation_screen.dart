@@ -28,8 +28,15 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/countdown_ring.dart';
 import '../widgets/playback_controls.dart';
 
-/// 圆盘让位给「标记错词」时能缩到的下限 —— 再小单词就看不清了。
+/// 圆盘让位给操作行时能缩到的下限 —— 再小单词就看不清了。
 const double _minDialSize = 140;
+
+/// 表盘下方操作行的尺寸。舞台要按这些数给表盘让位，所以集中放一处。
+const double _controlMainSize = 64;
+const double _controlSideSize = 48;
+const double _controlLabelGap = Spacing.xs + 2;
+const double _controlLabelSlot = 18;
+const double _controlRowMaxWidth = 380;
 
 /// 听写页。对应 RN 版 src/screens/DictationScreen.tsx。
 class DictationScreen extends StatefulWidget {
@@ -649,6 +656,10 @@ class _DictationScreenState extends State<DictationScreen>
                         Builder(
                           builder: (context) => useDualPane
                               ? Row(
+                                  // 侧栏通高。它现在只剩设置和错词，不拉满的话
+                                  // 就是一块悬在半空的色块。
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(
                                       child: _buildWordStage(
@@ -843,12 +854,13 @@ class _DictationScreenState extends State<DictationScreen>
     bool useCompactLayout,
     bool isFinished,
   ) {
-    final gap = useCompactLayout ? Spacing.sm : Spacing.lg;
+    final gap = useCompactLayout ? Spacing.md : Spacing.xl;
 
     final padding = EdgeInsets.symmetric(
       horizontal: Spacing.lg,
       vertical: useCompactLayout ? Spacing.xs : Spacing.md,
     );
+    final showShortcutHint = MediaQuery.sizeOf(context).width >= 600;
 
     // 完成卡片自带滚动，直接居中就行。
     if (isFinished) {
@@ -864,15 +876,18 @@ class _DictationScreenState extends State<DictationScreen>
         builder: (context, constraints) {
           // dialSize 是按整块屏幕估的；真机上进度条、页头、底部面板和安全区
           // 吃掉高度之后，舞台能用的比那个小 —— 圆盘先让位，别把按钮挤出去。
-          final markSlot = MediaQuery.textScalerOf(context)
-              .scale(buttonMinHeight(ButtonSize.sm));
+          final textScaler = MediaQuery.textScalerOf(context);
+          final controlSlot = _controlMainSize +
+              _controlLabelGap +
+              textScaler.scale(_controlLabelSlot) +
+              (showShortcutHint ? Spacing.sm + textScaler.scale(16) : 0);
           final fittedDial = math.max(
             _minDialSize,
-            math.min(dialSize, constraints.maxHeight - gap - markSlot),
+            math.min(dialSize, constraints.maxHeight - gap - controlSlot),
           );
 
           // 圆盘缩到下限还是放不下（超大系统字号）时让舞台滚动，
-          // 而不是把「标记错词」裁掉半截。
+          // 而不是把操作行裁掉半截。
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
@@ -883,15 +898,23 @@ class _DictationScreenState extends State<DictationScreen>
                   children: [
                     _buildWatch(colors, fittedDial),
                     SizedBox(height: gap),
-                    AppButton(
-                      label: '标记错词',
-                      icon: AppIcons.closeCircleOutline,
-                      variant: ButtonVariant.danger,
-                      size: ButtonSize.sm,
-                      onPressed: _handleMarkWrong,
-                      disabled: !_markEnabled,
-                      haptic: false,
+                    // 操作行紧贴表盘：眼睛盯着表、手就在表下面。以前它夹在
+                    // 底部面板的「间隔 / 自动播放」和错词区中间，离表盘隔着
+                    // 一整块留白，双栏时更是跑到另一栏去了。
+                    ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(maxWidth: _controlRowMaxWidth),
+                      child: _buildControlRow(colors),
                     ),
+                    // 够宽才提，窄屏上多半是手机，这一行只会挤掉表盘的高度。
+                    if (showShortcutHint) ...[
+                      const SizedBox(height: Spacing.sm),
+                      Text(
+                        '空格 暂停 · ← → 切词 · R 重听 · M 标错词',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 11, color: colors.subtle),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1333,17 +1356,6 @@ class _DictationScreenState extends State<DictationScreen>
             trailing: _buildSpeechRateEntry(colors),
           ),
           SizedBox(height: gap),
-          _buildControlRow(colors),
-          // 够宽才提，窄屏上多半是手机，这一行只会挤掉错词区的高度。
-          if (MediaQuery.sizeOf(context).width >= 600) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(
-              '空格 暂停 · ← → 切词 · R 重听 · M 标错词',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: colors.subtle),
-            ),
-          ],
-          SizedBox(height: gap),
           Flexible(
             child: _buildWrongSection(
               colors,
@@ -1396,49 +1408,68 @@ class _DictationScreenState extends State<DictationScreen>
       bool disabled = false,
       bool haptic = true,
       bool side = true,
+      bool danger = false,
     }) {
-      return Padding(
-        padding: EdgeInsets.only(top: side ? 8 : 0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIconButton(
-              icon: icon,
-              size: size,
-              variant: variant,
-              onPressed: onPressed,
-              disabled: disabled,
-              haptic: haptic,
-              semanticLabel: label,
-            ),
-            const SizedBox(height: Spacing.xs + 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: colors.muted,
+      // 文字也算按钮的一部分 —— 只有 48 的圆能点的话，手指落在字上就落空了。
+      //
+      // 五格等宽（Expanded）而不是均分间距：标签长短不一（「重听」对
+      // 「标记错词」），均分间距会把主按钮从表盘的中轴上挤偏。
+      return Expanded(
+          child: GestureDetector(
+        onTap: disabled ? null : onPressed,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: side ? (_controlMainSize - _controlSideSize) / 2 : 0,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIconButton(
+                icon: icon,
+                size: size,
+                variant: variant,
+                onPressed: onPressed,
+                disabled: disabled,
+                haptic: haptic,
+                semanticLabel: label,
               ),
-            ),
-          ],
+              const SizedBox(height: _controlLabelGap),
+              // 最窄的机型 + 放大字号时四个字比一格宽，缩一点也别折行或溢出。
+              ExcludeSemantics(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: danger ? colors.danger : colors.muted,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+      ));
     }
 
     final playing = _playback.playState == PlayState.playing;
 
-    // 间距均分而不是写死 —— 系统字号放大后文字变宽，写死会撑破一行。
-    //
     // 这一格原先是「结束」，与页头左上角的关闭按钮（以及系统返回键）完全重复，
     // 而「再读一遍」——听写里最高频的动作——反倒没有入口。换掉了。
+    //
+    // 五格：主按钮落在正中，和表盘同一条中轴；「标记错词」放最右，
+    // 右手拇指最顺，也离「重听」最远，不容易按错。
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         item(
           AppIcons.replay,
           '重听',
-          48,
+          _controlSideSize,
           IconButtonVariant.surface,
           _handleReplay,
           disabled: !_replayEnabled,
@@ -1447,7 +1478,7 @@ class _DictationScreenState extends State<DictationScreen>
         item(
           AppIcons.skipBack,
           '上一个',
-          48,
+          _controlSideSize,
           IconButtonVariant.surface,
           _handlePrevious,
           disabled: !_previousEnabled,
@@ -1456,7 +1487,7 @@ class _DictationScreenState extends State<DictationScreen>
         item(
           playing ? AppIcons.pause : AppIcons.play,
           playing ? '暂停' : '继续',
-          64,
+          _controlMainSize,
           IconButtonVariant.primary,
           _handlePlayToggle,
           side: false,
@@ -1464,11 +1495,23 @@ class _DictationScreenState extends State<DictationScreen>
         item(
           AppIcons.skipForward,
           '下一个',
-          48,
+          _controlSideSize,
           IconButtonVariant.surface,
           _handleSkip,
           disabled: !_skipEnabled,
           haptic: false,
+        ),
+        item(
+          // 小旗 = 「标记」。带圈的 ✕ 套在描边圆里是双环，裸 ✕ 又和页头的
+          // 退出按钮撞脸。
+          AppIcons.flagOutline,
+          '标记错词',
+          _controlSideSize,
+          IconButtonVariant.danger,
+          _handleMarkWrong,
+          disabled: !_markEnabled,
+          haptic: false,
+          danger: true,
         ),
       ],
     );
