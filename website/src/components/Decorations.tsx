@@ -3,6 +3,9 @@
  * 纯 SVG 装饰，用于烘托"爱丽丝梦游仙境"的文学氛围。
  */
 
+/** 三角函数结果在 Node 与浏览器间末位可能不同，取整以保证预渲染与 hydration 一致。 */
+const round = (n: number) => Math.round(n * 1000) / 1000;
+
 export function PocketWatch({
   className = "",
   spin = false,
@@ -48,10 +51,10 @@ export function PocketWatch({
       {/* 刻度 */}
       {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => {
         const rad = (deg * Math.PI) / 180;
-        const x1 = 60 + Math.sin(rad) * 40;
-        const y1 = 75 - Math.cos(rad) * 40;
-        const x2 = 60 + Math.sin(rad) * 45;
-        const y2 = 75 - Math.cos(rad) * 45;
+        const x1 = round(60 + Math.sin(rad) * 40);
+        const y1 = round(75 - Math.cos(rad) * 40);
+        const x2 = round(60 + Math.sin(rad) * 45);
+        const y2 = round(75 - Math.cos(rad) * 45);
         return (
           <line
             key={deg}
@@ -104,10 +107,10 @@ export function Gear({
     const cy = 50;
     const a1 = angle;
     const a2 = angle + Math.PI / teeth;
-    const x1 = cx + Math.cos(a1) * outer;
-    const y1 = cy + Math.sin(a1) * outer;
-    const x2 = cx + Math.cos(a2) * inner;
-    const y2 = cy + Math.sin(a2) * inner;
+    const x1 = round(cx + Math.cos(a1) * outer);
+    const y1 = round(cy + Math.sin(a1) * outer);
+    const x2 = round(cx + Math.cos(a2) * inner);
+    const y2 = round(cy + Math.sin(a2) * inner);
     return `L${x1},${y1} L${x2},${y2}`;
   }).join(" ");
 

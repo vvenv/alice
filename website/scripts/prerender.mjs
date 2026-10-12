@@ -1,100 +1,61 @@
 /**
- * Post-build prerender: serve dist/, render /, write HTML into dist/index.html.
+ * Post-build prerender: SSR-build src/entry-server.tsx, render / with
+ * react-dom/server, write the markup into dist/index.html.
+ *
+ * The markup has to come from React (not a browser DOM snapshot), otherwise
+ * hydrateRoot in main.tsx fails with a hydration mismatch.
  */
-import { createServer } from "node:http";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join, extname, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { build } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DIST = join(__dirname, "..", "dist");
+const ROOT = join(__dirname, "..");
+const DIST = join(ROOT, "dist");
+const SSR_DIST = join(ROOT, "dist-ssr");
 const INDEX = join(DIST, "index.html");
-const PORT = 4179;
-
-const MIME = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".ico": "image/x-icon",
-  ".json": "application/json",
-  ".txt": "text/plain; charset=utf-8",
-  ".xml": "application/xml",
-  ".map": "application/json",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-};
-
-function contentType(filePath) {
-  return MIME[extname(filePath).toLowerCase()] ?? "application/octet-stream";
-}
-
-function startServer() {
-  return new Promise((resolve, reject) => {
-    const server = createServer((req, res) => {
-      try {
-        const url = new URL(req.url ?? "/", `http://127.0.0.1:${PORT}`);
-        let pathname = decodeURIComponent(url.pathname);
-        if (pathname.endsWith("/")) pathname += "index.html";
-        const filePath = join(DIST, pathname === "/" ? "index.html" : pathname.slice(1));
-        if (!filePath.startsWith(DIST) || !existsSync(filePath)) {
-          res.writeHead(404);
-          res.end("Not found");
-          return;
-        }
-        res.writeHead(200, { "Content-Type": contentType(filePath) });
-        res.end(readFileSync(filePath));
-      } catch (err) {
-        res.writeHead(500);
-        res.end(String(err));
-      }
-    });
-    server.listen(PORT, "127.0.0.1", () => resolve(server));
-    server.on("error", reject);
-  });
-}
+const EMPTY_ROOT = '<div id="root"></div>';
 
 async function main() {
   if (!existsSync(INDEX)) {
     throw new Error(`Missing ${INDEX} — run vite build first`);
   }
 
-  const server = await startServer();
-  const browser = await chromium.launch({ headless: true });
+  let html = readFileSync(INDEX, "utf8");
+  if (!html.includes(EMPTY_ROOT)) {
+    throw new Error(
+      "dist/index.html has no empty #root (already prerendered?) — run vite build first",
+    );
+  }
 
   try {
-    const page = await browser.newPage();
-    await page.goto(`http://127.0.0.1:${PORT}/`, {
-      waitUntil: "networkidle",
-      timeout: 60_000,
+    await build({
+      root: ROOT,
+      logLevel: "warn",
+      build: {
+        ssr: "src/entry-server.tsx",
+        outDir: SSR_DIST,
+        emptyOutDir: true,
+        sourcemap: false,
+      },
     });
-    await page.waitForSelector("#root h1", { timeout: 30_000 });
 
-    const rootHtml = await page.$eval("#root", (el) => el.innerHTML);
-    if (!rootHtml || rootHtml.length < 200) {
+    const { render } = await import(
+      pathToFileURL(join(SSR_DIST, "entry-server.js")).href
+    );
+    const rootHtml = render();
+    if (!rootHtml || rootHtml.length < 200 || !rootHtml.includes("<h1")) {
       throw new Error("Prerender produced unexpectedly empty #root");
     }
 
-    let html = readFileSync(INDEX, "utf8");
-    if (!html.includes('<div id="root"></div>') && !html.includes('<div id="root">')) {
-      throw new Error("dist/index.html does not contain a recognizable #root");
-    }
-
-    html = html.replace(
-      /<div id="root">[\s\S]*?<\/div>/,
-      `<div id="root">${rootHtml}</div>`,
-    );
+    // Function replacer: rootHtml may contain `$` sequences.
+    html = html.replace(EMPTY_ROOT, () => `<div id="root">${rootHtml}</div>`);
 
     writeFileSync(INDEX, html);
     console.log(`✓ Prerendered / → ${INDEX} (${rootHtml.length} chars in #root)`);
   } finally {
-    await browser.close();
-    server.close();
+    rmSync(SSR_DIST, { recursive: true, force: true });
   }
 }
 
