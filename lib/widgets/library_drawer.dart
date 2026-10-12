@@ -1,15 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/library_item.dart';
 import '../models/word_history_entry.dart';
 import '../services/dictation.dart';
+import '../services/storage.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_bottom_sheet.dart';
 import 'app_icons.dart';
 import 'drawer_search_field.dart';
 
-/// 词库抽屉：按分类折叠、可搜索、可收藏。
+/// 词库抽屉：按分类折叠、可搜索、可收藏。打开时停在上次用的那个分类上。
 ///
 /// 对应 RN 版 src/components/LibraryDrawer.tsx。
 Future<void> showLibraryDrawer(
@@ -32,6 +35,63 @@ Future<void> showLibraryDrawer(
 }
 
 int _wordCount(String text) => parseWords(text).length;
+
+/// 一个分类里共用同一段前缀的词表，如「七上」下的 Unit 1 ~ 8。
+class _Section {
+  _Section(this.title);
+
+  /// 前缀（「七上」）；分类不分册时为 null。
+  final String? title;
+  final List<({LibraryItem item, String label})> cells = [];
+}
+
+/// 把一个分类的词表按册拆开。
+///
+/// 教材类的标签都是「七上 Unit 1」这种「册 + 单元」，一个分类六十来条，
+/// 每条都把册名重复一遍。拆出来之后格子里只剩「Unit 1」，一行能排四个。
+/// 字母表那种（A / B / … / XYZ）没有册，原样铺成一段。
+List<_Section> _sectionsOf(List<LibraryItem> items) {
+  final split = items.every((item) => item.label.contains(' '));
+  if (!split) {
+    final flat = _Section(null);
+    for (final item in items) {
+      flat.cells.add((item: item, label: item.label));
+    }
+    return [flat];
+  }
+
+  final sections = <_Section>[];
+  for (final item in items) {
+    final cut = item.label.indexOf(' ');
+    final title = item.label.substring(0, cut);
+    if (sections.isEmpty || sections.last.title != title) {
+      sections.add(_Section(title));
+    }
+    sections.last.cells
+        .add((item: item, label: item.label.substring(cut + 1).trim()));
+  }
+  return sections;
+}
+
+const double _cellGap = Spacing.sm;
+const double _cellPadX = Spacing.sm;
+
+/// 格子的最小宽度，按这个分类里最长的标签估。
+///
+/// 上限卡在 104：「Starter Unit 1」这种个别长标签靠缩字放进去，
+/// 不为它把整个分类从三列拖成两列。
+double _minCellWidth(List<_Section> sections) {
+  var units = 0;
+  for (final section in sections) {
+    for (final cell in section.cells) {
+      // 汉字按两个字符宽算。
+      final n =
+          cell.label.runes.fold<int>(0, (n, r) => n + (r > 0x2e80 ? 2 : 1));
+      if (n > units) units = n;
+    }
+  }
+  return (units * 7.5 + _cellPadX * 2 + 4).clamp(72.0, 104.0);
+}
 
 /// 小写化并去掉常见分隔符，让「七上unit1」能匹配「七上 Unit 1」。
 String _normalizeForSearch(String value) =>
@@ -89,8 +149,25 @@ class _LibraryDrawerBody extends StatefulWidget {
 class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  final Set<String> _expandedCategories = <String>{};
+  // 上次停在哪个分类就先展开哪个 —— 一本教材要听一学期，每次进来都从
+  // 全折叠开始找，是同一段路走几十遍。
+  late final Set<String> _expandedCategories = <String>{
+    if (loadLibraryCategory() case final category?) category,
+  };
+  late String? _lastItemId = loadLibraryItemId();
   late final Set<String> _favorites = widget.initialFavorites.toSet();
+  final GlobalKey _currentCellKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    // 上次那条可能在「六下」，离展开的分类开头好几屏 —— 直接滚到它跟前，
+    // 下一个单元就在旁边。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cell = _currentCellKey.currentContext;
+      if (cell != null) Scrollable.ensureVisible(cell, alignment: 0.3);
+    });
+  }
 
   @override
   void dispose() {
@@ -104,11 +181,29 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
       _isFiltering || _expandedCategories.contains(category);
 
   void _toggleGroup(String category) {
+    final opened = !_expandedCategories.contains(category);
     setState(() {
-      if (!_expandedCategories.remove(category)) {
+      if (opened) {
         _expandedCategories.add(category);
+      } else {
+        _expandedCategories.remove(category);
       }
     });
+    // 记最后展开的那个；把它收起来就是不想再看到它。
+    if (opened) {
+      unawaited(saveLibraryCategory(category));
+    } else if (loadLibraryCategory() == category) {
+      unawaited(saveLibraryCategory(null));
+    }
+  }
+
+  void _apply(LibraryItem item) {
+    // 搜索结果里直接点的也算：下次打开就停在它所在的分类。
+    unawaited(saveLibraryCategory(item.category));
+    unawaited(saveLibraryItemId(item.entry.id));
+    _lastItemId = item.entry.id;
+    widget.onApply(item.entry);
+    Navigator.of(context).pop();
   }
 
   void _toggleFavorite(String id) {
@@ -236,29 +331,71 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
             ),
             if (expanded) ...[
               const SizedBox(height: Spacing.xs),
-              Container(
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(Radii.control),
-                  border: Border.all(color: colors.borderSubtle),
+              _buildGrid(context, group),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// 展开后的词表。格子而不是一行一条：标签只有「Unit 1」「A」这么短，
+  /// 一行一条的话右边大半行都是空的，六十条要滚好几屏。
+  Widget _buildGrid(BuildContext context, LibraryGroup group) {
+    final colors = context.colors;
+    final sections = _sectionsOf(group.items);
+    final minWidth = _minCellWidth(sections);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns =
+            ((width + _cellGap) / (minWidth + _cellGap)).floor().clamp(2, 8);
+        // 往下取整，免得浮点误差把一行的最后一格挤到下一行。
+        final cellWidth =
+            ((width - _cellGap * (columns - 1)) / columns).floorToDouble();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (i, section) in sections.indexed) ...[
+              if (i > 0) const SizedBox(height: Spacing.md),
+              if (section.title != null)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: Spacing.xs,
+                    bottom: Spacing.xs + 2,
+                  ),
+                  child: Text(
+                    section.title!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colors.muted,
+                    ),
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    for (var i = 0; i < group.items.length; i++)
-                      _LibraryRow(
-                        item: group.items[i],
-                        favorited: _favorites.contains(group.items[i].entry.id),
-                        showDivider: i > 0,
-                        onApply: () {
-                          widget.onApply(group.items[i].entry);
-                          Navigator.of(context).pop();
-                        },
+              Wrap(
+                spacing: _cellGap,
+                runSpacing: _cellGap,
+                children: [
+                  for (final cell in section.cells)
+                    SizedBox(
+                      width: cellWidth,
+                      child: _LibraryCell(
+                        key: cell.item.entry.id == _lastItemId
+                            ? _currentCellKey
+                            : null,
+                        item: cell.item,
+                        label: cell.label,
+                        favorited: _favorites.contains(cell.item.entry.id),
+                        current: cell.item.entry.id == _lastItemId,
+                        onApply: () => _apply(cell.item),
                         onToggleFavorite: () =>
-                            _toggleFavorite(group.items[i].entry.id),
+                            _toggleFavorite(cell.item.entry.id),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ],
           ],
@@ -268,78 +405,109 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
   }
 }
 
-class _LibraryRow extends StatelessWidget {
-  const _LibraryRow({
+class _LibraryCell extends StatelessWidget {
+  const _LibraryCell({
+    super.key,
     required this.item,
+    required this.label,
     required this.favorited,
-    required this.showDivider,
+    required this.current,
     required this.onApply,
     required this.onToggleFavorite,
   });
 
   final LibraryItem item;
+
+  /// 格子里显示的短标签（去掉了册名）。读屏仍然报完整的 [LibraryItem.label]。
+  final String label;
   final bool favorited;
-  final bool showDivider;
+
+  /// 上次载入的就是这一条 —— 描个边，方便接着往下听下一个单元。
+  final bool current;
   final VoidCallback onApply;
   final VoidCallback onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final words = _wordCount(item.entry.text);
 
     return Semantics(
       button: true,
+      selected: current,
       label: '载入 ${item.label}',
+      value: '$words 词',
       child: GestureDetector(
         onTap: onApply,
         behavior: HitTestBehavior.opaque,
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: Spacing.sm + 2,
-            horizontal: Spacing.sm + 2,
+          padding: const EdgeInsets.only(
+            left: _cellPadX,
+            top: Spacing.sm,
+            bottom: Spacing.xs,
           ),
-          decoration: showDivider
-              ? BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: colors.borderSubtle, width: 0.5),
-                  ),
-                )
-              : null,
-          child: Row(
+          decoration: BoxDecoration(
+            color: current ? colors.primarySoft : colors.surface,
+            borderRadius: BorderRadius.circular(Radii.control),
+            border: Border.all(
+              color: current ? colors.primary : colors.borderSubtle,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: colors.foreground,
-                  ),
-                ),
-              ),
-              const SizedBox(width: Spacing.sm),
-              Text(
-                '${_wordCount(item.entry.text)}',
-                style: TextStyle(fontSize: 11, color: colors.subtle),
-              ),
-              const SizedBox(width: Spacing.sm),
-              Semantics(
-                button: true,
-                label: favorited ? '取消收藏' : '收藏',
-                child: GestureDetector(
-                  onTap: onToggleFavorite,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      favorited ? AppIcons.star : AppIcons.starOutline,
-                      size: 18,
-                      color: favorited ? colors.gold : colors.subtle,
+              Padding(
+                padding: const EdgeInsets.only(right: _cellPadX),
+                child: ExcludeSemantics(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: current ? colors.primary : colors.foreground,
+                      ),
                     ),
                   ),
                 ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    // 词数已经在外层的 value 里报过了。
+                    child: ExcludeSemantics(
+                      child: Text(
+                        '$words 词',
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        softWrap: false,
+                        style: TextStyle(fontSize: 11, color: colors.subtle),
+                      ),
+                    ),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: favorited ? '取消收藏' : '收藏',
+                    child: GestureDetector(
+                      onTap: onToggleFavorite,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: _cellPadX,
+                          vertical: Spacing.xs,
+                        ),
+                        child: Icon(
+                          favorited ? AppIcons.star : AppIcons.starOutline,
+                          size: 18,
+                          color: favorited ? colors.gold : colors.subtle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

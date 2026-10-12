@@ -18,6 +18,9 @@ const String _speechRateKey = 'dictation_speech_rate';
 const String _intervalSecKey = 'dictation_interval_sec';
 // Flutter 版独有（RN 版的拍照按钮不能拖），所以不走 dictation_ 前缀。
 const String _cameraButtonPosKey = 'alice_camera_button_pos';
+const String _startIndexKey = 'alice_start_index';
+const String _libraryCategoryKey = 'alice_library_category';
+const String _libraryItemKey = 'alice_library_item';
 
 /// 用户历史条数上限。内置词表存在代码/资源里，不占用存储。
 const int _maxUserHistoryEntries = 50;
@@ -150,6 +153,65 @@ Future<String?> loadWordInput() async {
 Future<void> saveWordInput(String value) async {
   try {
     await Prefs.setString(_wordInputKey, value);
+  } catch (_) {
+    // 忽略
+  }
+}
+
+// --- 听写起点（锚点）-------------------------------------------------------
+//
+// 首页词表上高亮的那一行。听写中每换一个词就跟着走，所以它同时也是
+// 「上次听到哪了」：中途退出、甚至直接杀掉应用，下次打开还停在那个词上。
+
+Future<int> loadStartIndex() async {
+  try {
+    final parsed = int.tryParse(await Prefs.getString(_startIndexKey) ?? '');
+    return parsed != null && parsed > 0 ? parsed : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
+Future<void> saveStartIndex(int index) async {
+  try {
+    await Prefs.setString(_startIndexKey, '${index < 0 ? 0 : index}');
+  } catch (_) {
+    // 忽略
+  }
+}
+
+// --- 词库抽屉上次停在哪 ---------------------------------------------------
+//
+// 同步读：抽屉第一帧就要知道展开哪一组，异步读会先闪一下全折叠。
+
+/// 上次展开（或从中选过词表）的分类，没有则为 null。
+String? loadLibraryCategory() => _readSync(_libraryCategoryKey);
+
+/// 上次载入的词表 id，没有则为 null。
+String? loadLibraryItemId() => _readSync(_libraryItemKey);
+
+String? _readSync(String key) {
+  try {
+    final value = Prefs.getStringSync(key);
+    return value == null || value.isEmpty ? null : value;
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> saveLibraryCategory(String? category) =>
+    _writeOrRemove(_libraryCategoryKey, category);
+
+Future<void> saveLibraryItemId(String? id) =>
+    _writeOrRemove(_libraryItemKey, id);
+
+Future<void> _writeOrRemove(String key, String? value) async {
+  try {
+    if (value == null || value.isEmpty) {
+      await Prefs.remove(key);
+    } else {
+      await Prefs.setString(key, value);
+    }
   } catch (_) {
     // 忽略
   }

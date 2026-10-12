@@ -65,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double _intervalSec = kDefaultIntervalSec;
   bool _autoNext = true;
   int _startIndex = 0;
+  int _savedStartIndex = 0;
   bool _shuffle = false;
   bool _isDisplayMode = false;
   OcrUiState _ocrUi = OcrUiState.idle;
@@ -114,6 +115,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() {});
   }
 
+  /// 起点一变就落盘。
+  ///
+  /// 改 [_startIndex] 的地方有十来处（点词、删词、清空、载入、撤销、听写进度），
+  /// 逐处补一句保存迟早漏掉一处，所以挂在 setState 上统一收口。
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    if (!_ready || _startIndex == _savedStartIndex) return;
+    _savedStartIndex = _startIndex;
+    unawaited(saveStartIndex(_startIndex));
+  }
+
   Future<void> _bootstrap() async {
     final results = await Future.wait([
       loadWordInput(),
@@ -124,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
       loadPersistedFavorites(),
       loadIntervalSec(),
       loadCameraButtonAlignment(),
+      loadStartIndex(),
     ]);
     if (!mounted) return;
 
@@ -137,6 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _favorites = results[3] as List<String>;
       _intervalSec = results[4] as double;
       _cameraAlignment = results[5] as Alignment;
+      // 上次听到哪就停在哪 —— 词表本来就会恢复，起点不跟着恢复的话，
+      // 听到第 30 个词退出去，回来又得自己翻回去找。
+      _startIndex = _savedStartIndex = results[6] as int;
+      _clampStartIndex();
       _ready = true;
     });
     unawaited(_enrichWhenDictionaryReady());
@@ -267,8 +285,10 @@ class _HomeScreenState extends State<HomeScreen> {
       // OCR 返回的是纯单词；立刻补全，好让展示模式有释义。
       _wordInput = enrichWordListText(words.join('\n'));
       _isDisplayMode = true;
-      _clampStartIndex();
+      _startIndex = 0;
     });
+    _debounce?.cancel();
+    unawaited(saveWordInput(_wordInput));
     // 高级识别刚刚可能扣了 credits —— 同步余额。
     _quota.syncFromCache();
   }
@@ -322,7 +342,16 @@ class _HomeScreenState extends State<HomeScreen> {
     var words = allWords.sublist(clampedStart);
     if (_shuffle) words = _shuffleList(words);
 
-    await _launchDictation(words, historyText: enriched);
+    // 从编辑态直接开始时防抖还没到点 —— 先落盘，杀掉应用也丢不了这份词表。
+    _debounce?.cancel();
+    unawaited(saveWordInput(enriched));
+
+    await _launchDictation(
+      words,
+      historyText: enriched,
+      // 乱序之后听写页的下标和词表行号对不上，不跟。
+      anchorBase: _shuffle ? null : clampedStart,
+    );
   }
 
   /// 从错词本直接开一轮听写。
@@ -350,13 +379,18 @@ class _HomeScreenState extends State<HomeScreen> {
     await _launchDictation(
       _shuffle ? _shuffleList(words) : words,
       historyText: enriched,
+      anchorBase: _shuffle ? null : 0,
     );
   }
 
   /// 开始听写的公共尾段：预热音频、记历史、进页、回来后同步间隔。
+  ///
+  /// [anchorBase] 是 [words] 第一个词在首页词表里的行号；给了它，听写每换
+  /// 一个词首页的起点就跟一步，听完整份再回到开头。为 null 则不跟。
   Future<void> _launchDictation(
     List<String> words, {
     required String historyText,
+    int? anchorBase,
   }) async {
     // 趁着点击手势还在：激活音频会话，并给前两个词开始预取。
     // 进页后再开口会丢手势，第一句经常被 iOS 吃掉；下载也不挡播放，
@@ -378,6 +412,12 @@ class _HomeScreenState extends State<HomeScreen> {
           words: words,
           intervalSec: _intervalSec,
           autoNext: _autoNext,
+          onIndexChanged: anchorBase == null
+              ? null
+              : (i) => _moveStartIndex(anchorBase + i, from: historyText),
+          onCompleted: anchorBase == null
+              ? null
+              : () => _moveStartIndex(0, from: historyText),
         ),
       ),
     );
@@ -385,6 +425,16 @@ class _HomeScreenState extends State<HomeScreen> {
     // 听写页里可能调过间隔 —— 回来时重新读一次（对应 RN 的 useFocusEffect）。
     final sec = await loadIntervalSec();
     if (mounted) setState(() => _intervalSec = sec);
+  }
+
+  /// 听写页报来的进度。首页此刻压在听写页底下，照样更新 —— 落盘靠的就是它。
+  void _moveStartIndex(int index, {required String from}) {
+    // 词表在听写期间被换掉了（分享进来一份新的）：行号已经不是一回事。
+    if (!mounted || from != _wordInput) return;
+    setState(() {
+      _startIndex = index;
+      _clampStartIndex();
+    });
   }
 
   /// 删掉一行之后给一次撤销。
@@ -447,8 +497,13 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _wordInput = enrichWordListText(text);
       _isDisplayMode = true;
-      _clampStartIndex();
+      // 换了一份词表，旧起点没有意义。
+      _startIndex = 0;
     });
+    // 载入即落盘：以前只有打字才会存，从词库载入一份、听到一半杀掉应用，
+    // 回来看到的是更早那份。
+    _debounce?.cancel();
+    unawaited(saveWordInput(_wordInput));
     _toast.show(toastMessage);
   }
 
@@ -506,6 +561,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // --- 底部菜单 -----------------------------------------------------------
+  //
+  // 只在窄屏出现，装的是页头放不下的那几项（见 _buildHeader）。词库和收藏
+  // 已经在页头上了，这里不再重复。
 
   Future<void> _openMenu() async {
     await showAppBottomSheet<void>(
@@ -521,15 +579,6 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.of(sheetContext).pop();
               _openWrongWords();
-            },
-          ),
-          const SizedBox(height: Spacing.sm),
-          SheetRow(
-            icon: AppIcons.starOutline,
-            label: '收藏',
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              _openFavorites();
             },
           ),
           const SizedBox(height: Spacing.sm),
@@ -1029,6 +1078,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeader(bool showOcrProgress) {
     final colors = context.colors;
+    final wide = MediaQuery.sizeOf(context).width >= 600;
+
+    // 图标不带字，长按 / 悬停给个名字。语义标签由按钮自己报，这里不重复。
+    Widget headerAction(IconData icon, String label, VoidCallback onPressed) {
+      return Padding(
+        padding: const EdgeInsets.only(left: Spacing.xs),
+        child: Tooltip(
+          message: label,
+          excludeFromSemantics: true,
+          child: AppIconButton(
+            icon: icon,
+            onPressed: onPressed,
+            semanticLabel: label,
+          ),
+        ),
+      );
+    }
 
     return Center(
       child: ConstrainedBox(
@@ -1135,17 +1201,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               const SizedBox(width: Spacing.sm),
-              AppIconButton(
-                icon: AppIcons.library,
-                onPressed: _openLibrary,
-                semanticLabel: '词库',
-              ),
-              const SizedBox(width: Spacing.xs),
-              AppIconButton(
-                icon: AppIcons.menu,
-                onPressed: _openMenu,
-                semanticLabel: '菜单',
-              ),
+              // 入口按使用频率排：词库、收藏最常用，窄屏上也直接露着；
+              // 错词本、历史、设置在窄屏收进菜单 —— 五个图标并排会把标题挤没，
+              // 识别中的取消胶囊也没处放。够宽（平板 / Web）就全部平铺，
+              // 为三四个入口再弹一层抽屉不值当。
+              headerAction(AppIcons.library, '词库', _openLibrary),
+              headerAction(AppIcons.starOutline, '收藏', _openFavorites),
+              if (wide) ...[
+                headerAction(AppIcons.wrongWords, '错词本', _openWrongWords),
+                headerAction(AppIcons.time, '历史记录', _openHistory),
+                headerAction(AppIcons.settings, '设置', _openSettings),
+              ] else
+                headerAction(AppIcons.menu, '菜单', _openMenu),
             ],
           ),
         ),
@@ -1241,8 +1308,8 @@ class _ModelChip extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: active
                       ? (model.tier == ModelTier.premium
-                            ? colors.gold
-                            : colors.primary)
+                          ? colors.gold
+                          : colors.primary)
                       : colors.subtle,
                 ),
               ),

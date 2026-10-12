@@ -44,12 +44,21 @@ void main() {
     );
   }
 
+  // 手机宽度：页头只露词库和收藏，错词本在「更多」里。
   testWidgets('菜单里能打开错词本，看到攒下来的错词', (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 3;
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
     await addWrongWordToBook('castle');
     await addWrongWordToBook('whisper');
 
     await tester.pumpWidget(wrap(const HomeScreen()));
     await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('词库'), findsOneWidget);
+    expect(find.bySemanticsLabel('收藏'), findsOneWidget);
+    expect(find.bySemanticsLabel('错词本'), findsNothing);
 
     await tester.tap(find.bySemanticsLabel('菜单'));
     await tester.pumpAndSettle();
@@ -68,9 +77,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('菜单'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('错词本'));
+    await tester.tap(find.bySemanticsLabel('错词本'));
     await tester.pumpAndSettle();
 
     expect(find.text('错词本 (0)'), findsOneWidget);
@@ -85,9 +92,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('菜单'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('错词本'));
+    await tester.tap(find.bySemanticsLabel('错词本'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.bySemanticsLabel('从错词本移除 castle'));
@@ -96,6 +101,48 @@ void main() {
     expect(find.text('错词本 (1)'), findsOneWidget);
     expect(find.text('castle'), findsNothing);
     expect(loadWrongWords(), ['whisper']);
+  });
+
+  testWidgets('窄屏的「更多」里不再重复收藏', (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 3;
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(wrap(const HomeScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('菜单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('错词本'), findsOneWidget);
+    expect(find.text('历史记录'), findsOneWidget);
+    expect(find.text('设置'), findsOneWidget);
+    expect(find.text('收藏'), findsNothing);
+  });
+
+  testWidgets('窄屏页头上的收藏直接打开收藏抽屉', (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 3;
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(wrap(const HomeScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('收藏'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('收藏 ('), findsOneWidget);
+  });
+
+  // 平板 / Web：放得下就全部平铺，不为几个入口再弹一层抽屉。
+  testWidgets('宽屏页头平铺全部入口，没有「更多」', (tester) async {
+    await tester.pumpWidget(wrap(const HomeScreen()));
+    await tester.pumpAndSettle();
+
+    for (final label in ['词库', '收藏', '错词本', '历史记录', '设置']) {
+      expect(find.bySemanticsLabel(label), findsOneWidget, reason: label);
+    }
+    expect(find.bySemanticsLabel('菜单'), findsNothing);
   });
 
   // 320px 宽是最挤的机型。品牌行曾经在这里溢出 0.1px，把「写」裁掉半个。

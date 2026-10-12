@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../services/dictation.dart';
 import '../services/dictionary.dart';
@@ -76,9 +77,65 @@ class _WordInputSectionState extends State<WordInputSection> {
   /// 拖动中的临时落点，松手后清空、改用 [WordInputSection.overlayAlignment]。
   Alignment? _dragAlignment;
 
+  final ScrollController _listScroll = ScrollController();
+  final GlobalKey _cursorKey = GlobalKey();
+
+  /// 用户刚亲手点成起点的那一行。它就在手指底下，哪怕只露了半行也别去挪。
+  int? _tappedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    // 冷启动恢复出来的起点多半在第一屏之外。
+    if (widget.startIndex > 0) _revealCursor();
+  }
+
+  /// 把起点那一行滚进视野，已经完整露着就不动。
+  ///
+  /// 行高不固定（释义长短不一），列表又是懒构建的，目标行可能还没有
+  /// RenderObject。先按比例跳到大概的位置，等它建出来再精确对齐；
+  /// 懒列表的总长是估的，跳一次未必够，所以留几次重试。
+  void _revealCursor({int attempts = 6}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_listScroll.hasClients) return;
+      final position = _listScroll.position;
+      final target = _cursorKey.currentContext?.findRenderObject();
+
+      if (target != null) {
+        final viewport = RenderAbstractViewport.of(target);
+        final top = viewport.getOffsetToReveal(target, 0).offset;
+        final bottom = viewport.getOffsetToReveal(target, 1).offset;
+        // top 是「把它顶到视口上沿」的偏移，bottom 是「贴到下沿」的偏移；
+        // 当前偏移落在两者之间就是完整可见。
+        if (position.pixels <= top && position.pixels >= bottom) return;
+        // 停在上方三分之一处：前面留一两行上下文，后面要听的词看得更多。
+        final wanted = viewport.getOffsetToReveal(target, 0.3).offset;
+        _listScroll.jumpTo(
+          wanted.clamp(position.minScrollExtent, position.maxScrollExtent),
+        );
+        return;
+      }
+
+      if (attempts == 0) return;
+      final count = parseWords(widget.value).length;
+      if (count < 2) return;
+      _listScroll.jumpTo(
+        position.maxScrollExtent * widget.startIndex / (count - 1),
+      );
+      _revealCursor(attempts: attempts - 1);
+    });
+  }
+
   @override
   void didUpdateWidget(WordInputSection oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final tapped = _tappedIndex == widget.startIndex;
+    _tappedIndex = null;
+    if (!tapped &&
+        (widget.startIndex != oldWidget.startIndex ||
+            (widget.isDisplayMode && !oldWidget.isDisplayMode))) {
+      _revealCursor();
+    }
     // 外部改了文本（载入历史/词库、OCR 结果、补全）就同步进输入框，
     // 但用户正在打字时不要覆盖光标。
     if (widget.value != _controller.text) {
@@ -91,6 +148,7 @@ class _WordInputSectionState extends State<WordInputSection> {
 
   @override
   void dispose() {
+    _listScroll.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -345,6 +403,7 @@ class _WordInputSectionState extends State<WordInputSection> {
     final colors = context.colors;
 
     return ListView.builder(
+      controller: _listScroll,
       padding: EdgeInsets.only(
         top: Spacing.sm,
         bottom: Spacing.sm + _overlayBand,
@@ -361,8 +420,10 @@ class _WordInputSectionState extends State<WordInputSection> {
         final expanded = _expanded.contains(idx);
 
         return GestureDetector(
+          key: isCursor ? _cursorKey : null,
           behavior: HitTestBehavior.opaque,
           onTap: () {
+            _tappedIndex = idx;
             widget.onStartIndexChanged(idx);
             if (clampable) _toggleExpand(idx);
           },

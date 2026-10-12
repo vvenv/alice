@@ -46,6 +46,8 @@ class DictationScreen extends StatefulWidget {
     required this.intervalSec,
     required this.autoNext,
     this.interruptions,
+    this.onIndexChanged,
+    this.onCompleted,
   });
 
   final List<String> words;
@@ -54,6 +56,12 @@ class DictationScreen extends StatefulWidget {
 
   /// 音频中断事件源。为空时用真实的（来电/抢焦点、拔耳机），测试注入假流。
   final Stream<PlaybackInterruption>? interruptions;
+
+  /// 当前词的下标变了（[words] 里的下标）。首页靠它把词表上的起点跟过来。
+  final ValueChanged<int>? onIndexChanged;
+
+  /// 整份词表听完了。中途退出不算。
+  final VoidCallback? onCompleted;
 
   @override
   State<DictationScreen> createState() => _DictationScreenState();
@@ -102,6 +110,11 @@ class _DictationScreenState extends State<DictationScreen>
   int? _prevRemainingMs;
   int? _prevTickMs;
   int _prevIndex = 0;
+  bool _stoppedByUser = false;
+
+  /// 正在播的还是不是 [DictationScreen.words]。成绩页「重听错词」之后放的是
+  /// 另一份列表，下标对不上首页的词表，就不再往外报了。
+  bool _playingSource = true;
   bool _keepAwake = false;
   StreamSubscription<PlaybackInterruption>? _interruptionSub;
 
@@ -226,6 +239,7 @@ class _DictationScreenState extends State<DictationScreen>
     if (_playback.currentIndex != _prevIndex) {
       _prevIndex = _playback.currentIndex;
       _metaExpanded = false;
+      if (_playingSource) widget.onIndexChanged?.call(_prevIndex);
     }
 
     setState(() {});
@@ -301,6 +315,7 @@ class _DictationScreenState extends State<DictationScreen>
     final seconds =
         (DateTime.now().difference(_startTime).inMilliseconds / 1000).round();
     _elapsedSec = seconds < 1 ? 1 : seconds;
+    if (_playingSource && !_stoppedByUser) widget.onCompleted?.call();
     Haptics.notifySuccess();
     playChime();
     _finishAnim
@@ -397,6 +412,7 @@ class _DictationScreenState extends State<DictationScreen>
       destructive: true,
     );
     if (!confirmed || !mounted) return;
+    _stoppedByUser = true;
     _playback.stopDictation();
     _handleExit();
   }
@@ -467,6 +483,7 @@ class _DictationScreenState extends State<DictationScreen>
     // 累计错词本不动 —— 用户并没有说这些词已经掌握了。
     _wrong.resetRound();
     _finishAnim.reset();
+    _playingSource = false;
     _playback.startDictation(lines);
   }
 

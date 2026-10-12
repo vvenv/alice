@@ -139,9 +139,7 @@ void main() {
     await tester.pumpWidget(wrap(const HomeScreen(), dark: false));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('菜单'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('历史记录'));
+    await tester.tap(find.bySemanticsLabel('历史记录'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('zebra'), findsWidgets);

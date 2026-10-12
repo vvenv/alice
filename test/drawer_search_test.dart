@@ -47,9 +47,8 @@ void main() {
   Future<void> openHistory(WidgetTester tester) async {
     await tester.pumpWidget(wrap(const HomeScreen()));
     await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('菜单'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('历史记录'));
+    // 测试窗口 800 宽，入口平铺在页头，不经过「更多」菜单。
+    await tester.tap(find.bySemanticsLabel('历史记录'));
     await tester.pumpAndSettle();
   }
 
