@@ -58,8 +58,11 @@ cd alice
 cp .env.example .env   # 填入自己的密钥（见下方「配置」）
 
 flutter pub get
-flutter run                # 连着的设备 / 模拟器
-flutter run -d chrome      # Web
+./do.sh                    # 交互菜单：运行 / 测试 / 安装 / 发版…
+# 或直跑：
+./do.sh run                # flutter run
+./do.sh run --chrome       # Web
+./do.sh doctor             # 环境自检
 ```
 
 官网本地开发：
@@ -69,9 +72,18 @@ pnpm install
 pnpm --filter website dev
 ```
 
+底层命令仍可直接用（`do.sh` 只是薄封装）：
+
+```bash
+flutter run
+flutter run -d chrome
+```
+
 ## 提交前检查
 
 ```bash
+./do.sh test --lint          # analyze + test + pnpm lint
+# 或：
 flutter analyze              # 0 issue
 flutter test                 # 190 个用例
 pnpm lint                    # scripts/ 的 TypeScript
@@ -103,6 +115,15 @@ Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里
 `ZHIPU_BASE_URL` 这个可选的编译期常量，有默认值。
 
 ## 发版
+
+推荐走 `./do.sh`（会提示选版本，再调下面的脚本）：
+
+```bash
+./do.sh release              # 交互选 keep / patch / minor / major
+./do.sh release patch        # 升 patch 后发版
+./do.sh website              # 落地页 + /app/
+./do.sh webapp               # 仅 /app/
+```
 
 ### Android
 
