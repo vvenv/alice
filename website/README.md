@@ -18,7 +18,7 @@ pnpm --filter website build     # 预渲染产物到 dist/
 
 - **设计令牌全在 `src/index.css`**。Tailwind v4 用 `@theme` / `@utility` /
   `@custom-variant` 声明颜色、字体、动画与 `container`，没有 `tailwind.config.js`。
-- **路径别名 `@/`** 指向 `src/`，由 `vite-tsconfig-paths` 从 `tsconfig.json` 读取。
+- **路径别名 `@/`** 指向 `src/`，由 Vite `resolve.tsconfigPaths` 从 `tsconfig.json` 读取。
 - **暗色模式走 `.dark` class**（`@custom-variant dark`），不是 `prefers-color-scheme`。
 - 站点文案、下载链接等集中在 `src/data/site.ts`；FAQ 在 `src/data/faq.ts`，
   同时喂给页面和 `JsonLd` 的结构化数据。
