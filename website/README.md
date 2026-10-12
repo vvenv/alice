@@ -1,6 +1,6 @@
 # Alice 听写 · 官网
 
-<https://alice.edao.plus> —— 产品介绍与 APK 下载页。Vite + React 19 + Tailwind CSS v4
+<https://alice.wenfu.dev> —— 产品介绍与 APK 下载页。Vite + React 19 + Tailwind CSS v4
 的静态站，构建时用 Playwright 预渲染成纯 HTML（`scripts/prerender.mjs`），
 部署在 Cloudflare Pages。
 

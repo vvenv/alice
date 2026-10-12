@@ -1,4 +1,4 @@
-export const SITE_URL = "https://alice.edao.plus";
+export const SITE_URL = "https://alice.wenfu.dev";
 export const SITE_NAME = "Alice 听写";
 export const SITE_TAGLINE = "拍照即听写";
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;

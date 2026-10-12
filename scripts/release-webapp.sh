@@ -30,7 +30,7 @@ error() { echo "ERROR: $*" >&2; exit 1; }
 
 # Flutter --wasm 用 <script type=module> 拉 main.dart.mjs。
 # nginx 若把它标成 application/octet-stream，再叠加 nosniff，浏览器会拒掉，
-# /app/ 永远停在「正在加载」。见 scripts/nginx-alice.edao.plus.conf。
+# /app/ 永远停在「正在加载」。见 scripts/nginx-alice.wenfu.dev.conf。
 content_type() {
   curl -sSI "$1" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}'
 }
@@ -43,7 +43,7 @@ assert_js_mime() {
       echo "  MIME $url → $got"
       ;;
     *)
-      error "$url 的 Content-Type 是 '${got:-<empty>}'，浏览器会拒掉 wasm 入口。把 scripts/nginx-alice.edao.plus.conf 同步到服务器后再发。"
+      error "$url 的 Content-Type 是 '${got:-<empty>}'，浏览器会拒掉 wasm 入口。把 scripts/nginx-alice.wenfu.dev.conf 同步到服务器后再发。"
       ;;
   esac
 }
@@ -99,7 +99,7 @@ if [ -f "$ROOT/.env" ]; then
 fi
 SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.example)}"
 REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
-PUBLIC_HOST="https://alice.edao.plus"
+PUBLIC_HOST="https://alice.wenfu.dev"
 APP_REMOTE="$REMOTE_DIR/app"
 DIST_DIR="$ROOT/build/web"
 

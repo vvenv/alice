@@ -52,7 +52,7 @@ if [ -f "$ROOT/.env" ]; then
 fi
 SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.example)}"
 REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
-PUBLIC_HOST="https://alice.edao.plus"
+PUBLIC_HOST="https://alice.wenfu.dev"
 WEBSITE_DIR="$ROOT/website"
 
 echo "▶ Releasing website → $SERVER:$REMOTE_DIR"

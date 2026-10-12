@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the download QR code for the Alice website.
 
-Encodes https://alice.edao.plus/#download so the same QR code stays valid for
+Encodes https://alice.wenfu.dev/#download so the same QR code stays valid for
 every release — the page always points to the latest APK, so the QR never needs
 regenerating between builds.
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import qrcode
 
-URL = "https://alice.edao.plus/#download"
+URL = "https://alice.wenfu.dev/#download"
 # ink (#1A2B4A) — matches the website's primary text/brand color; high
 # contrast on white, reliably scannable by phone cameras.
 INK = "#1A2B4A"

@@ -4,11 +4,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Website](https://img.shields.io/badge/官网-alice.edao.plus-E5397B)](https://alice.edao.plus)
+[![Website](https://img.shields.io/badge/官网-alice.wenfu.dev-E5397B)](https://alice.wenfu.dev)
 
 英文单词听写应用，Flutter 实现，支持 Android / iOS / Web。
 
-官网与下载：**<https://alice.edao.plus>**
+官网与下载：**<https://alice.wenfu.dev>**
 
 > 0.6.3 之前的版本是 Expo / React Native 实现，仍在 `main` 分支。
 > 本分支是 Flutter 重写；迁移那一刻的 RN 快照打了 tag `rn-final`，记录见
@@ -131,7 +131,7 @@ pnpm release:webapp                    # 仅更新 /app/
 ```
 
 两者无先后顺序要求：落地页 rsync 只排除 `app/`，不会互相覆盖。APK 托管在
-Cloudflare R2，不经过部署服务器。Web 应用入口：<https://alice.edao.plus/app/>。
+Cloudflare R2，不经过部署服务器。Web 应用入口：<https://alice.wenfu.dev/app/>。
 
 ### 出包自检
 

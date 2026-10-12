@@ -184,21 +184,21 @@ void main() {
 
   group('Web 发版', () {
     // 0.7.4 挂到 /app/ 之后，忘了 --base-href，bootstrap / manifest
-    // 全打到 alice.edao.plus/ 根路径 404。
+    // 全打到 alice.wenfu.dev/ 根路径 404。
     test('发版脚本给 Flutter Web 设了 /app/ 的 base-href', () {
       final script = File('scripts/release-webapp.sh').readAsStringSync();
       expect(script, contains('--base-href /app/'),
-          reason: 'Web 挂在 alice.edao.plus/app/，不设 base-href 的话 '
+          reason: 'Web 挂在 alice.wenfu.dev/app/，不设 base-href 的话 '
               'flutter_bootstrap.js / manifest.json 会打到官网根路径 404');
       expect(script, contains('replace_web_fonts'),
           reason: 'Web 发版必须把全量思源宋体换成子集，否则首屏约 28MB 字体');
       // Ubuntu nginx 1.24 不认 .mjs，会标成 octet-stream；nosniff 下一拒，
-      // /app/ 卡在启动页。发版必须核 MIME，配置见 nginx-alice.edao.plus.conf。
+      // /app/ 卡在启动页。发版必须核 MIME，配置见 nginx-alice.wenfu.dev.conf。
       expect(script, contains('main.dart.mjs'),
           reason: 'wasm 入口 main.dart.mjs 的 Content-Type 必须在发版时核对');
       expect(script, contains('application/javascript'),
           reason: 'main.dart.mjs 必须按 JS MIME 下发，不能是 octet-stream');
-      expect(File('scripts/nginx-alice.edao.plus.conf').existsSync(), isTrue,
+      expect(File('scripts/nginx-alice.wenfu.dev.conf').existsSync(), isTrue,
           reason: 'nginx 站点配置不在仓库里，下次改服务器会丢掉 mjs MIME');
     });
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://alice.edao.plus/sitemap.xml
+Sitemap: https://alice.wenfu.dev/sitemap.xml

@@ -4,8 +4,8 @@
 
 ## 官方链接
 
-- 网站: https://alice.edao.plus/
-- Web 应用: https://alice.edao.plus/app/
+- 网站: https://alice.wenfu.dev/
+- Web 应用: https://alice.wenfu.dev/app/
 - 开源仓库: https://github.com/vvenv/alice
 - Android 下载: https://pub-a2b1a761ddf24764aa62b64c625793f0.r2.dev/alice-0.7.8-20260910-2204.apk
 

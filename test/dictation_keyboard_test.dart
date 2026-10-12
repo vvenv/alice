@@ -15,7 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 听写页的键盘操作。
 ///
-/// Web 是正式发布目标（alice.edao.plus/app/），坐在电脑前听写却只能用鼠标点；
+/// Web 是正式发布目标（alice.wenfu.dev/app/），坐在电脑前听写却只能用鼠标点；
 /// 外接键盘的平板同理。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

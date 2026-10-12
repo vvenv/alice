@@ -33,7 +33,7 @@
 #          openjdk@17 when JAVA_HOME is unset.
 #
 # NOTE: The QR code is intentionally NOT touched — it encodes the stable
-# URL https://alice.edao.plus/#download, so it never needs regenerating.
+# URL https://alice.wenfu.dev/#download, so it never needs regenerating.
 
 set -euo pipefail
 
@@ -103,7 +103,7 @@ if [ -f "$ROOT/.env" ]; then
 fi
 SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.example)}"
 REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
-PUBLIC_HOST="https://alice.edao.plus"
+PUBLIC_HOST="https://alice.wenfu.dev"
 WEBSITE_DIR="$ROOT/website"
 APK_PUBLIC_DIR="$WEBSITE_DIR/public/downloads"
 R2_BUCKET="${R2_BUCKET:?R2_BUCKET not set — add it to .env (see .env.example)}"
