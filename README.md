@@ -102,7 +102,7 @@ pnpm --filter website check
 存在设备本地，不进构建产物。
 | `DEPLOY_SERVER`     | 发布脚本的部署目标（`user@host`）                                   | 仅发版需要                          |
 | `DEPLOY_REMOTE_DIR` | 服务器上的站点目录                                                  | 仅发版需要                          |
-| `R2_*` / `CLOUDFLARE_*` | APK 上传用的 Cloudflare R2 配置                                 | 仅发版需要                          |
+| `R2_*` / `CLOUDFLARE_*` | APK / 截图上传用的 Cloudflare R2 配置                           | 仅发版需要                          |
 
 `ZHIPU_API_KEY` 走 Dart 的编译期常量，不进仓库：
 

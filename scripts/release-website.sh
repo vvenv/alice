@@ -10,10 +10,9 @@
 # Website and webapp deploys are order-independent: each leaves the other alone.
 #
 # Usage:
-#   pnpm release:website              # landing + /app/ web app
-#   pnpm release:website -- --skip-webapp
+#   pnpm release:website                 # landing + /app/ web app
 #   bash scripts/release-website.sh --skip-webapp
-#   bash scripts/release-website.sh
+#   ./do.sh website --skip-webapp
 #
 # Prereqs: SSH key auth to the deploy server (BatchMode).
 # Config from .env (see .env.example):

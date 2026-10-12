@@ -14,6 +14,7 @@
     "release:android": "bash scripts/release.sh",
     "release:website": "bash scripts/release-website.sh",
     "release:webapp": "bash scripts/release-webapp.sh",
+    "screenshots:upload": "bash scripts/upload-screenshots.sh",
     "lint": "tsc -p tsconfig.scripts.json"
   },
   "devDependencies": {

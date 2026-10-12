@@ -1,22 +1,23 @@
 import type { ReactNode } from "react";
+import { SCREENSHOTS } from "@/data/site";
 
-export type AppShot = "home" | "library" | "dictation" | "finish";
+export type AppShot = keyof typeof SCREENSHOTS;
 
 const SHOTS: Record<AppShot, { src: string; alt: string }> = {
   home: {
-    src: "/screenshots/home.png",
+    src: SCREENSHOTS.home,
     alt: "首页：单词列表、拍照识词与开始听写",
   },
   library: {
-    src: "/screenshots/library.png",
+    src: SCREENSHOTS.library,
     alt: "词库：290 套教材词表，支持搜索与收藏",
   },
   dictation: {
-    src: "/screenshots/dictation.png",
+    src: SCREENSHOTS.dictation,
     alt: "听写：怀表倒计时，可重听、调语速、标记错词",
   },
   finish: {
-    src: "/screenshots/finish.png",
+    src: SCREENSHOTS.finish,
     alt: "完成：成绩单、本轮错词与再听一遍",
   },
 };

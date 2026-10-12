@@ -19,6 +19,14 @@ export const GITHUB_URL = "https://github.com/vvenv/alice";
 export const APP_VERSION = "0.8.0";
 export const APK_URL =
   "https://file.wenfu.dev/alice-0.8.0-20261012-2221.apk";
+/** App screenshots on Cloudflare R2 (`pnpm screenshots:upload`). */
+export const SCREENSHOTS_BASE = "https://file.wenfu.dev/screenshots";
+export const SCREENSHOTS = {
+  home: `${SCREENSHOTS_BASE}/home.png`,
+  library: `${SCREENSHOTS_BASE}/library.png`,
+  dictation: `${SCREENSHOTS_BASE}/dictation.png`,
+  finish: `${SCREENSHOTS_BASE}/finish.png`,
+} as const;
 /** Flutter Web build, hosted under the marketing site. */
 export const WEB_APP_URL = `${SITE_URL}/app/`;
 export const OG_IMAGE_URL = `${SITE_URL}/og.png`;
