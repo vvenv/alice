@@ -239,49 +239,46 @@ class _FavoriteRow extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(
-              top: Spacing.sm + 2,
-              bottom: Spacing.sm + 2,
-              right: Spacing.sm + 2,
+          Text(
+            '${_wordCount(item.entry.text)} 词',
+            style: TextStyle(fontSize: 11, color: colors.subtle),
+          ),
+          const SizedBox(width: Spacing.sm),
+          // 与词库分类头的计数同款胶囊。
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.sm,
+              vertical: 2,
             ),
-            child: Row(
-              children: [
-                Text(
-                  '${_wordCount(item.entry.text)}',
-                  style: TextStyle(fontSize: 11, color: colors.subtle),
+            decoration: BoxDecoration(
+              color: colors.surfaceSunken,
+              borderRadius: BorderRadius.circular(Radii.full),
+            ),
+            child: Text(
+              item.source == _FavoriteSource.library ? '词库' : '历史',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colors.subtle,
+              ),
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: '取消收藏',
+            child: GestureDetector(
+              onTap: onRemove,
+              behavior: HitTestBehavior.opaque,
+              // 内边距算进点击区，星标本身只有 18px。
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: Spacing.sm,
+                  right: Spacing.sm + 2,
+                  top: Spacing.sm + 2,
+                  bottom: Spacing.sm + 2,
                 ),
-                const SizedBox(width: Spacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.xs + 2,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surfaceSunken,
-                    borderRadius: BorderRadius.circular(Radii.xs),
-                    border: Border.all(color: colors.borderSubtle),
-                  ),
-                  child: Text(
-                    item.source == _FavoriteSource.library ? '词库' : '历史',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: colors.subtle,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Spacing.sm),
-                Semantics(
-                  button: true,
-                  label: '取消收藏',
-                  child: GestureDetector(
-                    onTap: onRemove,
-                    behavior: HitTestBehavior.opaque,
-                    child: Icon(AppIcons.star, size: 18, color: colors.gold),
-                  ),
-                ),
-              ],
+                child: Icon(AppIcons.star, size: 18, color: colors.gold),
+              ),
             ),
           ),
         ],
