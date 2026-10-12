@@ -215,6 +215,28 @@ void main() {
       expect(manifest, contains('#1A2B4A'));
     });
 
+    // flutter_tts 的 Web onboundary 在 --wasm 下 `as int` 必抛，朗读时每个词
+    // 边界一条 Uncaught WebAssembly.Exception。index.html 在插件注册前屏蔽它。
+    test('index.html 屏蔽了 flutter_tts 的 onboundary', () {
+      final html = File('web/index.html').readAsStringSync();
+      final guard = html.indexOf("'onboundary'");
+      expect(guard, isNonNegative,
+          reason: 'wasm 下 flutter_tts 的 onboundary 会抛未捕获异常，'
+              'index.html 必须把这个 setter 变成空操作');
+      expect(guard, lessThan(html.indexOf('{{flutter_js}}')),
+          reason: '屏蔽必须在 Flutter 加载（插件注册）之前执行');
+      expect(
+        Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))
+            .any((f) => f.readAsStringSync().contains('setProgressHandler')),
+        isFalse,
+        reason: 'Web 上 onboundary 被屏蔽了，setProgressHandler 不会触发；'
+            '要用它就得先换掉 index.html 里的屏蔽',
+      );
+    });
+
     test('Web 思源宋体子集存在且明显小于全量', () {
       for (final name in [
         'NotoSerifSC_500Medium.ttf',

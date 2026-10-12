@@ -76,6 +76,22 @@
     <div class="status">正在加载</div>
   </div>
   <script>
+    // flutter_tts 4.2.5 的 Web 实现在 onboundary 里写了 `event['charIndex'] as int`。
+    // dart2js 下 JS number 就是 int；--wasm 下它是 JSNumber，强转直接抛
+    // WebAssembly.Exception，朗读时每个词边界都在控制台报一次 Uncaught。
+    // 我们不用朗读进度回调，所以在插件注册之前把这个 setter 变成空操作。
+    // 上游修掉后（或者要用 setProgressHandler 时）删掉这段。
+    try {
+      if (window.SpeechSynthesisUtterance) {
+        Object.defineProperty(SpeechSynthesisUtterance.prototype, 'onboundary', {
+          configurable: true,
+          get: function() { return null; },
+          set: function() {}
+        });
+      }
+    } catch (_) {}
+  </script>
+  <script>
     {{flutter_js}}
     {{flutter_build_config}}
     _flutter.loader.load({
