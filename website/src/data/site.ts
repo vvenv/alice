@@ -22,10 +22,10 @@ export const APK_URL =
 /** App screenshots on Cloudflare R2 (`pnpm screenshots:upload`). */
 export const SCREENSHOTS_BASE = "https://file.wenfu.dev/screenshots";
 export const SCREENSHOTS = {
-  home: `${SCREENSHOTS_BASE}/home.png`,
-  library: `${SCREENSHOTS_BASE}/library.png`,
-  dictation: `${SCREENSHOTS_BASE}/dictation.png`,
-  finish: `${SCREENSHOTS_BASE}/finish.png`,
+  home: `${SCREENSHOTS_BASE}/home.7e301e7f.png`,
+  library: `${SCREENSHOTS_BASE}/library.902244a9.png`,
+  dictation: `${SCREENSHOTS_BASE}/dictation.62908826.png`,
+  finish: `${SCREENSHOTS_BASE}/finish.fcfd070e.png`,
 } as const;
 /** Flutter Web build, hosted under the marketing site. */
 export const WEB_APP_URL = `${SITE_URL}/app/`;
