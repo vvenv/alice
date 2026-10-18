@@ -439,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 删掉一行之后给一次撤销。
   ///
-  /// 那个删除按钮是列表行里一个 20px 的 ✕，误触代价不小 —— 刚 OCR 识出来
+  /// 左滑一下或点行尾的 ✕ 就删了，误触代价不小 —— 刚 OCR 识出来
   /// 三十个词，误删一个就得重拍。错词删除一直有撤销，这里没有说不过去。
   void _handleWordDeleted(int index, String line) {
     final word = parseWordLine(line).word;
@@ -768,12 +768,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           _openOcrSettings();
                         },
                         behavior: HitTestBehavior.opaque,
-                        child: Text(
-                          '设置',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: colors.primary,
+                        // 纯文字只有十几像素高；撑到 44 再点。
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '设置',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: colors.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -823,12 +831,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           _openRecharge();
                         },
                         behavior: HitTestBehavior.opaque,
-                        child: Text(
-                          '领取',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: colors.primary,
+                        // 纯文字只有十几像素高；撑到 44 再点。
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '领取',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: colors.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -1222,6 +1238,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomPanel(int parsedWordCount) {
     final colors = context.colors;
+    final start =
+        parsedWordCount == 0 ? 0 : min(_startIndex, parsedWordCount - 1);
 
     return Center(
       child: ConstrainedBox(
@@ -1244,7 +1262,9 @@ class _HomeScreenState extends State<HomeScreen> {
             onPlayToggle: _handleStart,
             shuffle: _shuffle,
             onShuffleChanged: (v) => setState(() => _shuffle = v),
-            wordCount: parsedWordCount,
+            // 起点不在开头时，按钮报的是这一轮真正要听的词数。
+            wordCount: parsedWordCount - start,
+            startOrdinal: start > 0 ? start + 1 : null,
             busy: _starting,
           ),
         ),

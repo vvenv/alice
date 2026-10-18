@@ -43,4 +43,21 @@ void main() {
     final words = parseWords(enriched).map(speakTextFromEntry).toList();
     expect(words, ['apple', 'banana']);
   });
+
+  // ECDICT 里 name 的末段「名称, 文件名, 姓名」不带词性，并进 n. 组后和前面重复。
+  test('同一词性组里重复的释义词条只留一次', () {
+    expect(
+      splitSenses('名字, 名称, 姓名, 文件名；vt. 命名；名称, 文件名, 姓名', 'n.'),
+      ['n. 名字, 名称, 姓名, 文件名', 'vt. 命名'],
+    );
+    expect(
+      splitSenses('名字, 名称；名称, 名誉', 'n.'),
+      ['n. 名字, 名称；名誉'],
+    );
+    // 不同词性组之间不算重复。
+    expect(
+      splitSenses('n. 会；adj. 会', 'n.'),
+      ['n. 会', 'adj. 会'],
+    );
+  });
 }

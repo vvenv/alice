@@ -58,6 +58,8 @@ Future<void> _loadDictionary() async {
 /// 仅做清理，保留完整释义（含多义项）。多义项以「；」分隔，由构建脚本保证。
 String _normalizeMeaning(String raw) => raw.trim();
 
+final RegExp _glossSplitRe = RegExp('[，,、]');
+
 /// 将释义按词性分组：同一词性的多个义项合并为一行（「；」连接），不同词性各占一行。
 ///
 /// 返回的每行自带词性前缀（主词性组使用 mainPos）；无词性前缀的义项归入主词性组。
@@ -65,6 +67,10 @@ List<String> splitSenses(String meaning, [String? mainPos]) {
   final mainKey = normalizePos(mainPos ?? '');
   // LinkedHashMap 语义 —— Dart 的 Map 字面量保持插入顺序，与 JS Map 一致。
   final groups = <String, List<String>>{};
+  // ECDICT 不少词条末尾还挂着一段不带词性的义项，并进主词性组后和前面重复
+  // （name：「名字, 名称, 姓名……；名称, 文件名, 姓名」）。按组记下见过的词条，
+  // 重复的去掉。
+  final seen = <String, Set<String>>{};
 
   for (final raw in meaning.split(RegExp('[；;]'))) {
     final seg = raw.trim();
@@ -78,6 +84,14 @@ List<String> splitSenses(String meaning, [String? mainPos]) {
       text = seg.substring(m.group(0)!.length).trim();
     }
     if (text.isEmpty) continue;
+
+    final glosses = text.split(_glossSplitRe).map((g) => g.trim()).toList();
+    final seenInGroup = seen.putIfAbsent(key, () => <String>{});
+    final fresh =
+        glosses.where((g) => g.isNotEmpty && seenInGroup.add(g)).toList();
+    if (fresh.isEmpty) continue;
+    // 没去掉任何东西就保留原文，别把原来的「、」「，」统一改掉。
+    if (fresh.length < glosses.length) text = fresh.join(', ');
 
     groups.putIfAbsent(key, () => <String>[]).add(text);
   }

@@ -97,6 +97,24 @@ void main() {
     expect(find.textContaining('下一个词'), findsOneWidget);
   });
 
+  // 手机上间隔、自动播放、语速收成底部一行摘要，点开才是完整设置 ——
+  // 听写中眼睛该盯着表盘，不是一整块设置面板。
+  testWidgets('窄屏：设置收成一行摘要，点开能调间隔和语速', (tester) async {
+    await pumpDictation(tester, size: const Size(390, 844));
+
+    expect(find.text('自动播放'), findsNothing);
+    final strip = find.textContaining('间隔 7.0s');
+    expect(strip, findsOneWidget);
+
+    await tester.tap(strip);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('听写设置'), findsOneWidget);
+    expect(find.text('自动播放'), findsOneWidget);
+    expect(find.text('朗读中文释义'), findsOneWidget);
+  });
+
   // 删单个错词一直有撤销，整批清空却是一键不可逆 —— 而且它还会把这些词
   // 从累计错词本里一并撤掉。
   testWidgets('清空错词要先确认', (tester) async {

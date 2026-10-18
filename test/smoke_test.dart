@@ -95,7 +95,7 @@ void main() {
       expect(find.text('本轮错词 (0)'), findsOneWidget);
       expect(find.text('尚无错词'), findsOneWidget);
       // 单词默认隐藏
-      expect(find.text('•••••'), findsOneWidget);
+      expect(find.text('单词已隐藏'), findsOneWidget);
     });
   }
 
@@ -197,13 +197,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('•••••'), findsOneWidget);
+    expect(find.text('单词已隐藏'), findsOneWidget);
     expect(find.text('apple'), findsNothing);
 
     await tester.tap(find.bySemanticsLabel('显示单词'));
     await tester.pump();
 
-    expect(find.text('•••••'), findsNothing);
+    expect(find.text('单词已隐藏'), findsNothing);
     expect(find.text('apple'), findsOneWidget);
     expect(find.text('n. 苹果'), findsOneWidget);
   });

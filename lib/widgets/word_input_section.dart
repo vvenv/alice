@@ -42,7 +42,7 @@ class WordInputSection extends StatefulWidget {
 
   /// 删掉某一行之后回调（行号 + 原文），供上层给一次撤销。
   ///
-  /// 删除按钮是个 20px 的 ✕，误触代价不小 —— 刚 OCR 识出来三十个词，
+  /// 左滑或点 ✕ 都会删，误删代价不小 —— 刚 OCR 识出来三十个词，
   /// 误删一个就得重拍。
   final void Function(int index, String line)? onWordDeleted;
 
@@ -336,9 +336,14 @@ class _WordInputSectionState extends State<WordInputSection> {
         children: [
           // 展示模式下点某一行会把它设为听写起点（那一行会高亮 + 左侧描边），
           // 但此前没有任何文字说明，光看高亮猜不出来。
+          // 起点挪开之后，提示换成「从第几个开始」—— 学会了的人不用每次看说明。
           Expanded(
             child: Text(
-              display ? '$wordCount 个单词 · 点词设为起点' : '$wordCount 个单词',
+              !display
+                  ? '$wordCount 个单词'
+                  : widget.startIndex > 0
+                      ? '$wordCount 个单词 · 从第 ${widget.startIndex + 1} 个开始'
+                      : '$wordCount 个单词 · 点词设为起点',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -411,7 +416,8 @@ class _WordInputSectionState extends State<WordInputSection> {
       itemCount: parsedWords.length,
       itemBuilder: (context, idx) {
         final line = parsedWords[idx];
-        final isCursor = idx == widget.startIndex;
+        // 起点在开头时不高亮：第一行亮着看起来像「选中了」，其实什么也没选。
+        final isCursor = idx == widget.startIndex && idx > 0;
         final entry = parseWordLine(line);
         final senses = entry.hasMeta
             ? splitSenses(entry.meaning ?? '', entry.pos)
@@ -419,8 +425,8 @@ class _WordInputSectionState extends State<WordInputSection> {
         final clampable = sensesClamped(senses, 2, 20);
         final expanded = _expanded.contains(idx);
 
-        return GestureDetector(
-          key: isCursor ? _cursorKey : null,
+        final row = GestureDetector(
+          key: idx == widget.startIndex ? _cursorKey : null,
           behavior: HitTestBehavior.opaque,
           onTap: () {
             _tappedIndex = idx;
@@ -428,9 +434,12 @@ class _WordInputSectionState extends State<WordInputSection> {
             if (clampable) _toggleExpand(idx);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.lg,
-              vertical: Spacing.md,
+            // 右侧少留一点：✕ 的 40px 点击区自带留白。
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.lg,
+              Spacing.md,
+              Spacing.sm,
+              Spacing.md,
             ),
             decoration: BoxDecoration(
               color: isCursor ? colors.primarySoft : null,
@@ -492,18 +501,21 @@ class _WordInputSectionState extends State<WordInputSection> {
                   ),
                 ),
                 const SizedBox(width: Spacing.md),
+                // 每行一颗深色 ✕ 曾是整页最抢眼的东西。压淡、点击区放大到
+                // 40；主要的删法是左滑，✕ 被拍照按钮挡住时也删得掉。
                 Semantics(
                   button: true,
                   label: '删除 ${entry.word}',
                   child: GestureDetector(
                     onTap: () => _handleDeleteWord(idx),
                     behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.all(Spacing.xs),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
                       child: Icon(
-                        AppIcons.closeCircle,
-                        size: 20,
-                        color: colors.subtle,
+                        AppIcons.close,
+                        size: 18,
+                        color: colors.subtle.withValues(alpha: 0.45),
                       ),
                     ),
                   ),
@@ -511,6 +523,34 @@ class _WordInputSectionState extends State<WordInputSection> {
               ],
             ),
           ),
+        );
+
+        return Dismissible(
+          // 行号进 key：删掉一行后后面的行整体前移，旧的滑动状态不能串过去。
+          key: ValueKey('$idx|$line'),
+          direction: DismissDirection.endToStart,
+          onDismissed: (_) => _handleDeleteWord(idx),
+          background: Container(
+            color: colors.dangerSoft,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: Spacing.xl),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(AppIcons.trash, size: 18, color: colors.danger),
+                const SizedBox(width: Spacing.xs),
+                Text(
+                  '删除',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colors.danger,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          child: row,
         );
       },
     );

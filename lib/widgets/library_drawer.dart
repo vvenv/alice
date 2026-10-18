@@ -327,9 +327,8 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
                             style: TextStyle(
                               fontFamily: AppFonts.displayZh,
                               fontSize: 15,
-                              color: expanded
-                                  ? colors.foreground
-                                  : colors.muted,
+                              color:
+                                  expanded ? colors.foreground : colors.muted,
                             ),
                           ),
                         ),
@@ -345,7 +344,7 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
                             borderRadius: BorderRadius.circular(Radii.full),
                           ),
                           child: Text(
-                            '${group.items.length}',
+                            '${group.items.length} 个单元',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -548,7 +547,11 @@ class _LibraryCell extends StatelessWidget {
                         child: Icon(
                           favorited ? AppIcons.star : AppIcons.starOutline,
                           size: 18,
-                          color: favorited ? colors.gold : colors.subtle,
+                          // 未收藏的星压得很淡：几十张卡片每张一颗深色星，
+                          // 比单元名还显眼。仍然露着，免得没人知道能收藏。
+                          color: favorited
+                              ? colors.gold
+                              : colors.subtle.withValues(alpha: 0.35),
                         ),
                       ),
                     ),

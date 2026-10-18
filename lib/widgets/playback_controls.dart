@@ -25,6 +25,7 @@ class PlaybackControls extends StatelessWidget {
     this.shuffle,
     this.onShuffleChanged,
     this.wordCount,
+    this.startOrdinal,
     this.trailing,
     this.busy = false,
   });
@@ -40,6 +41,10 @@ class PlaybackControls extends StatelessWidget {
 
   /// 传了就在主按钮里显示词数徽标，为 0 时按钮变暗（但仍可点）。
   final int? wordCount;
+
+  /// 不从第一个词开始时传起点的序号（从 1 数），主按钮改说「从第 N 个开始」。
+  /// 此时 [wordCount] 应是剩下要听的词数，而不是整张词表。
+  final int? startOrdinal;
 
   /// 开关行右端的附加控件。听写页没有「打乱顺序」，那半行本来是空的，
   /// 正好放语速入口。
@@ -61,9 +66,13 @@ class PlaybackControls extends StatelessWidget {
       children: [
         Row(
           children: [
+            // 关了自动播放就没有「间隔」可言 —— 滑块照样亮着会让人以为拖了有用。
             Text(
               '间隔',
-              style: TextStyle(fontSize: 13, color: colors.muted),
+              style: TextStyle(
+                fontSize: 13,
+                color: autoNext ? colors.muted : colors.subtle,
+              ),
             ),
             const SizedBox(width: Spacing.md),
             Expanded(
@@ -73,6 +82,7 @@ class PlaybackControls extends StatelessWidget {
                 step: kIntervalStep,
                 value: intervalSec,
                 onChanged: onIntervalChanged,
+                disabled: !autoNext,
                 label: '听写间隔秒数',
                 formatValue: (v) => '${v.toStringAsFixed(1)} 秒',
               ),
@@ -86,7 +96,7 @@ class PlaybackControls extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: colors.primary,
+                  color: autoNext ? colors.primary : colors.subtle,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -122,7 +132,11 @@ class PlaybackControls extends StatelessWidget {
         if (showPlay) ...[
           const SizedBox(height: Spacing.sm),
           AppButton(
-            label: busy ? '正在准备…' : '开始听写',
+            label: busy
+                ? '正在准备…'
+                : startOrdinal != null
+                    ? '从第 $startOrdinal 个开始'
+                    : '开始听写',
             variant: ButtonVariant.primary,
             size: ButtonSize.lg,
             onPressed: onPlayToggle,

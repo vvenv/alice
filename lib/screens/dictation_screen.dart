@@ -487,15 +487,36 @@ class _DictationScreenState extends State<DictationScreen>
     _playback.startDictation(lines);
   }
 
+  /// 完成页点错词：再读一遍，顺带把释义用 toast 报出来。
+  void _reviewWrongWord(String word) {
+    Haptics.tapLight();
+    unawaited(speakWord(word));
+    final line = _playback.wordList.firstWhere(
+      (l) => speakTextFromEntry(l) == word,
+      orElse: () => word,
+    );
+    final entry = parseWordLine(line);
+    final senses = entry.meaning != null
+        ? splitSenses(entry.meaning!, entry.pos)
+        : const <String>[];
+    _toast.show(senses.isEmpty ? word : '$word  ${senses.first}');
+  }
+
   /// 听写中调语速。
   ///
   /// 以前语速只在设置页 —— 听到读太快，得先结束整轮听写才能改。间隔滑块就在
   /// 手边，语速却要退两级页面，没有道理。「朗读中文释义」同理，顺手一起放进来
   /// （调度器每个词都会重读一次开关，所以下一个词就生效）。
-  Future<void> _openSpeechSettings() async {
+  ///
+  /// 窄屏上间隔、自动播放也收在这里：听写进行中它们很少动，常驻在底部要吃掉
+  /// 小四分之一屏，眼睛该盯的是表盘。
+  ///
+  /// 双栏时侧栏里已经摆着间隔和自动播放，[includePlayback] 为 false，
+  /// 抽屉只管朗读。
+  Future<void> _openSettingsSheet({bool includePlayback = false}) async {
     await showAppBottomSheet<void>(
       context: context,
-      title: '朗读',
+      title: includePlayback ? '听写设置' : '朗读',
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) {
           final colors = context.colors;
@@ -503,6 +524,22 @@ class _DictationScreenState extends State<DictationScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (includePlayback) ...[
+                PlaybackControls(
+                  intervalSec: _intervalSec,
+                  autoNext: _autoNext,
+                  onIntervalChanged: (v) {
+                    _handleIntervalChanged(v);
+                    setSheetState(() {});
+                  },
+                  onAutoNextChanged: (v) {
+                    _handleAutoNextChanged(v);
+                    setSheetState(() {});
+                  },
+                  showPlayButton: false,
+                ),
+                const SizedBox(height: Spacing.md),
+              ],
               Row(
                 children: [
                   Icon(AppIcons.speedometer, size: 16, color: colors.secondary),
@@ -670,51 +707,61 @@ class _DictationScreenState extends State<DictationScreen>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
+                        // 完成后底部面板不再出现：错词已经列在成绩单上，间隔、
+                        // 语速也用不着了，留着只会和「错词再听一遍」抢视线。
                         Builder(
-                          builder: (context) => useDualPane
-                              ? Row(
-                                  // 侧栏通高。它现在只剩设置和错词，不拉满的话
-                                  // 就是一块悬在半空的色块。
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    Expanded(
-                                      child: _buildWordStage(
-                                        colors,
-                                        dialSize,
-                                        useCompactLayout,
-                                        isFinished,
-                                      ),
-                                    ),
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: math.min(380, width * 0.42),
-                                      ),
-                                      child: _buildBottomPanel(
-                                        colors,
-                                        useCompactLayout: useCompactLayout,
-                                        useDualPane: true,
-                                      ),
-                                    ),
-                                  ],
+                          builder: (context) => isFinished
+                              ? _buildWordStage(
+                                  colors,
+                                  dialSize,
+                                  useCompactLayout,
+                                  isFinished,
                                 )
-                              : Column(
-                                  children: [
-                                    Expanded(
-                                      child: _buildWordStage(
-                                        colors,
-                                        dialSize,
-                                        useCompactLayout,
-                                        isFinished,
-                                      ),
+                              : useDualPane
+                                  ? Row(
+                                      // 侧栏通高。它现在只剩设置和错词，不拉满的话
+                                      // 就是一块悬在半空的色块。
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: _buildWordStage(
+                                            colors,
+                                            dialSize,
+                                            useCompactLayout,
+                                            isFinished,
+                                          ),
+                                        ),
+                                        ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth:
+                                                math.min(380, width * 0.42),
+                                          ),
+                                          child: _buildBottomPanel(
+                                            colors,
+                                            useCompactLayout: useCompactLayout,
+                                            useDualPane: true,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Column(
+                                      children: [
+                                        Expanded(
+                                          child: _buildWordStage(
+                                            colors,
+                                            dialSize,
+                                            useCompactLayout,
+                                            isFinished,
+                                          ),
+                                        ),
+                                        _buildBottomPanel(
+                                          colors,
+                                          useCompactLayout: useCompactLayout,
+                                          useDualPane: false,
+                                        ),
+                                      ],
                                     ),
-                                    _buildBottomPanel(
-                                      colors,
-                                      useCompactLayout: useCompactLayout,
-                                      useDualPane: false,
-                                    ),
-                                  ],
-                                ),
                         ),
                         AppToast(
                           toast: _toast.toast,
@@ -767,11 +814,9 @@ class _DictationScreenState extends State<DictationScreen>
     // 这里跟着放大，否则「听写中」会被裁掉。
     final sideWidth = MediaQuery.textScalerOf(context).scale(80);
 
-    final status = isFinished
-        ? ('已完成', kStatusPlaying)
-        : _playback.playState == PlayState.playing
-            ? ('听写中', kStatusPlaying)
-            : ('已暂停', colors.gold);
+    final status = _playback.playState == PlayState.playing
+        ? ('听写中', kStatusPlaying)
+        : ('已暂停', colors.gold);
 
     return Padding(
       padding: const EdgeInsets.only(
@@ -794,72 +839,75 @@ class _DictationScreenState extends State<DictationScreen>
               ),
             ),
           ),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text:
-                      '${math.min(_playback.currentIndex + 1, _playback.wordList.length)}',
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 17,
+          // 完成后成绩单里都有，计数和「已完成」不再重复。
+          if (!isFinished)
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text:
+                        '${math.min(_playback.currentIndex + 1, _playback.wordList.length)}',
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 17,
+                    ),
                   ),
-                ),
-                const TextSpan(text: ' / '),
-                TextSpan(text: '${_playback.wordList.length}'),
-              ],
+                  const TextSpan(text: ' / '),
+                  TextSpan(text: '${_playback.wordList.length}'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: colors.muted,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: colors.muted,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          SizedBox(
-            width: sideWidth,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Semantics(
-                label: status.$1,
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 28),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.md,
-                    vertical: Spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(Radii.full),
-                    border: Border.all(color: colors.borderMuted),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: status.$2,
-                          shape: BoxShape.circle,
+          if (!isFinished)
+            SizedBox(
+              width: sideWidth,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Semantics(
+                  label: status.$1,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 28),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(Radii.full),
+                      border: Border.all(color: colors.borderMuted),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: status.$2,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: Spacing.xs + 2),
-                      Text(
-                        status.$1,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: colors.muted,
+                        const SizedBox(width: Spacing.xs + 2),
+                        Text(
+                          status.$1,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colors.muted,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -965,10 +1013,14 @@ class _DictationScreenState extends State<DictationScreen>
           Positioned(
             top: 0,
             right: 12,
-            child: AppIconButton(
-              icon: _showWord ? AppIcons.eye : AppIcons.eyeOff,
-              onPressed: () => setState(() => _showWord = !_showWord),
-              semanticLabel: _showWord ? '隐藏单词' : '显示单词',
+            child: Tooltip(
+              message: _showWord ? '隐藏单词' : '显示单词',
+              excludeFromSemantics: true,
+              child: AppIconButton(
+                icon: _showWord ? AppIcons.eye : AppIcons.eyeOff,
+                onPressed: () => setState(() => _showWord = !_showWord),
+                semanticLabel: _showWord ? '隐藏单词' : '显示单词',
+              ),
             ),
           ),
         ],
@@ -1090,17 +1142,16 @@ class _DictationScreenState extends State<DictationScreen>
                       ),
                     ),
                 ],
-              ] else
+              ] else ...[
+                // 以前是固定五个圆点，看着像「五个字母」的提示，其实什么也不代表。
+                Icon(AppIcons.headphones, size: 40, color: colors.foreground),
+                const SizedBox(height: Spacing.xs),
                 Text(
-                  '•••••',
+                  '单词已隐藏',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 36,
-                    letterSpacing: 1,
-                    color: colors.foreground,
-                  ),
+                  style: TextStyle(fontSize: 12, color: colors.subtle),
                 ),
+              ],
               if (_showWord &&
                   !_metaExpanded &&
                   _playback.currentIndex + 1 < _playback.wordList.length) ...[
@@ -1153,6 +1204,10 @@ class _DictationScreenState extends State<DictationScreen>
   Widget _buildFinished(AppColors colors) {
     final wrongCount = _wrong.wrongWords.length;
     final elapsed = _elapsedSec;
+    final total = _playback.wordList.length;
+    final accuracy = total == 0
+        ? 0
+        : ((total - wrongCount).clamp(0, total) * 100 / total).round();
 
     return AnimatedBuilder(
       animation: _finishAnim,
@@ -1181,10 +1236,10 @@ class _DictationScreenState extends State<DictationScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     AppIcons.checkmarkCircle,
                     size: 48,
-                    color: kStatusPlaying,
+                    color: colors.gold,
                   ),
                   const SizedBox(height: Spacing.md),
                   Text(
@@ -1223,6 +1278,12 @@ class _DictationScreenState extends State<DictationScreen>
                         ),
                         _statItem(
                           colors,
+                          '$accuracy%',
+                          '正确率',
+                          colors.foreground,
+                        ),
+                        _statItem(
+                          colors,
                           elapsed != null
                               ? '${elapsed ~/ 60}:${(elapsed % 60).toString().padLeft(2, '0')}'
                               : '—',
@@ -1252,22 +1313,46 @@ class _DictationScreenState extends State<DictationScreen>
                         spacing: Spacing.sm,
                         runSpacing: Spacing.sm,
                         children: [
+                          // 点一下再读一遍并给出释义 —— 复盘时最想知道的就是
+                          // 「刚才错的那个到底怎么念、什么意思」。
                           for (final word in _wrong.wrongWords)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.md,
-                                vertical: Spacing.xs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colors.dangerSoft,
-                                borderRadius: BorderRadius.circular(Radii.full),
-                                border: Border.all(color: colors.danger),
-                              ),
-                              child: Text(
-                                word,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colors.danger,
+                            Semantics(
+                              button: true,
+                              label: '朗读 $word',
+                              child: GestureDetector(
+                                onTap: () => _reviewWrongWord(word),
+                                behavior: HitTestBehavior.opaque,
+                                child: Container(
+                                  constraints:
+                                      const BoxConstraints(minHeight: 36),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Spacing.md,
+                                    vertical: Spacing.xs,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.dangerSoft,
+                                    borderRadius:
+                                        BorderRadius.circular(Radii.full),
+                                    border: Border.all(color: colors.danger),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        AppIcons.volume,
+                                        size: 13,
+                                        color: colors.danger,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        word,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: colors.danger,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -1364,14 +1449,17 @@ class _DictationScreenState extends State<DictationScreen>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlaybackControls(
-            intervalSec: _intervalSec,
-            autoNext: _autoNext,
-            onIntervalChanged: _handleIntervalChanged,
-            onAutoNextChanged: _handleAutoNextChanged,
-            showPlayButton: false,
-            trailing: _buildSpeechRateEntry(colors),
-          ),
+          if (useDualPane)
+            PlaybackControls(
+              intervalSec: _intervalSec,
+              autoNext: _autoNext,
+              onIntervalChanged: _handleIntervalChanged,
+              onAutoNextChanged: _handleAutoNextChanged,
+              showPlayButton: false,
+              trailing: _buildSpeechRateEntry(colors),
+            )
+          else
+            _buildSettingsStrip(colors),
           SizedBox(height: gap),
           Flexible(
             child: _buildWrongSection(
@@ -1385,12 +1473,60 @@ class _DictationScreenState extends State<DictationScreen>
     );
   }
 
+  /// 窄屏底部的一行设置摘要，点开是完整的设置抽屉。
+  Widget _buildSettingsStrip(AppColors colors) {
+    final summary = [
+      _autoNext ? '间隔 ${_intervalSec.toStringAsFixed(1)}s' : '手动切词',
+      '语速 ${_speechRate.toStringAsFixed(1)}x',
+      if (_readTranslation) '读释义',
+    ].join(' · ');
+
+    return Semantics(
+      button: true,
+      label: '听写设置，$summary',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => _openSettingsSheet(includePlayback: true),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          decoration: BoxDecoration(
+            color: colors.background,
+            borderRadius: BorderRadius.circular(Radii.surface),
+            border: Border.all(color: colors.borderMuted),
+          ),
+          child: Row(
+            children: [
+              Icon(AppIcons.settings, size: 16, color: colors.muted),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Text(
+                  summary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colors.muted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              Icon(AppIcons.chevronUp, size: 18, color: colors.subtle),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSpeechRateEntry(AppColors colors) {
     return Semantics(
       button: true,
       label: '朗读设置，当前语速 ${_speechRate.toStringAsFixed(1)} 倍',
       child: GestureDetector(
-        onTap: _openSpeechSettings,
+        onTap: _openSettingsSheet,
         behavior: HitTestBehavior.opaque,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: Spacing.xs),

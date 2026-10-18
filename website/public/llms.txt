@@ -7,7 +7,7 @@
 - 网站: https://alice.wenfu.dev/
 - Web 应用: https://alice.wenfu.dev/app/
 - 开源仓库: https://github.com/vvenv/alice
-- Android 下载: https://file.wenfu.dev/alice-0.8.0-20261012-2221.apk
+- Android 下载: https://file.wenfu.dev/alice-0.9.0-20261018-2257.apk
 
 ## 产品要点
 

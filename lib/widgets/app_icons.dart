@@ -14,7 +14,7 @@ class AppIcons {
   static const IconData time = Icons.watch_later_outlined;
   static const IconData star = Icons.star;
   static const IconData starOutline = Icons.star_border;
-  static const IconData library = Icons.local_library_outlined;
+  static const IconData library = Icons.menu_book_outlined;
   static const IconData settings = Icons.settings_outlined;
   static const IconData chevronForward = Icons.chevron_right;
   static const IconData chevronDown = Icons.keyboard_arrow_down;
@@ -61,4 +61,6 @@ class AppIcons {
   static const IconData alertCircle = Icons.error;
   static const IconData pricetag = Icons.local_offer_outlined;
   static const IconData chatbox = Icons.chat_bubble_outline;
+  static const IconData headphones = Icons.headphones_outlined;
+  static const IconData volume = Icons.volume_up_outlined;
 }
