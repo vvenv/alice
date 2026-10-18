@@ -16,6 +16,12 @@
 # Usage:
 #   pnpm screenshots:upload
 #   bash scripts/upload-screenshots.sh
+#   ./do.sh screenshots
+#   bash scripts/upload-screenshots.sh --check   # 只检查 site.ts 是否指向当前截图，
+#                                                # 不上传、不需要 R2 凭据；过期则退出码 1
+#   bash scripts/upload-screenshots.sh --ensure  # 发版脚本构建官网前调用：已是最新就
+#                                                # 直接过；过期时终端里问要不要上传，
+#                                                # 非交互则报错退出
 #
 # Prereqs (same R2 block as release.sh, see .env.example):
 #   R2_BUCKET / R2_PUBLIC_BASE / CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN
@@ -27,18 +33,16 @@ cd "$ROOT"
 
 error() { echo "ERROR: $*" >&2; exit 1; }
 
-if [ -f "$ROOT/.env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$ROOT/.env"
-  set +a
-fi
-
-R2_BUCKET="${R2_BUCKET:?R2_BUCKET not set — add it to .env (see .env.example)}"
-R2_PUBLIC_BASE="${R2_PUBLIC_BASE:?R2_PUBLIC_BASE not set — add it to .env (see .env.example)}"
-R2_PUBLIC_BASE="${R2_PUBLIC_BASE%/}"
-: "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID not set — add it to .env (see .env.example)}"
-: "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN not set — add it to .env (see .env.example)}"
+MODE=upload
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check) MODE=check ;;
+    --ensure) MODE=ensure ;;
+    -h|--help) sed -n '2,27p' "$0"; exit 0 ;;
+    *) error "未知选项: $1" ;;
+  esac
+  shift
+done
 
 SHOTS=(home library dictation finish)
 SRC_DIR="$ROOT/docs/screenshots"
@@ -53,10 +57,51 @@ done
 grep -q 'export const SCREENSHOTS_BASE' "$SITE_TS" \
   || error "site.ts 缺少 SCREENSHOTS_BASE — 先加常量再跑本脚本"
 
+# 截图在 R2 上的文件名：内容哈希前 8 位。
+hashed_name() {
+  echo "$1.$(shasum -a 256 "$SRC_DIR/$1.png" | cut -c1-8).png"
+}
+
+if [ "$MODE" != upload ]; then
+  stale=()
+  for name in "${SHOTS[@]}"; do
+    grep -q "/$(hashed_name "$name")\`" "$SITE_TS" || stale+=("$name")
+  done
+  if [ ${#stale[@]} -eq 0 ]; then
+    echo "✓ site.ts 已指向当前截图"
+    exit 0
+  fi
+  echo "截图未上传或已过期: ${stale[*]}" >&2
+  [ "$MODE" = check ] && exit 1
+
+  # --ensure：换了 docs/screenshots/ 却没上传就构建，官网会带着旧图上线。
+  [ -t 0 ] || error "截图未上传 — 先跑 ./do.sh screenshots（或 pnpm screenshots:upload）"
+  read -r -p "截图有更新，先上传？ [Y/n]: " ans </dev/tty || true
+  case "${ans:-y}" in
+    [Yy]|[Yy][Ee][Ss]) ;;
+    *)
+      echo "⚠ 跳过上传：官网将继续使用 site.ts 里的旧截图"
+      exit 0
+      ;;
+  esac
+fi
+
+if [ -f "$ROOT/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+
+R2_BUCKET="${R2_BUCKET:?R2_BUCKET not set — add it to .env (see .env.example)}"
+R2_PUBLIC_BASE="${R2_PUBLIC_BASE:?R2_PUBLIC_BASE not set — add it to .env (see .env.example)}"
+R2_PUBLIC_BASE="${R2_PUBLIC_BASE%/}"
+: "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID not set — add it to .env (see .env.example)}"
+: "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN not set — add it to .env (see .env.example)}"
+
 echo "▶ Uploading screenshots → $R2_BUCKET/screenshots/"
 for name in "${SHOTS[@]}"; do
-  hash="$(shasum -a 256 "$SRC_DIR/$name.png" | cut -c1-8)"
-  file="$name.$hash.png"
+  file="$(hashed_name "$name")"
   key="screenshots/$file"
   pnpm exec wrangler r2 object put "$R2_BUCKET/$key" \
     --file "$SRC_DIR/$name.png" \
@@ -88,4 +133,4 @@ fi
 echo ""
 echo "✓ Screenshots on R2"
 echo "  Base: $R2_PUBLIC_BASE/screenshots/"
-echo "  Next: bash scripts/release-website.sh --skip-webapp"
+echo "  Next: ./do.sh website --skip-webapp"

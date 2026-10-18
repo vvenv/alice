@@ -123,7 +123,12 @@ Web 上 OCR 由用户在设置里自备 API Key。`lib/services/config.dart` 里
 ./do.sh release patch        # 升 patch 后发版
 ./do.sh website              # 落地页 + /app/
 ./do.sh webapp               # 仅 /app/
+./do.sh screenshots          # docs/screenshots/ → R2，并改写 site.ts 里的截图 URL
 ```
+
+官网截图放在 R2 上，文件名带内容哈希（缓存一年）。`./do.sh website` 和 Android
+发版在构建官网前都会核对 `site.ts` 是否指向当前截图；换了截图还没上传时，终端里会
+问一句要不要先传，非交互运行则直接报错退出。
 
 ### Android
 

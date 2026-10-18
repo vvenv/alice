@@ -20,6 +20,8 @@
 #   ./do.sh website                 # 落地页 + /app/
 #   ./do.sh website --skip-webapp   # 仅落地页
 #   ./do.sh webapp                  # 仅更新 /app/
+#   ./do.sh screenshots             # 上传 docs/screenshots/ 到 R2 并改写 site.ts
+#   ./do.sh screenshots --check     # 只检查 site.ts 是否指向当前截图
 #   ./do.sh data                    # 交互：check / gen / dict
 #   ./do.sh data check|gen|dict     # 直跑
 #   ./do.sh doctor                  # 检查 Flutter / Java / .env / adb / 签名
@@ -489,6 +491,27 @@ cmd_webapp() {
   bash "$ROOT/scripts/release-webapp.sh"
 }
 
+cmd_screenshots() {
+  local args=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --check) args+=(--check) ;;
+      -h|--help) usage 0 ;;
+      *) log_die "screenshots 未知参数: $1" ;;
+    esac
+    shift
+  done
+
+  need pnpm
+  if [ ${#args[@]} -gt 0 ]; then
+    bash "$ROOT/scripts/upload-screenshots.sh" --check
+    return
+  fi
+  log_info "上传截图…"
+  bash "$ROOT/scripts/upload-screenshots.sh"
+  log_success "截图已上传；部署官网后生效"
+}
+
 cmd_data() {
   local which="${1:-}"
   if [ -n "$which" ]; then
@@ -619,6 +642,7 @@ run_main_menu() {
       "release:Android 发版" \
       "website:部署官网" \
       "webapp:部署 /app/" \
+      "screenshots:上传截图" \
       "data:词库数据" \
       "doctor:环境检查" \
       "quit:退出")"
@@ -626,7 +650,7 @@ run_main_menu() {
       quit)
         exit 0
         ;;
-      run|test|install|release|website|webapp|data|doctor)
+      run|test|install|release|website|webapp|screenshots|data|doctor)
         "cmd_$choice" || true
         pause_menu
         ;;
@@ -643,7 +667,7 @@ CMD=""
 if [ $# -gt 0 ]; then
   case "$1" in
     -h|--help) usage 0 ;;
-    run|test|install|release|website|webapp|data|doctor)
+    run|test|install|release|website|webapp|screenshots|data|doctor)
       CMD="$1"
       shift
       ;;

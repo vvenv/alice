@@ -3,6 +3,7 @@
 # Cloudflare R2 → publish website.
 #
 # Flow:
+#   0. Make sure site.ts points at the current screenshots (offer to upload)
 #   0. Optionally bump version (patch / minor / major / x.y.z)
 #   1. Read version from pubspec.yaml
 #   2. Build the release APK with `flutter build apk` to a temp path
@@ -111,6 +112,9 @@ R2_PUBLIC_BASE="${R2_PUBLIC_BASE:?R2_PUBLIC_BASE not set — add it to .env (see
 R2_PUBLIC_BASE="${R2_PUBLIC_BASE%/}"
 : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID not set — add it to .env (see .env.example)}"
 : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN not set — add it to .env (see .env.example)}"
+
+# 截图走 R2，URL 写在 site.ts 里 —— 打 APK 之前就确认，别等构建完才发现。
+bash "$ROOT/scripts/upload-screenshots.sh" --ensure
 
 # --- JDK for Gradle ---
 # JDK 25+ restricts native access in java.lang.System (JEP 472) and breaks

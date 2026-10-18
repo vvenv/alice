@@ -2,6 +2,7 @@
 # Deploy the marketing website (and by default the Flutter Web app under /app/).
 #
 # Flow:
+#   0. Make sure site.ts points at the current screenshots (offer to upload)
 #   1. Build the website (pnpm --filter website build)
 #   2. rsync dist/ to the server, excluding downloads/ and app/ so the live
 #      APK and Web app are never wiped by --delete
@@ -53,6 +54,9 @@ SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER not set — add it to .env (see .env.exam
 REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/var/www/alice}"
 PUBLIC_HOST="https://alice.wenfu.dev"
 WEBSITE_DIR="$ROOT/website"
+
+# 截图走 R2，URL 写在 site.ts 里 —— 构建前确认它指向当前截图。
+bash "$ROOT/scripts/upload-screenshots.sh" --ensure
 
 echo "▶ Releasing website → $SERVER:$REMOTE_DIR"
 echo ""
