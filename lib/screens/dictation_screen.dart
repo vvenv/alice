@@ -97,9 +97,13 @@ class _DictationScreenState extends State<DictationScreen>
 
   // 倒计时环：每段用一条线性动画驱动，让它以 60fps 匀速耗尽，
   // 而不是跟着调度器每 50ms 的 tick 重绘。
+  //
+  // preserve：它是计时读数，不是装饰动画。系统里关了动画（无障碍「移除动画」、
+  // 开发者选项动画缩放 0）时，normal 会把时长压到 1/20，环一出现就耗尽了。
   late final AnimationController _countdownAnim = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1),
+    animationBehavior: AnimationBehavior.preserve,
   );
 
   late final AnimationController _finishAnim = AnimationController(

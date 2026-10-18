@@ -2,8 +2,13 @@
 # Upload App screenshots from docs/screenshots/ to Cloudflare R2 and point the
 # marketing site at the public URLs.
 #
-# Objects land at:
-#   $R2_PUBLIC_BASE/screenshots/{home,library,dictation,finish}.png
+# Objects land at content-hashed keys:
+#   $R2_PUBLIC_BASE/screenshots/{home,library,dictation,finish}.<sha8>.png
+#
+# 文件名带内容哈希、缓存一年 immutable：截图一变 URL 就变，浏览器和 CF 边缘
+# 不会拿着旧图不放，也不用 purge。以前是覆盖同名对象 + max-age=1 天，
+# 换了截图官网最多要一天才看得到。旧对象留在 R2 上，缓存着旧 HTML 的访客
+# 也不会裂图。
 #
 # Source of truth for the PNGs stays in docs/screenshots/ (README embeds those).
 # website/public/screenshots/ is not used — the site loads from R2.
@@ -44,25 +49,34 @@ for name in "${SHOTS[@]}"; do
   [ -f "$SRC_DIR/$name.png" ] || error "缺少截图: $SRC_DIR/$name.png"
 done
 
+# If the constant is missing, fail loudly so we don't silently ship local paths.
+grep -q 'export const SCREENSHOTS_BASE' "$SITE_TS" \
+  || error "site.ts 缺少 SCREENSHOTS_BASE — 先加常量再跑本脚本"
+
 echo "▶ Uploading screenshots → $R2_BUCKET/screenshots/"
 for name in "${SHOTS[@]}"; do
-  key="screenshots/$name.png"
-  url="$R2_PUBLIC_BASE/$key"
+  hash="$(shasum -a 256 "$SRC_DIR/$name.png" | cut -c1-8)"
+  file="$name.$hash.png"
+  key="screenshots/$file"
   pnpm exec wrangler r2 object put "$R2_BUCKET/$key" \
     --file "$SRC_DIR/$name.png" \
     --remote \
     --content-type "image/png" \
-    --cache-control "public, max-age=86400"
-  echo "  ✓ $url"
+    --cache-control "public, max-age=31536000, immutable"
+  echo "  ✓ $R2_PUBLIC_BASE/$key"
+
+  # site.ts 里那一行：home: `${SCREENSHOTS_BASE}/home[.xxxxxxxx].png`,
+  NAME="$name" FILE="$file" perl -0777 -pi -e \
+    's{(\b\Q$ENV{NAME}\E:\s*`\$\{SCREENSHOTS_BASE\}/)[^`]+(`)}{$1$ENV{FILE}$2}' \
+    "$SITE_TS"
+  grep -q "/$file\`" "$SITE_TS" \
+    || error "site.ts 里没找到 $name 的截图 URL — 检查 SCREENSHOTS 对象"
 done
 
 echo "▶ Updating SCREENSHOTS_BASE in site.ts..."
 SCREENSHOTS_BASE="$R2_PUBLIC_BASE/screenshots" perl -0777 -pi -e \
   's{(export const SCREENSHOTS_BASE\s*=\s*")[^"]+(")}{$1$ENV{SCREENSHOTS_BASE}$2}' \
   "$SITE_TS"
-# If the constant is missing, fail loudly so we don't silently ship local paths.
-grep -q 'export const SCREENSHOTS_BASE' "$SITE_TS" \
-  || error "site.ts 缺少 SCREENSHOTS_BASE — 先加常量再跑本脚本"
 echo "  → $R2_PUBLIC_BASE/screenshots"
 
 # Drop any leftover copies under public/ so the build never ships them.

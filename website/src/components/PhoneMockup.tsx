@@ -18,7 +18,7 @@ const SHOTS: Record<AppShot, { src: string; alt: string }> = {
   },
   finish: {
     src: SCREENSHOTS.finish,
-    alt: "完成：成绩单、本轮错词与再听一遍",
+    alt: "完成：成绩单、正确率、本轮错词与再听一遍",
   },
 };
 
