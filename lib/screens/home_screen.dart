@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/custom_word_list.dart';
 import '../models/library_item.dart';
 import '../models/word_history_entry.dart';
+import '../services/app_update.dart';
 import '../services/credits.dart';
 import '../services/dictation.dart';
 import '../services/dictionary.dart';
@@ -18,6 +21,7 @@ import '../services/storage.dart';
 import '../services/tts.dart';
 import '../state/ocr_quota_controller.dart';
 import '../state/toast_controller.dart';
+import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_bottom_sheet.dart';
@@ -31,6 +35,7 @@ import '../widgets/library_drawer.dart';
 import '../widgets/ocr_settings_modal.dart';
 import '../widgets/playback_controls.dart';
 import '../widgets/recharge_modal.dart';
+import '../widgets/update_dialog.dart';
 import '../widgets/word_input_section.dart';
 import '../widgets/wrong_words_drawer.dart';
 import 'dictation_screen.dart';
@@ -39,17 +44,21 @@ import 'settings_screen.dart';
 
 const Duration _wordInputSaveDebounce = Duration(milliseconds: 500);
 
-List<T> _shuffleList<T>(List<T> items) {
+List<T> _shuffleList<T>(List<T> items, [Random? random]) {
   final shuffled = List<T>.from(items);
-  final random = Random();
+  final rng = random ?? Random();
   for (var i = shuffled.length - 1; i > 0; i--) {
-    final j = random.nextInt(i + 1);
+    final j = rng.nextInt(i + 1);
     final tmp = shuffled[i];
     shuffled[i] = shuffled[j];
     shuffled[j] = tmp;
   }
   return shuffled;
 }
+
+/// 测试里把乱序钉成固定种子。正式包永远是 null，走真随机。
+@visibleForTesting
+Random? debugShuffleRandom;
 
 /// 首页。对应 RN 版 src/screens/HomeScreen.tsx。
 class HomeScreen extends StatefulWidget {
@@ -68,6 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _savedStartIndex = 0;
   bool _shuffle = false;
   bool _isDisplayMode = false;
+
+  /// 看的是上一次播出的词序，而不是正在编辑的草稿。
+  bool _showingLast = false;
+  String _lastPlayback = '';
+  int _lastStartIndex = 0;
+  List<CustomWordList> _customLists = <CustomWordList>[];
   OcrUiState _ocrUi = OcrUiState.idle;
   bool _starting = false;
   Alignment _cameraAlignment = kDefaultCameraButtonAlignment;
@@ -138,6 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
       loadIntervalSec(),
       loadCameraButtonAlignment(),
       loadStartIndex(),
+      loadLastPlayback(),
+      loadCustomLists(),
     ]);
     if (!mounted) return;
 
@@ -154,11 +171,28 @@ class _HomeScreenState extends State<HomeScreen> {
       // 上次听到哪就停在哪 —— 词表本来就会恢复，起点不跟着恢复的话，
       // 听到第 30 个词退出去，回来又得自己翻回去找。
       _startIndex = _savedStartIndex = results[6] as int;
+      _lastPlayback = results[7] as String;
+      _customLists = results[8] as List<CustomWordList>;
       _clampStartIndex();
       _ready = true;
     });
     unawaited(_enrichWhenDictionaryReady());
     unawaited(_consumePendingShare());
+    unawaited(_checkForUpdate());
+  }
+
+  /// 启动时看一眼官网有没有新版 APK。
+  ///
+  /// 只在 release 包里做：debug 包的 versionCode 和线上一样或更高，查了也白查，
+  /// 而且 widget 测试不该碰网络。
+  Future<void> _checkForUpdate() async {
+    if (!kReleaseMode) return;
+    final info = await checkUpdateOnLaunch();
+    // 用户这时可能已经进了听写 / 设置页，别把框盖在别的页面上 —— 下次启动再说。
+    if (info == null || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final ok = await showAppUpdateDialog(context, info);
+    if (!ok && mounted) _toast.show('打不开浏览器，已复制下载地址');
   }
 
   /// 冷启动是被分享拉起来的：原生侧先把文本存着，这里取一次。
@@ -179,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final previous = _wordInput;
     setState(() {
+      _showingLast = false;
       _wordInput = enrichWordListText(normalized);
       _isDisplayMode = true;
       _startIndex = 0;
@@ -239,6 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onWordInputChanged(String value) {
     setState(() {
+      _showingLast = false;
       final wasEmpty = parseWords(_wordInput).isEmpty;
       _wordInput = value;
       final empty = parseWords(_wordInput).isEmpty;
@@ -269,12 +305,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 词数掉到 startIndex 以下时把游标收回来。
   void _clampStartIndex() {
-    final count = parseWords(_wordInput).length;
+    final count = parseWords(_activeListText).length;
     if (count == 0) {
-      _startIndex = 0;
-    } else if (_startIndex >= count) {
-      _startIndex = count - 1;
+      _activeStartIndex = 0;
+    } else if (_activeStartIndex >= count) {
+      _activeStartIndex = count - 1;
     }
+  }
+
+  /// 卡片上正在看的那份：草稿，或上一次播出的词序。
+  String get _activeListText => _showingLast ? _lastPlayback : _wordInput;
+
+  int get _activeStartIndex => _showingLast ? _lastStartIndex : _startIndex;
+
+  set _activeStartIndex(int value) {
+    if (_showingLast) {
+      _lastStartIndex = value;
+    } else {
+      _startIndex = value;
+    }
+  }
+
+  /// 上次听写和当前草稿不是同一份时才值得切过去。
+  bool get _canShowLast {
+    final last = parseWords(_lastPlayback);
+    if (last.isEmpty) return false;
+    return plainWordList(_lastPlayback) != plainWordList(_wordInput);
+  }
+
+  void _showCurrentList() {
+    if (!_showingLast) return;
+    setState(() => _showingLast = false);
   }
 
   // --- 各类回调 -----------------------------------------------------------
@@ -282,6 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleOcrResult(List<String> words) {
     if (!mounted) return;
     setState(() {
+      _showingLast = false;
       // OCR 返回的是纯单词；立刻补全，好让展示模式有释义。
       _wordInput = enrichWordListText(words.join('\n'));
       _isDisplayMode = true;
@@ -324,33 +386,78 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (!mounted) return;
     final enriched = enrichWordListText(_wordInput);
-    if (enriched != _wordInput) {
+    if (!_showingLast && enriched != _wordInput) {
       setState(() {
         _wordInput = enriched;
         _clampStartIndex();
       });
     }
 
-    final allWords = parseWords(enriched);
+    // 看的是上次听写时按那份播出，不拿草稿去补全、也不改草稿。
+    final source = _showingLast ? _lastPlayback : enriched;
+    final allWords = parseWords(source);
     if (allWords.isEmpty) {
       _toast.show('请先输入单词列表');
       return;
     }
 
+    final activeStart = _activeStartIndex;
     final clampedStart =
-        _startIndex < allWords.length - 1 ? _startIndex : allWords.length - 1;
+        activeStart < allWords.length - 1 ? activeStart : allWords.length - 1;
     var words = allWords.sublist(clampedStart);
-    if (_shuffle) words = _shuffleList(words);
+    final shuffled = _shuffle && !_showingLast;
+    if (shuffled) {
+      words = [
+        for (final entry in _shuffleList(
+          parseWordEntries(words.join('\n')),
+          debugShuffleRandom,
+        ))
+          entryToLine(entry),
+      ];
+    }
 
     // 从编辑态直接开始时防抖还没到点 —— 先落盘，杀掉应用也丢不了这份词表。
-    _debounce?.cancel();
-    unawaited(saveWordInput(enriched));
+    if (!_showingLast) {
+      _debounce?.cancel();
+      unawaited(saveWordInput(enriched));
+    }
+
+    // 从当前词表开的这一轮，播出顺序和草稿不一样（乱序，或从中间听）就记下。
+    // 正在复习「上次听写」时不改写：从中间再听只是复习，完整顺序还要留着对答案。
+    // 正序整表和草稿相同，就不单独留一份。
+    final played = words.join('\n');
+    if (!_showingLast &&
+        parseWords(played).isNotEmpty &&
+        plainWordList(played) != plainWordList(_wordInput)) {
+      unawaited(saveLastPlayback(played));
+      if (mounted) {
+        setState(() {
+          _lastPlayback = played;
+          _lastStartIndex = 0;
+        });
+      }
+    } else if (!_showingLast &&
+        plainWordList(played) == plainWordList(_wordInput)) {
+      // 没打乱，或打乱结果碰巧和原文一样：上次听写没有单独存在的必要。
+      if (_lastPlayback.isNotEmpty) {
+        unawaited(saveLastPlayback(''));
+        if (mounted) {
+          setState(() {
+            _lastPlayback = '';
+            _showingLast = false;
+            _lastStartIndex = 0;
+          });
+        }
+      }
+    }
 
     await _launchDictation(
       words,
-      historyText: enriched,
-      // 乱序之后听写页的下标和词表行号对不上，不跟。
-      anchorBase: _shuffle ? null : clampedStart,
+      historyText: shuffled ? played : (_showingLast ? _wordInput : enriched),
+      // 乱序之后听写页的下标和当前词表行号对不上。
+      // 看的是上次听写时，进度记在上次那一份上。
+      anchorBase: shuffled ? null : clampedStart,
+      trackLast: _showingLast,
     );
   }
 
@@ -376,10 +483,32 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     unawaited(saveWordInput(enriched));
 
+    final shuffled = _shuffle;
+    final played = shuffled
+        ? [
+            for (final entry in _shuffleList(
+              parseWordEntries(words.join('\n')),
+              debugShuffleRandom,
+            ))
+              entryToLine(entry),
+          ]
+        : words;
+    final playedText = played.join('\n');
+    if (shuffled && plainWordList(playedText) != plainWordList(enriched)) {
+      unawaited(saveLastPlayback(playedText));
+      if (mounted) {
+        setState(() {
+          _lastPlayback = playedText;
+          _lastStartIndex = 0;
+          _showingLast = false;
+        });
+      }
+    }
+
     await _launchDictation(
-      _shuffle ? _shuffleList(words) : words,
-      historyText: enriched,
-      anchorBase: _shuffle ? null : 0,
+      played,
+      historyText: shuffled ? playedText : enriched,
+      anchorBase: shuffled ? null : 0,
     );
   }
 
@@ -391,6 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> words, {
     required String historyText,
     int? anchorBase,
+    bool trackLast = false,
   }) async {
     // 趁着点击手势还在：激活音频会话，并给前两个词开始预取。
     // 进页后再开口会丢手势，第一句经常被 iOS 吃掉；下载也不挡播放，
@@ -414,17 +544,33 @@ class _HomeScreenState extends State<HomeScreen> {
           autoNext: _autoNext,
           onIndexChanged: anchorBase == null
               ? null
-              : (i) => _moveStartIndex(anchorBase + i, from: historyText),
+              : (i) => trackLast
+                  ? _moveLastStartIndex(anchorBase + i)
+                  : _moveStartIndex(anchorBase + i, from: historyText),
           onCompleted: anchorBase == null
               ? null
-              : () => _moveStartIndex(0, from: historyText),
+              : () => trackLast
+                  ? _moveLastStartIndex(0)
+                  : _moveStartIndex(0, from: historyText),
         ),
       ),
     );
 
     // 听写页里可能调过间隔 —— 回来时重新读一次（对应 RN 的 useFocusEffect）。
     final sec = await loadIntervalSec();
-    if (mounted) setState(() => _intervalSec = sec);
+    if (!mounted) return;
+    setState(() {
+      _intervalSec = sec;
+      // 从当前词表乱序听完，回来停在播出顺序上对答案，起点回到开头。
+      // 本来就在看上次听写时，起点由听写页回调维护；这里再写成 0
+      // 会把中途退出的位置盖掉。
+      if (!trackLast &&
+          _canShowLast &&
+          plainWordList(words.join('\n')) == plainWordList(_lastPlayback)) {
+        _showingLast = true;
+        _lastStartIndex = 0;
+      }
+    });
   }
 
   /// 听写页报来的进度。首页此刻压在听写页底下，照样更新 —— 落盘靠的就是它。
@@ -433,6 +579,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted || from != _wordInput) return;
     setState(() {
       _startIndex = index;
+      _clampStartIndex();
+    });
+  }
+
+  void _moveLastStartIndex(int index) {
+    if (!mounted || !_showingLast) return;
+    setState(() {
+      _lastStartIndex = index;
       _clampStartIndex();
     });
   }
@@ -465,6 +619,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 清空词表 —— 换一份词表以前要全选删。同样给一次撤销。
   void _handleClearWordInput() {
+    if (_showingLast) {
+      final previous = _lastPlayback;
+      setState(() {
+        _lastPlayback = '';
+        _showingLast = false;
+        _lastStartIndex = 0;
+      });
+      unawaited(saveLastPlayback(''));
+      _toast.show(
+        '已清除上次听写',
+        action: ToastAction(
+          label: '撤销',
+          onPressed: () {
+            setState(() {
+              _lastPlayback = previous;
+              _showingLast = _canShowLast;
+              _lastStartIndex = 0;
+            });
+            unawaited(saveLastPlayback(previous));
+          },
+        ),
+      );
+      return;
+    }
+
     final previous = _wordInput;
     if (parseWords(previous).isEmpty) return;
 
@@ -495,6 +674,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyEntry(WordHistoryEntry entry, String toastMessage) {
     final text = entry.enrichedText ?? entry.text;
     setState(() {
+      _showingLast = false;
       _wordInput = enrichWordListText(text);
       _isDisplayMode = true;
       // 换了一份词表，旧起点没有意义。
@@ -505,6 +685,50 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     unawaited(saveWordInput(_wordInput));
     _toast.show(toastMessage);
+  }
+
+  Future<void> _saveActiveListToLibrary({bool toast = true}) async {
+    final text = _activeListText;
+    if (parseWords(text).isEmpty) {
+      if (toast) _toast.show('词表是空的');
+      return;
+    }
+    if (!mounted) return;
+    final name = await showTextPromptDialog(
+      context,
+      title: '存入词库',
+      message: '给这份词表起个名字，下次从「我的词库」里直接载入。',
+      initialValue: suggestCustomListName(text),
+      hintText: '词表名称',
+    );
+    if (name == null || !mounted) return;
+
+    final saved = await saveCustomList(name: name, text: text);
+    if (!mounted) return;
+    if (saved == null) {
+      _toast.show('没存上，再试一次');
+      return;
+    }
+    final lists = await loadCustomLists();
+    if (!mounted) return;
+    setState(() => _customLists = lists);
+    if (toast) _toast.show('已存入「${saved.name}」');
+  }
+
+  Future<void> _handleDeleteCustom(String id) async {
+    final list = _customLists.where((e) => e.id == id);
+    final name = list.isEmpty ? '这份词表' : list.first.name;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: '删除词表',
+      message: '确定要删除「$name」吗？',
+      confirmLabel: '删除',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _customLists = _customLists.where((e) => e.id != id).toList());
+    await deleteCustomList(id);
+    if (mounted) setState(() => _favorites = loadFavorites());
   }
 
   Future<void> _handleToggleFavorite(String id) async {
@@ -658,7 +882,11 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         favorites: _favorites,
         history: _history,
-        onApply: (entry) => _applyEntry(entry, '已载入收藏'),
+        customLists: _customLists,
+        onApply: (entry) {
+          _showCurrentList();
+          _applyEntry(entry, '已载入收藏');
+        },
         onToggleFavorite: _handleToggleFavorite,
       );
 
@@ -666,7 +894,10 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         history: _history,
         favorites: _favorites,
-        onApply: (entry) => _applyEntry(entry, '已载入历史记录'),
+        onApply: (entry) {
+          _showCurrentList();
+          _applyEntry(entry, '已载入历史记录');
+        },
         onDelete: _handleDeleteHistory,
         onClear: _handleClearHistory,
         onToggleFavorite: _handleToggleFavorite,
@@ -676,7 +907,18 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         groups: _libraryGroups,
         favorites: _favorites,
-        onApply: (entry) => _applyEntry(entry, '已载入词库'),
+        customLists: _customLists,
+        onSaveCurrent: parseWords(_activeListText).isEmpty
+            ? null
+            : () {
+                Navigator.of(context).pop();
+                unawaited(_saveActiveListToLibrary());
+              },
+        onDeleteCustom: (id) => unawaited(_handleDeleteCustom(id)),
+        onApply: (entry) {
+          _showCurrentList();
+          _applyEntry(entry, '已载入词库');
+        },
         onToggleFavorite: _handleToggleFavorite,
       );
 
@@ -921,7 +1163,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final parsedWordCount = parseWords(_wordInput).length;
+    final activeText = _activeListText;
+    final parsedWordCount = parseWords(activeText).length;
     final showOcrProgress = _ocrUi.busy && _ocrUi.message.isNotEmpty;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final showOcrSetupBanner =
@@ -987,18 +1230,47 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                if (_canShowLast)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: Spacing.sm,
+                                    ),
+                                    child: _ListSourceSwitch(
+                                      showingLast: _showingLast,
+                                      onChanged: (last) => setState(() {
+                                        _showingLast = last;
+                                        _clampStartIndex();
+                                      }),
+                                    ),
+                                  ),
                                 Expanded(
                                   child: WordInputSection(
-                                    value: _wordInput,
-                                    onChanged: _onWordInputChanged,
-                                    startIndex: _startIndex,
-                                    onStartIndexChanged: (i) =>
-                                        setState(() => _startIndex = i),
-                                    isDisplayMode: _isDisplayMode,
-                                    onToggleDisplayMode:
-                                        _handleToggleDisplayMode,
-                                    onWordDeleted: _handleWordDeleted,
+                                    value: activeText,
+                                    onChanged: _showingLast
+                                        ? (_) {}
+                                        : _onWordInputChanged,
+                                    startIndex: _activeStartIndex,
+                                    onStartIndexChanged: (i) => setState(() {
+                                      _activeStartIndex = i;
+                                    }),
+                                    isDisplayMode:
+                                        _showingLast || _isDisplayMode,
+                                    onToggleDisplayMode: _showingLast
+                                        ? null
+                                        : _handleToggleDisplayMode,
+                                    onWordDeleted: _showingLast
+                                        ? null
+                                        : _handleWordDeleted,
                                     onClearAll: _handleClearWordInput,
+                                    onSave: parseWords(activeText).isEmpty
+                                        ? null
+                                        : () => unawaited(
+                                              _saveActiveListToLibrary(),
+                                            ),
+                                    caption: _showingLast
+                                        ? '$parsedWordCount 个单词 · 按播放顺序对答案'
+                                        : null,
+                                    readOnly: _showingLast,
                                     overlayActionSize: cameraSize,
                                     overlayAlignment: _cameraAlignment,
                                     onOverlayAlignmentChanged:
@@ -1266,6 +1538,93 @@ class _HomeScreenState extends State<HomeScreen> {
             wordCount: parsedWordCount - start,
             startOrdinal: start > 0 ? start + 1 : null,
             busy: _starting,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 「当前词表 / 上次听写」。上次听写空着或和草稿一样时整条不出现。
+class _ListSourceSwitch extends StatelessWidget {
+  const _ListSourceSwitch({
+    required this.showingLast,
+    required this.onChanged,
+  });
+
+  final bool showingLast;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return SizedBox(
+      height: 36,
+      child: Row(
+        children: [
+          Expanded(
+            child: _SourceChip(
+              label: '当前词表',
+              selected: !showingLast,
+              onTap: () => onChanged(false),
+              colors: colors,
+            ),
+          ),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: _SourceChip(
+              label: '上次听写',
+              selected: showingLast,
+              onTap: () => onChanged(true),
+              colors: colors,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SourceChip extends StatelessWidget {
+  const _SourceChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.colors,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? colors.primarySoft : colors.surface,
+            borderRadius: BorderRadius.circular(Radii.full),
+            border: Border.all(
+              color: selected ? colors.primary : colors.borderSubtle,
+            ),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? colors.primary : colors.muted,
+            ),
           ),
         ),
       ),

@@ -9,7 +9,9 @@
 #   2. Build the release APK with `flutter build apk` to a temp path
 #   3. Upload it to Cloudflare R2 (wrangler) as alice-<version>-<timestamp>.apk
 #      — zero egress fees, and the deploy server no longer carries ~110 MB APKs
-#   4. Update APK_URL in website/src/data/site.ts (and public/llms.txt)
+#   4. Update APK_URL in website/src/data/site.ts (and public/llms.txt), and
+#      write public/version.json — the app polls it for the in-app update
+#      prompt (lib/services/app_update.dart)
 #   5. Build the website (pnpm --filter website build)
 #   6. Deploy dist/ to the server via rsync (excluding app/). The legacy
 #      downloads/ dir on the server is removed by --delete — APKs live on R2.
@@ -21,6 +23,9 @@
 #   pnpm release:android major        # bump major (0.2.0 → 1.0.0) then release
 #   pnpm release:android 0.3.0        # set explicit version then release
 #   bash scripts/release.sh patch     # same, directly
+#   RELEASE_NOTES=$'修复 A\n新增 B' pnpm release:android patch
+#                                     # update notes shown in the in-app prompt
+#                                     # (asked interactively when unset)
 #
 # Prereqs: Flutter SDK on PATH, Java 17 or 21 (NOT 25+ — JEP 472 breaks AGP
 #          CMake configure) / Android SDK,
@@ -71,7 +76,7 @@ VERSION_ARG=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      sed -n '5,31p' "$0"
+      sed -n '2,/^set -euo pipefail$/p' "$0" | sed '$d'
       exit 0
       ;;
     -*)
@@ -147,6 +152,14 @@ TS="$(date +%Y%m%d-%H%M)"
 APK_NAME="alice-${VERSION}-${TS}.apk"
 APK_URL="$R2_PUBLIC_BASE/$APK_NAME"
 
+VERSION_CODE="$(get_current_version_code)"
+
+# 更新说明：App 内的更新提示框里显示。没给就在终端问一句，留空也行。
+RELEASE_NOTES="${RELEASE_NOTES:-}"
+if [ -z "$RELEASE_NOTES" ] && [ -t 0 ]; then
+  read -r -p "更新说明（App 内提示里显示，可留空）: " RELEASE_NOTES </dev/tty || true
+fi
+
 echo "▶ Releasing Alice v$VERSION ($TS)"
 echo "  APK object: $R2_BUCKET/$APK_NAME"
 echo ""
@@ -191,12 +204,24 @@ find "$APK_PUBLIC_DIR" -maxdepth 1 -name 'alice-*.apk' -delete
 # --- 3. update APK_URL ---
 SITE_TS="$WEBSITE_DIR/src/data/site.ts"
 LLMS_TXT="$WEBSITE_DIR/public/llms.txt"
-echo "▶ [3/6] Updating APK_URL in site.ts / llms.txt..."
+VERSION_JSON="$WEBSITE_DIR/public/version.json"
+echo "▶ [3/6] Updating APK_URL in site.ts / llms.txt / version.json..."
 # site.ts has the URL on its own line after `export const APK_URL =`, so slurp
 # the whole file (-0777) to match across the line break.
 APK_URL="$APK_URL" perl -0777 -pi -e 's{(export const APK_URL\s*=\s*")[^"]+(")}{$1$ENV{APK_URL}$2}' "$SITE_TS"
 VERSION="$VERSION" perl -pi -e 's{(export const APP_VERSION\s*=\s*")[^"]+(")}{$1$ENV{VERSION}$2}' "$SITE_TS"
 APK_URL="$APK_URL" perl -pi -e 's{https://[^"\s]+/alice-[^"\s]+\.apk}{$ENV{APK_URL}}g' "$LLMS_TXT"
+# App 只比 build（versionCode）—— 「保持当前版本」重发时它不变，不会弹更新。
+VERSION="$VERSION" VERSION_CODE="$VERSION_CODE" APK_URL="$APK_URL" \
+  RELEASE_NOTES="$RELEASE_NOTES" node -e '
+    const e = process.env;
+    process.stdout.write(JSON.stringify({
+      version: e.VERSION,
+      build: Number(e.VERSION_CODE),
+      url: e.APK_URL,
+      notes: e.RELEASE_NOTES.trim(),
+    }, null, 2) + "\n");
+  ' >"$VERSION_JSON"
 echo "  → $APK_URL"
 
 # --- 4. build website ---
@@ -216,6 +241,7 @@ rsync -avz --delete --exclude=app \
 echo "▶ [6/6] Verifying..."
 curl -sS --head -o /dev/null -w "  APK  → HTTP %{http_code}, %{content_type}\n" "$APK_URL"
 curl -sS -o /dev/null -w "  Site → HTTP %{http_code}\n" "$PUBLIC_HOST/"
+curl -sS -o /dev/null -w "  version.json → HTTP %{http_code}\n" "$PUBLIC_HOST/version.json"
 
 echo ""
 echo "✓ Released v$VERSION ($TS)"
@@ -224,8 +250,8 @@ echo "  Site: $PUBLIC_HOST/#download"
 echo ""
 echo "Reminder: review & commit when ready —"
 if [ -n "$VERSION_ARG" ]; then
-  echo "  git add pubspec.yaml website/src/data/site.ts website/public/llms.txt"
+  echo "  git add pubspec.yaml website/src/data/site.ts website/public/llms.txt website/public/version.json"
 else
-  echo "  git add website/src/data/site.ts website/public/llms.txt"
+  echo "  git add website/src/data/site.ts website/public/llms.txt website/public/version.json"
 fi
 echo "  (APK is gitignored; only the URL changes are tracked)"

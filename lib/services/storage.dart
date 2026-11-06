@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/painting.dart';
 
+import '../models/custom_word_list.dart';
 import '../models/word_history_entry.dart';
 import 'dictation.dart';
 import 'library_data.dart';
@@ -21,9 +22,14 @@ const String _cameraButtonPosKey = 'alice_camera_button_pos';
 const String _startIndexKey = 'alice_start_index';
 const String _libraryCategoryKey = 'alice_library_category';
 const String _libraryItemKey = 'alice_library_item';
+const String _lastPlaybackKey = 'alice_last_playback';
+const String _customListsKey = 'alice_custom_lists';
 
 /// 用户历史条数上限。内置词表存在代码/资源里，不占用存储。
 const int _maxUserHistoryEntries = 50;
+
+/// 自建词库条数上限。
+const int _maxCustomLists = 40;
 
 const double kDefaultSpeechRate = 0.9;
 const double kMinSpeechRate = 0.5;
@@ -35,6 +41,9 @@ const double kIntervalStep = 0.5;
 
 /// 内置词库条目的 id 前缀。`default_` 是为了兼容早期把词库行写进存储的安装包。
 bool isLibraryId(String id) => id.startsWith('default_');
+
+/// 用户自建词表的 id 前缀。
+bool isCustomListId(String id) => id.startsWith('custom_');
 
 /// 归一化单词表以便比较：剥掉词性/释义，只留可朗读的词头，
 /// 这样补全过的文本仍能与它对应的纯词库文本匹配上。
@@ -317,6 +326,127 @@ Future<void> clearWordHistory() async {
     if (remaining.length != _cachedFavorites.length) {
       await saveFavorites(remaining);
     }
+  } catch (_) {
+    // 忽略
+  }
+}
+
+// --- 上一次实际播出的词序 -------------------------------------------------
+//
+// 和草稿分开：草稿是「现在要听的」，这里是「刚才听过的」。
+// 乱序时这份就是对答案用的顺序。
+
+Future<String> loadLastPlayback() async {
+  try {
+    return (await Prefs.getString(_lastPlaybackKey)) ?? '';
+  } catch (_) {
+    return '';
+  }
+}
+
+Future<void> saveLastPlayback(String text) async {
+  try {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      await Prefs.remove(_lastPlaybackKey);
+    } else {
+      await Prefs.setString(_lastPlaybackKey, trimmed);
+    }
+  } catch (_) {
+    // 忽略
+  }
+}
+
+// --- 自建词库 -------------------------------------------------------------
+
+/// 给一份词表起个默认名字：首词，多词时带上词数。
+String suggestCustomListName(String text) {
+  final lines = parseWords(text);
+  if (lines.isEmpty) return '未命名';
+  var first = parseWordLine(lines.first).word.trim();
+  if (first.isEmpty) first = '未命名';
+  final runes = first.runes.toList();
+  if (runes.length > 16) {
+    first = String.fromCharCodes(runes.take(16));
+  }
+  if (lines.length == 1) return first;
+  return '$first 等 ${lines.length} 词';
+}
+
+Future<List<CustomWordList>> loadCustomLists() async {
+  try {
+    final data = await Prefs.getString(_customListsKey);
+    if (data == null || data.isEmpty) return <CustomWordList>[];
+    final parsed = json.decode(data);
+    if (parsed is! List) return <CustomWordList>[];
+    return parsed.map(CustomWordList.fromJson).whereType<CustomWordList>().toList();
+  } catch (_) {
+    return <CustomWordList>[];
+  }
+}
+
+Future<void> _persistCustomLists(List<CustomWordList> lists) async {
+  await Prefs.setString(
+    _customListsKey,
+    json.encode(lists.map((e) => e.toJson()).toList()),
+  );
+}
+
+/// 存一份自建词表。词序相同的已有条目会改名并提到最前，不另开一条。
+Future<CustomWordList?> saveCustomList({
+  required String name,
+  required String text,
+}) async {
+  final trimmedName = name.trim();
+  final trimmedText = text.trim();
+  if (trimmedName.isEmpty || parseWords(trimmedText).isEmpty) return null;
+
+  try {
+    final lists = await loadCustomLists();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final plain = plainWordList(trimmedText);
+    CustomWordList? existing;
+    for (final list in lists) {
+      if (plainWordList(list.text) == plain) {
+        existing = list;
+        break;
+      }
+    }
+    final saved = CustomWordList(
+      id: existing?.id ?? 'custom_${_generateEntryId()}',
+      name: trimmedName,
+      text: trimmedText,
+      timestamp: now,
+    );
+    final next = [
+      saved,
+      ...lists.where((e) => e.id != saved.id),
+    ];
+    await _persistCustomLists(
+      next.length > _maxCustomLists ? next.sublist(0, _maxCustomLists) : next,
+    );
+    return saved;
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> deleteCustomList(String id) async {
+  if (!isCustomListId(id)) return;
+  try {
+    final lists = await loadCustomLists();
+    await _persistCustomLists(lists.where((e) => e.id != id).toList());
+    if (_cachedFavorites.contains(id)) {
+      await saveFavorites(_cachedFavorites.where((x) => x != id).toList());
+    }
+  } catch (_) {
+    // 忽略
+  }
+}
+
+Future<void> clearCustomLists() async {
+  try {
+    await _persistCustomLists(<CustomWordList>[]);
   } catch (_) {
     // 忽略
   }

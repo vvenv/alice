@@ -23,6 +23,8 @@ void main() {
 
   setUp(() async {
     await clearWordHistory();
+    await saveLastPlayback('');
+    await clearCustomLists();
   });
 
   test('自己输入的词表会写进历史', () async {
@@ -86,5 +88,59 @@ void main() {
     final history = await loadWordHistory();
     expect(history, hasLength(1));
     expect(history.first.text, enriched);
+  });
+
+  test('上次听写按播出顺序存，和当前草稿分开', () async {
+    await saveLastPlayback('cat\napple\nbanana');
+    expect(await loadLastPlayback(), 'cat\napple\nbanana');
+
+    await saveLastPlayback('   ');
+    expect(await loadLastPlayback(), isEmpty);
+  });
+
+  test('自建词表按词序去重，改名后仍是同一条', () async {
+    final first = await saveCustomList(
+      name: '水果',
+      text: 'apple\nbanana',
+    );
+    expect(first, isNotNull);
+    expect(first!.id, startsWith('custom_'));
+
+    final again = await saveCustomList(
+      name: '复习',
+      text: 'apple | n. | 苹果\nbanana | n. | 香蕉',
+    );
+    expect(again?.id, first.id);
+    final lists = await loadCustomLists();
+    expect(lists, hasLength(1));
+    expect(lists.single.id, first.id);
+    expect(lists.single.name, '复习');
+  });
+
+  test('删自建词表时顺手丢掉它的收藏', () async {
+    final saved = await saveCustomList(name: '水果', text: 'apple\npear');
+    await toggleFavorite(saved!.id);
+    expect(isFavorite(saved.id), isTrue);
+
+    await deleteCustomList(saved.id);
+    expect(await loadCustomLists(), isEmpty);
+    expect(isFavorite(saved.id), isFalse);
+  });
+
+  test('空名字或空词表存不进去', () async {
+    expect(
+      await saveCustomList(name: '  ', text: 'apple'),
+      isNull,
+    );
+    expect(
+      await saveCustomList(name: '空', text: ' \n '),
+      isNull,
+    );
+    expect(await loadCustomLists(), isEmpty);
+  });
+
+  test('默认名字用首词，多词时带上词数', () {
+    expect(suggestCustomListName('apple'), 'apple');
+    expect(suggestCustomListName('apple\nbanana\ncat'), 'apple 等 3 词');
   });
 }

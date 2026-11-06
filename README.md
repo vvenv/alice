@@ -30,7 +30,8 @@
 - 识别有 60s 超时，进行中点顶栏的进度胶囊即可取消
 - Credits：演示积分，点领取即到账、暂不扣款；仅高级识别成功才扣减
 - AI 识图可能存在误差，识别入口均有提示
-- 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索
+- 内置教材词库：中考 1600、高考 3500、人教 / 外研 / 闽教版单元词表，支持搜索；词表卡片或词库抽屉里可以「存入词库」，自建词表单独放在「我的词库」，和正在编辑的草稿、上一次听写分开
+- 乱序听写结束后，首页多出「上次听写」：按当时播出的单词顺序排，用来对答案；「当前词表」仍是打乱前的原文，两份互不覆盖
 - 可调间隔、自动播放下一个；听写中可随时重听当前词（点表盘或按「重听」）
 - 听写中直接调语速与「朗读中文释义」，不必退出去设置页
 - 全程屏幕常亮 —— 手机放桌上写字时不会息屏
@@ -142,6 +143,10 @@ pnpm release:android 0.7.0     # 指定版本号
 
 流程：可选升版 → `flutter build apk --release --split-per-abi --target-platform android-arm64` → 上传 **arm64-v8a** 到 Cloudflare R2 → 更新官网下载链接 → 构建并 rsync 部署官网。
 详见 [`scripts/release.sh`](scripts/release.sh)。没有 `android/key.properties` 时会警告并继续用 debug 签名。
+
+发版同时会写 `website/public/version.json`（随官网部署到 `/version.json`）。已装的 App 启动时读它，
+versionCode 比本机新就弹更新提示（设置 → 关于 → 检查更新 可手动查）。提示框里的更新说明来自
+`RELEASE_NOTES` 环境变量，没设时终端里会问一句，可留空。只有升了版本（versionCode +1）才会触发提示。
 
 版本号只有 `pubspec.yaml` 里 `version: 0.7.2+14` 这一处，
 `versionName` / `versionCode` 与 iOS 的 `MARKETING_VERSION` /

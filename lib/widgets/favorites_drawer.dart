@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/custom_word_list.dart';
 import '../models/word_history_entry.dart';
 import '../services/dictation.dart';
 import '../services/library_data.dart';
@@ -17,12 +18,14 @@ Future<void> showFavoritesDrawer(
   required List<WordHistoryEntry> history,
   required ValueChanged<WordHistoryEntry> onApply,
   required ValueChanged<String> onToggleFavorite,
+  List<CustomWordList> customLists = const [],
 }) {
   return showAppBottomSheet<void>(
     context: context,
     builder: (sheetContext) => _FavoritesDrawerBody(
       initialFavorites: favorites,
       history: history,
+      customLists: customLists,
       onApply: onApply,
       onToggleFavorite: onToggleFavorite,
     ),
@@ -31,7 +34,7 @@ Future<void> showFavoritesDrawer(
 
 int _wordCount(String text) => parseWords(text).length;
 
-enum _FavoriteSource { library, history }
+enum _FavoriteSource { library, history, custom }
 
 class _FavoriteItem {
   const _FavoriteItem({
@@ -49,6 +52,7 @@ class _FavoriteItem {
 List<_FavoriteItem> _resolveFavorites(
   List<String> favorites,
   List<WordHistoryEntry> history,
+  List<CustomWordList> customLists,
 ) {
   final result = <_FavoriteItem>[];
   for (final id in favorites) {
@@ -60,6 +64,17 @@ List<_FavoriteItem> _resolveFavorites(
           source: _FavoriteSource.library,
           label: '${libItem.category} · ${libItem.label}',
         ));
+      }
+    } else if (isCustomListId(id)) {
+      for (final list in customLists) {
+        if (list.id == id) {
+          result.add(_FavoriteItem(
+            entry: list.toLibraryItem().entry,
+            source: _FavoriteSource.custom,
+            label: list.name,
+          ));
+          break;
+        }
       }
     } else {
       for (final e in history) {
@@ -81,12 +96,14 @@ class _FavoritesDrawerBody extends StatefulWidget {
   const _FavoritesDrawerBody({
     required this.initialFavorites,
     required this.history,
+    required this.customLists,
     required this.onApply,
     required this.onToggleFavorite,
   });
 
   final List<String> initialFavorites;
   final List<WordHistoryEntry> history;
+  final List<CustomWordList> customLists;
   final ValueChanged<WordHistoryEntry> onApply;
   final ValueChanged<String> onToggleFavorite;
 
@@ -116,7 +133,8 @@ class _FavoritesDrawerBodyState extends State<_FavoritesDrawerBody> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final all = _resolveFavorites(_favorites, widget.history);
+    final all =
+        _resolveFavorites(_favorites, widget.history, widget.customLists);
     final q = _query.trim().toLowerCase();
     // 标题（词库分类 / 历史正文首行）已经是用户能记住的那一串。
     final items = q.isEmpty
@@ -255,7 +273,11 @@ class _FavoriteRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(Radii.full),
             ),
             child: Text(
-              item.source == _FavoriteSource.library ? '词库' : '历史',
+              switch (item.source) {
+                _FavoriteSource.library => '词库',
+                _FavoriteSource.custom => '我的',
+                _FavoriteSource.history => '历史',
+              },
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

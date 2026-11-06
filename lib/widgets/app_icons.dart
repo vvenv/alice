@@ -36,6 +36,7 @@ class AppIcons {
   static const IconData skipBack = Icons.skip_previous;
   static const IconData skipForward = Icons.skip_next;
   static const IconData refresh = Icons.refresh;
+  static const IconData systemUpdate = Icons.system_update_outlined;
   static const IconData replay = Icons.replay;
   static const IconData rotateLeft = Icons.rotate_90_degrees_ccw;
   static const IconData rotateRight = Icons.rotate_90_degrees_cw;

@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/app_update.dart';
 import '../services/credits.dart';
 import '../services/haptics.dart';
 import '../services/ocr.dart';
@@ -26,6 +27,7 @@ import '../widgets/app_switch.dart';
 import '../widgets/ocr_settings_modal.dart';
 import '../widgets/tts_settings_modal.dart';
 import '../widgets/recharge_modal.dart';
+import '../widgets/update_dialog.dart';
 
 /// 设置页。对应 RN 版 src/screens/SettingsScreen.tsx。
 class SettingsScreen extends StatefulWidget {
@@ -47,6 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _intervalSec = kDefaultIntervalSec;
   OcrProviderConfig? _customOcrConfig;
   String _appVersion = '—';
+  bool _checkingUpdate = false;
 
   late final ToastController _toast = ToastController();
 
@@ -243,6 +246,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     await Clipboard.setData(ClipboardData(text: uri.toString()));
     if (mounted) _toast.show('打不开浏览器，已复制反馈地址');
+  }
+
+  /// 手动检查更新。和启动时的自动检查不同：不管「稍后」「跳过」，
+  /// 失败和「已是最新」都要明确告诉用户。
+  Future<void> _handleCheckUpdate() async {
+    if (_checkingUpdate) return;
+    setState(() => _checkingUpdate = true);
+    try {
+      final current = await currentBuildNumber();
+      if (current == null) {
+        _toast.show('读不到当前版本号');
+        return;
+      }
+      final info = await fetchAvailableUpdate(currentBuild: current);
+      if (!mounted) return;
+      if (info == null) {
+        _toast.show('已是最新版本');
+        return;
+      }
+      final ok = await showAppUpdateDialog(context, info, manual: true);
+      if (!ok && mounted) _toast.show('打不开浏览器，已复制下载地址');
+    } catch (_) {
+      if (mounted) _toast.show('检查更新失败，请检查网络');
+    } finally {
+      if (mounted) setState(() => _checkingUpdate = false);
+    }
   }
 
   // --- 渲染 ---------------------------------------------------------------
@@ -479,6 +508,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               label: '版本',
                               detail: _appVersion,
                             ),
+                            if (isAppUpdateSupported) ...[
+                              _divider(colors),
+                              _row(
+                                colors,
+                                icon: AppIcons.systemUpdate,
+                                label: '检查更新',
+                                detail: _checkingUpdate ? '检查中…' : null,
+                                onTap: _handleCheckUpdate,
+                              ),
+                            ],
                             _divider(colors),
                             _row(
                               colors,

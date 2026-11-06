@@ -16,9 +16,9 @@ export const SITE_KEYWORDS = [
   "高考英语单词",
 ].join(",");
 export const GITHUB_URL = "https://github.com/vvenv/alice";
-export const APP_VERSION = "0.9.0";
+export const APP_VERSION = "0.10.0";
 export const APK_URL =
-  "https://file.wenfu.dev/alice-0.9.0-20261018-2257.apk";
+  "https://file.wenfu.dev/alice-0.10.0-20261019-1512.apk";
 /** App screenshots on Cloudflare R2 (`pnpm screenshots:upload`). */
 export const SCREENSHOTS_BASE = "https://file.wenfu.dev/screenshots";
 export const SCREENSHOTS = {

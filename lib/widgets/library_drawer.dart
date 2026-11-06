@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/custom_word_list.dart';
 import '../models/library_item.dart';
 import '../models/word_history_entry.dart';
 import '../services/dictation.dart';
@@ -9,10 +10,14 @@ import '../services/storage.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_bottom_sheet.dart';
+import 'app_button.dart';
 import 'app_icons.dart';
 import 'drawer_search_field.dart';
 
 /// 词库抽屉：按分类折叠、可搜索、可收藏。打开时停在上次用的那个分类上。
+///
+/// 自建词表排在内置分类前面，单独一组「我的词库」。有当前词表时，
+/// 标题行给出「存入词库」，免得为了存一份还得先关掉抽屉。
 ///
 /// 对应 RN 版 src/components/LibraryDrawer.tsx。
 Future<void> showLibraryDrawer(
@@ -21,6 +26,9 @@ Future<void> showLibraryDrawer(
   required List<String> favorites,
   required ValueChanged<WordHistoryEntry> onApply,
   required ValueChanged<String> onToggleFavorite,
+  List<CustomWordList> customLists = const [],
+  VoidCallback? onSaveCurrent,
+  ValueChanged<String>? onDeleteCustom,
 }) {
   return showAppBottomSheet<void>(
     context: context,
@@ -30,6 +38,9 @@ Future<void> showLibraryDrawer(
       initialFavorites: favorites,
       onApply: onApply,
       onToggleFavorite: onToggleFavorite,
+      initialCustomLists: customLists,
+      onSaveCurrent: onSaveCurrent,
+      onDeleteCustom: onDeleteCustom,
     ),
   );
 }
@@ -135,12 +146,22 @@ class _LibraryDrawerBody extends StatefulWidget {
     required this.initialFavorites,
     required this.onApply,
     required this.onToggleFavorite,
+    required this.initialCustomLists,
+    required this.onSaveCurrent,
+    required this.onDeleteCustom,
   });
 
   final List<LibraryGroup> groups;
   final List<String> initialFavorites;
   final ValueChanged<WordHistoryEntry> onApply;
   final ValueChanged<String> onToggleFavorite;
+  final List<CustomWordList> initialCustomLists;
+
+  /// 把首页当前词表存成自建词表。为空则不露「存入词库」。
+  final VoidCallback? onSaveCurrent;
+
+  /// 删一份自建词表。为空则格子上不露垃圾桶。
+  final ValueChanged<String>? onDeleteCustom;
 
   @override
   State<_LibraryDrawerBody> createState() => _LibraryDrawerBodyState();
@@ -156,6 +177,8 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
   };
   late String? _lastItemId = loadLibraryItemId();
   late final Set<String> _favorites = widget.initialFavorites.toSet();
+  late List<CustomWordList> _customLists =
+      List<CustomWordList>.from(widget.initialCustomLists);
   final GlobalKey _currentCellKey = GlobalKey();
 
   @override
@@ -213,11 +236,30 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
     widget.onToggleFavorite(id);
   }
 
+  void _deleteCustom(String id) {
+    setState(() => _customLists = _customLists.where((e) => e.id != id).toList());
+    _favorites.remove(id);
+    widget.onDeleteCustom?.call(id);
+  }
+
+  /// 内置分组前面拼上自建词表。搜索时整组一起滤。
+  List<LibraryGroup> get _allGroups {
+    if (_customLists.isEmpty) return widget.groups;
+    return [
+      LibraryGroup(
+        category: kCustomLibraryCategory,
+        items: [for (final list in _customLists) list.toLibraryItem()],
+      ),
+      ...widget.groups,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final filteredGroups = _filterLibraryGroups(widget.groups, _query);
-    final totalCount = widget.groups.fold<int>(0, (n, g) => n + g.items.length);
+    final groups = _allGroups;
+    final filteredGroups = _filterLibraryGroups(groups, _query);
+    final totalCount = groups.fold<int>(0, (n, g) => n + g.items.length);
     final filteredCount =
         filteredGroups.fold<int>(0, (n, g) => n + g.items.length);
 
@@ -227,13 +269,28 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: Spacing.sm),
-          child: Text(
-            '词库 (${_isFiltering ? filteredCount : totalCount})',
-            style: TextStyle(
-              fontFamily: AppFonts.displayZh,
-              fontSize: 17,
-              color: colors.foreground,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '词库 (${_isFiltering ? filteredCount : totalCount})',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: AppFonts.displayZh,
+                    fontSize: 17,
+                    color: colors.foreground,
+                  ),
+                ),
+              ),
+              if (widget.onSaveCurrent != null)
+                AppButton(
+                  label: '存入词库',
+                  variant: ButtonVariant.ghost,
+                  size: ButtonSize.sm,
+                  onPressed: widget.onSaveCurrent,
+                ),
+            ],
           ),
         ),
         DrawerSearchField(
@@ -438,6 +495,10 @@ class _LibraryDrawerBodyState extends State<_LibraryDrawerBody> {
                         onApply: () => _apply(cell.item),
                         onToggleFavorite: () =>
                             _toggleFavorite(cell.item.entry.id),
+                        onDelete: isCustomListId(cell.item.entry.id) &&
+                                widget.onDeleteCustom != null
+                            ? () => _deleteCustom(cell.item.entry.id)
+                            : null,
                       ),
                     ),
                 ],
@@ -459,6 +520,7 @@ class _LibraryCell extends StatelessWidget {
     required this.current,
     required this.onApply,
     required this.onToggleFavorite,
+    this.onDelete,
   });
 
   final LibraryItem item;
@@ -472,6 +534,9 @@ class _LibraryCell extends StatelessWidget {
   final VoidCallback onApply;
   final VoidCallback onToggleFavorite;
 
+  /// 自建词表才有。内置教材不能删。
+  final VoidCallback? onDelete;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -484,6 +549,7 @@ class _LibraryCell extends StatelessWidget {
       value: '$words 词',
       child: GestureDetector(
         onTap: onApply,
+        onLongPress: onDelete,
         behavior: HitTestBehavior.opaque,
         child: Container(
           padding: const EdgeInsets.only(

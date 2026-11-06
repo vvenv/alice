@@ -22,6 +22,9 @@ class WordInputSection extends StatefulWidget {
     this.onToggleDisplayMode,
     this.onWordDeleted,
     this.onClearAll,
+    this.onSave,
+    this.caption,
+    this.readOnly = false,
     this.overlayAction,
     this.overlayActionSize = 0,
     this.overlayAlignment = Alignment.bottomRight,
@@ -48,6 +51,15 @@ class WordInputSection extends StatefulWidget {
 
   /// 「清空」被点击。清空本身由上层执行，好把撤销一并给了。
   final VoidCallback? onClearAll;
+
+  /// 「存入词库」。把这份词表收进用户自己的词库，不改当前列表。
+  final VoidCallback? onSave;
+
+  /// 盖住默认的词数说明。上次听写用它标明「按播放顺序对答案」。
+  final String? caption;
+
+  /// 只读列表：不能删、不能改成编辑框。点词仍然可以设起点。
+  final bool readOnly;
 
   /// 浮在卡片上的操作按钮（首页放的是拍照识词）。
   final Widget? overlayAction;
@@ -295,7 +307,8 @@ class _WordInputSectionState extends State<WordInputSection> {
     required Widget child,
   }) {
     final colors = context.colors;
-    final showChrome = wordCount > 0 && widget.onToggleDisplayMode != null;
+    final showChrome = wordCount > 0 &&
+        (widget.onToggleDisplayMode != null || widget.caption != null);
 
     return Container(
       decoration: BoxDecoration(
@@ -339,11 +352,12 @@ class _WordInputSectionState extends State<WordInputSection> {
           // 起点挪开之后，提示换成「从第几个开始」—— 学会了的人不用每次看说明。
           Expanded(
             child: Text(
-              !display
-                  ? '$wordCount 个单词'
-                  : widget.startIndex > 0
-                      ? '$wordCount 个单词 · 从第 ${widget.startIndex + 1} 个开始'
-                      : '$wordCount 个单词 · 点词设为起点',
+              widget.caption ??
+                  (!display
+                      ? '$wordCount 个单词'
+                      : widget.startIndex > 0
+                          ? '$wordCount 个单词 · 从第 ${widget.startIndex + 1} 个开始'
+                          : '$wordCount 个单词 · 点词设为起点'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -354,6 +368,15 @@ class _WordInputSectionState extends State<WordInputSection> {
               ),
             ),
           ),
+          if (widget.onSave != null) ...[
+            AppButton(
+              label: '存入词库',
+              variant: ButtonVariant.ghost,
+              size: ButtonSize.sm,
+              onPressed: widget.onSave,
+            ),
+            const SizedBox(width: Spacing.xs),
+          ],
           if (widget.onClearAll != null) ...[
             AppButton(
               label: '清空',
@@ -363,13 +386,14 @@ class _WordInputSectionState extends State<WordInputSection> {
             ),
             const SizedBox(width: Spacing.xs),
           ],
-          AppButton(
-            label: display ? '编辑' : '完成',
-            icon: display ? AppIcons.createOutline : AppIcons.checkmark,
-            size: ButtonSize.sm,
-            active: !display,
-            onPressed: widget.onToggleDisplayMode,
-          ),
+          if (widget.onToggleDisplayMode != null)
+            AppButton(
+              label: display ? '编辑' : '完成',
+              icon: display ? AppIcons.createOutline : AppIcons.checkmark,
+              size: ButtonSize.sm,
+              active: !display,
+              onPressed: widget.onToggleDisplayMode,
+            ),
         ],
       ),
     );
@@ -435,10 +459,10 @@ class _WordInputSectionState extends State<WordInputSection> {
           },
           child: Container(
             // 右侧少留一点：✕ 的 40px 点击区自带留白。
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               Spacing.lg,
               Spacing.md,
-              Spacing.sm,
+              widget.readOnly ? Spacing.lg : Spacing.sm,
               Spacing.md,
             ),
             decoration: BoxDecoration(
@@ -500,30 +524,34 @@ class _WordInputSectionState extends State<WordInputSection> {
                     ],
                   ),
                 ),
-                const SizedBox(width: Spacing.md),
-                // 每行一颗深色 ✕ 曾是整页最抢眼的东西。压淡、点击区放大到
-                // 40；主要的删法是左滑，✕ 被拍照按钮挡住时也删得掉。
-                Semantics(
-                  button: true,
-                  label: '删除 ${entry.word}',
-                  child: GestureDetector(
-                    onTap: () => _handleDeleteWord(idx),
-                    behavior: HitTestBehavior.opaque,
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: Icon(
-                        AppIcons.close,
-                        size: 18,
-                        color: colors.subtle.withValues(alpha: 0.45),
+                if (!widget.readOnly) ...[
+                  const SizedBox(width: Spacing.md),
+                  // 每行一颗深色 ✕ 曾是整页最抢眼的东西。压淡、点击区放大到
+                  // 40；主要的删法是左滑，✕ 被拍照按钮挡住时也删得掉。
+                  Semantics(
+                    button: true,
+                    label: '删除 ${entry.word}',
+                    child: GestureDetector(
+                      onTap: () => _handleDeleteWord(idx),
+                      behavior: HitTestBehavior.opaque,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Icon(
+                          AppIcons.close,
+                          size: 18,
+                          color: colors.subtle.withValues(alpha: 0.45),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
         );
+
+        if (widget.readOnly) return row;
 
         return Dismissible(
           // 行号进 key：删掉一行后后面的行整体前移，旧的滑动状态不能串过去。

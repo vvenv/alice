@@ -30,6 +30,32 @@ Future<bool> showConfirmDialog(
   return result ?? false;
 }
 
+/// 单行输入对话框。取消或点外面返回 null；确定返回去掉首尾空白的文本。
+///
+/// 空文本按不了确定，对话框留着，避免存下一个没名字的词表。
+Future<String?> showTextPromptDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String initialValue = '',
+  String hintText = '',
+  String confirmLabel = '保存',
+  String cancelLabel = '取消',
+}) {
+  return showDialog<String>(
+    context: context,
+    barrierColor: context.themeController.colors.overlay,
+    builder: (dialogContext) => _TextPromptDialog(
+      title: title,
+      message: message,
+      initialValue: initialValue,
+      hintText: hintText,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+    ),
+  );
+}
+
 class _ConfirmDialog extends StatelessWidget {
   const _ConfirmDialog({
     required this.title,
@@ -100,6 +126,159 @@ class _ConfirmDialog extends StatelessWidget {
                     backgroundColor:
                         destructive ? colors.danger : colors.primary,
                     onTap: () => Navigator.of(context).pop(true),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TextPromptDialog extends StatefulWidget {
+  const _TextPromptDialog({
+    required this.title,
+    required this.message,
+    required this.initialValue,
+    required this.hintText,
+    required this.confirmLabel,
+    required this.cancelLabel,
+  });
+
+  final String title;
+  final String message;
+  final String initialValue;
+  final String hintText;
+  final String confirmLabel;
+  final String cancelLabel;
+
+  @override
+  State<_TextPromptDialog> createState() => _TextPromptDialogState();
+}
+
+class _TextPromptDialogState extends State<_TextPromptDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+  bool _empty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _controller.text.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
+      setState(() => _empty = true);
+      return;
+    }
+    Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.all(Spacing.xl),
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: const EdgeInsets.all(Spacing.xl),
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(Radii.surface),
+          border: Border.all(color: colors.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: AppFonts.displayZh,
+                fontSize: 17,
+                color: colors.foreground,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            Text(
+              widget.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 20 / 14,
+                color: colors.muted,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              maxLength: 24,
+              textInputAction: TextInputAction.done,
+              onChanged: (_) {
+                if (_empty) setState(() => _empty = false);
+              },
+              onSubmitted: (_) => _submit(),
+              style: TextStyle(fontSize: 15, color: colors.foreground),
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                counterText: '',
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.md,
+                  vertical: Spacing.sm,
+                ),
+                hintStyle: TextStyle(fontSize: 15, color: colors.subtle),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderSide: BorderSide(
+                    color: _empty ? colors.danger : colors.border,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderSide: BorderSide(
+                    color: _empty ? colors.danger : colors.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: Spacing.md + Spacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogButton(
+                    label: widget.cancelLabel,
+                    textColor: colors.muted,
+                    borderColor: colors.border,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: _DialogButton(
+                    label: widget.confirmLabel,
+                    textColor: colors.background,
+                    backgroundColor: colors.primary,
+                    onTap: _submit,
                   ),
                 ),
               ],
