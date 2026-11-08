@@ -7,7 +7,7 @@ const _log = Logger('Share');
 /// 「分享到 Alice」送进来的纯文本。
 ///
 /// 从微信 / 浏览器 / 备忘录里选中一段单词，分享过来直接成词表 —— 比拍照识别
-/// 更快，也不消耗 credits。原生侧见 android/.../MainActivity.kt。
+/// 更快。原生侧见 android/.../MainActivity.kt。
 ///
 /// 目前只有 Android。iOS 要一个独立的 Share Extension（自己的 target、
 /// App Group、签名），是另一件事；这边拿不到就当没有分享。

@@ -12,15 +12,17 @@ import 'prefs.dart';
 /// APK 不走应用商店，装上之后用户只能自己回官网看有没有新版。发版脚本
 /// （scripts/release.sh）每次会把最新版本写进官网根目录的 version.json：
 ///
-///     {"version": "0.9.1", "build": 23, "url": "https://…/alice-0.9.1-….apk",
+///     {"version": "0.10.1", "build": 2024, "url": "https://…/alice-0.10.1-….apk",
 ///      "notes": "…"}
 ///
-/// 这里拉它、和本机的 versionCode 比较，新了就提示用户去下载。下载和安装
-/// 交给系统浏览器 + 系统安装器：应用内自己下载要多申请
-/// REQUEST_INSTALL_PACKAGES、配 FileProvider，换来的只是少跳一次浏览器。
+/// 这里拉它、和本机的 versionCode 比较，新了就提示用户更新。下载在应用内完成，
+/// 再经 FileProvider 调起系统安装器（`app_update_install.dart` /
+/// `apk_installer.dart`）。需要 `REQUEST_INSTALL_PACKAGES`；用户得允许
+/// 「安装未知应用」。
 ///
 /// 只比 build（versionCode）不比 version 字符串：Android 认的就是它，
-/// 它比本机小的包根本装不上。
+/// 它比本机小的包根本装不上。`build` 必须是 APK 里的真实 versionCode——
+/// `--split-per-abi` 会给 arm64 加上 2000，不能写 pubspec 里那个裸的 +N。
 const _log = Logger('AppUpdate');
 
 const String kUpdateManifestUrl = 'https://alice.wenfu.dev/version.json';

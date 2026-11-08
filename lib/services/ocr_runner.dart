@@ -1,6 +1,6 @@
-import '../services/credits.dart';
 import 'abort.dart';
 import 'ocr.dart';
+import 'ocr_models.dart';
 
 /// [ocrWordsFromImage] 的形状，供 [OcrRunner] 替换。
 typedef OcrRecognize = Future<OcrResult> Function(
@@ -22,7 +22,6 @@ class OcrRunner {
     required this.onResult,
     required this.onStateChange,
     required this.onOutcome,
-    required this.onInsufficientCredits,
     required this.onNeedsOcrConfig,
     Future<XFile?> Function()? pickPhoto,
     Future<XFile?> Function()? pickAlbum,
@@ -51,9 +50,6 @@ class OcrRunner {
   /// 终态提示（成功 / 空结果 / 报错），交给 toast。
   final void Function(String message) onOutcome;
 
-  /// 高级模型余额不足 —— 调用方应该打开充值流程。
-  final void Function() onInsufficientCredits;
-
   /// Web / 无内置密钥且未配置 BYOK —— 调用方应该打开 OCR 设置。
   final void Function() onNeedsOcrConfig;
 
@@ -63,7 +59,7 @@ class OcrRunner {
   /// runOcr 的同步重入锁。
   ///
   /// [_busy] 不够用：它要等 [_setUiState] 才置位，而那发生在 `await
-  /// canRunOcrNow()` 之后 —— 两次快速点击会双双穿过去，高级模型就被扣两次费。
+  /// canRunOcrNow()` 之后 —— 两次快速点击会双双穿过去。
   /// 这个标志在第一个 await **之前**同步占位。
   bool _running = false;
 
@@ -112,11 +108,7 @@ class OcrRunner {
         try {
           await pickFuture;
         } catch (_) {}
-        if (gate.needsCustomConfig) {
-          onNeedsOcrConfig();
-        } else {
-          onInsufficientCredits();
-        }
+        onNeedsOcrConfig();
         return;
       }
 
@@ -161,8 +153,6 @@ class OcrRunner {
 
         onResult(result.words);
         onOutcome(OcrOutcomeMessages.success(result.words.length));
-      } on InsufficientCreditsError {
-        onInsufficientCredits();
       } catch (error) {
         // 用户自己按的取消，不算失败，也不用再提示一次
         // —— 取消那一下已经给过反馈了。

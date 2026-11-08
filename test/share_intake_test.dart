@@ -15,7 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 「分享到 Alice」。
 ///
 /// 从微信 / 浏览器 / 备忘录里选中一段单词分享过来，直接成词表 —— 比拍照识别
-/// 更快，也不消耗 credits。原生侧只有 Android（iOS 要独立的 Share Extension）。
+/// 更快。原生侧只有 Android（iOS 要独立的 Share Extension）。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 

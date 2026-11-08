@@ -9,7 +9,7 @@ import '../models/custom_word_list.dart';
 import '../models/library_item.dart';
 import '../models/word_history_entry.dart';
 import '../services/app_update.dart';
-import '../services/credits.dart';
+import '../services/ocr_models.dart';
 import '../services/dictation.dart';
 import '../services/dictionary.dart';
 import '../services/library_data.dart';
@@ -34,7 +34,6 @@ import '../widgets/history_drawer.dart';
 import '../widgets/library_drawer.dart';
 import '../widgets/ocr_settings_modal.dart';
 import '../widgets/playback_controls.dart';
-import '../widgets/recharge_modal.dart';
 import '../widgets/update_dialog.dart';
 import '../widgets/word_input_section.dart';
 import '../widgets/wrong_words_drawer.dart';
@@ -101,9 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
     },
     onOutcome: (message) {
       if (mounted) _toast.show(message);
-    },
-    onInsufficientCredits: () {
-      if (mounted) _openRecharge();
     },
     onNeedsOcrConfig: () {
       if (mounted) _openOcrSettings();
@@ -192,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (info == null || !mounted) return;
     if (ModalRoute.of(context)?.isCurrent != true) return;
     final ok = await showAppUpdateDialog(context, info);
-    if (!ok && mounted) _toast.show('打不开浏览器，已复制下载地址');
+    if (!ok && mounted) _toast.show('更新失败，已复制下载地址');
   }
 
   /// 冷启动是被分享拉起来的：原生侧先把文本存着，这里取一次。
@@ -351,8 +347,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     _debounce?.cancel();
     unawaited(saveWordInput(_wordInput));
-    // 高级识别刚刚可能扣了 credits —— 同步余额。
-    _quota.syncFromCache();
   }
 
   void _handleToggleDisplayMode() {
@@ -773,17 +767,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openRecharge() async {
-    await showRechargeModal(
-      context,
-      credits: _quota.credits,
-      onPurchase: (pack) async {
-        await _quota.recharge(pack);
-        _toast.show('已领取 +${pack.total} 积分');
-      },
-    );
-  }
-
   // --- 底部菜单 -----------------------------------------------------------
   //
   // 只在窄屏出现，装的是页头放不下的那几项（见 _buildHeader）。词库和收藏
@@ -845,7 +828,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await showOcrSettingsModal(
       context,
       value: custom,
-      credits: _quota.credits,
     );
     if (!mounted || result == null) return;
 
@@ -866,9 +848,6 @@ class _HomeScreenState extends State<HomeScreen> {
         await saveOcrProviderConfig(null);
         _toast.show('已切换到 ${getBuiltinModel(id).label}');
         await _quota.refresh();
-
-      case OcrSettingsOpenRecharge():
-        await _openRecharge();
     }
   }
 
@@ -1046,54 +1025,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ],
                 ),
-              const SizedBox(height: Spacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-                child: Row(
-                  children: [
-                    Icon(AppIcons.wallet, size: 14, color: colors.subtle),
-                    const SizedBox(width: Spacing.xs),
-                    Expanded(
-                      child: Text(
-                        '积分: ${quota.credits}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: colors.muted,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                    Semantics(
-                      button: true,
-                      label: '领取演示积分',
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.of(sheetContext).pop();
-                          _openRecharge();
-                        },
-                        behavior: HitTestBehavior.opaque,
-                        // 纯文字只有十几像素高；撑到 44 再点。
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 44),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.sm,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '领取',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: colors.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: Spacing.sm),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1679,17 +1610,11 @@ class _ModelChip extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                model.tier == ModelTier.premium
-                    ? '${model.creditCost} 积分'
-                    : '免费',
+                '免费',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: active
-                      ? (model.tier == ModelTier.premium
-                          ? colors.gold
-                          : colors.primary)
-                      : colors.subtle,
+                  color: active ? colors.primary : colors.subtle,
                 ),
               ),
             ],

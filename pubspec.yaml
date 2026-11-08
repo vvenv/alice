@@ -64,6 +64,9 @@ dev_dependencies:
   # 屏幕常亮的测试把平台实现换成假的（test/keep_awake_test.dart）
   wakelock_plus_platform_interface: ^1.7.0
 
+  # 更新下载测试把临时目录换成假的（test/app_update_install_test.dart）
+  path_provider_platform_interface: ^2.1.2
+
 flutter:
   uses-material-design: true
 

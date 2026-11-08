@@ -55,7 +55,7 @@ Future<void> main() async {
 
   await Prefs.init();
 
-  // 从 RN 版 AsyncStorage 搬运老数据（错词本、历史、收藏、Credits…）。
+  // 从 RN 版 AsyncStorage 搬运老数据（错词本、历史、收藏…）。
   // 只在首次启动时真正做事，失败不阻塞启动。
   await migrateLegacyAsyncStorage();
 

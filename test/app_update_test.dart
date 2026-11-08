@@ -134,9 +134,13 @@ void main() {
   });
 
   // 发版脚本写的、App 读的是同一份文件 —— 字段名对不上，提示就永远不会出现。
+  // build 必须是 split APK 的真实 versionCode（arm64 = pubspec + 2000），
+  // 写裸的 +N 会让已装用户永远判「已是最新」。
   test('仓库里的 version.json 能被 App 解析', () {
     final json =
         jsonDecode(File('website/public/version.json').readAsStringSync());
-    expect(AppUpdateInfo.fromJson(json), isNotNull);
+    final info = AppUpdateInfo.fromJson(json);
+    expect(info, isNotNull);
+    expect(info!.build, greaterThanOrEqualTo(2000));
   });
 }

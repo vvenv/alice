@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../services/credits.dart';
 import '../services/ocr.dart';
 import '../services/ocr_config.dart';
+import '../services/ocr_models.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
 import '../theme/tokens.dart';
 import 'app_icons.dart';
 
-/// 识别模型设置：免费 / 高级 / 自定义（BYOK）三档。
+/// 识别模型设置：免费内置 / 自定义（BYOK）。
 ///
-/// 对应 RN 版 src/components/OcrSettingsModal.tsx。
-enum _ViewMode { free, premium, custom }
+/// 对应 RN 版 src/components/OcrSettingsModal.tsx（高级档与积分已移除）。
+enum _ViewMode { free, custom }
 
 /// 用户在弹窗里做出的选择。
 sealed class OcrSettingsResult {
@@ -32,26 +32,16 @@ class OcrSettingsSelectModel extends OcrSettingsResult {
   final String modelId;
 }
 
-/// 请求打开充值流程。
-class OcrSettingsOpenRecharge extends OcrSettingsResult {
-  const OcrSettingsOpenRecharge();
-}
-
-final BuiltinModel _freeModel =
-    kBuiltinModels.firstWhere((m) => m.tier == ModelTier.free);
-final BuiltinModel _premiumModel =
-    kBuiltinModels.firstWhere((m) => m.tier == ModelTier.premium);
+final BuiltinModel _freeModel = kBuiltinModels.first;
 
 Future<OcrSettingsResult?> showOcrSettingsModal(
   BuildContext context, {
   required OcrProviderConfig? value,
-  required int credits,
 }) {
   return showDialog<OcrSettingsResult>(
     context: context,
     barrierColor: context.themeController.colors.overlay,
-    builder: (dialogContext) =>
-        _OcrSettingsModal(value: value, credits: credits),
+    builder: (dialogContext) => _OcrSettingsModal(value: value),
   );
 }
 
@@ -78,10 +68,9 @@ class _TestError extends _TestState {
 }
 
 class _OcrSettingsModal extends StatefulWidget {
-  const _OcrSettingsModal({required this.value, required this.credits});
+  const _OcrSettingsModal({required this.value});
 
   final OcrProviderConfig? value;
-  final int credits;
 
   @override
   State<_OcrSettingsModal> createState() => _OcrSettingsModalState();
@@ -108,12 +97,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
     if (_webRequiresKey || isCustomOcrConfigSet(widget.value)) {
       _view = _ViewMode.custom;
     } else {
-      loadSelectedModelId().then((id) {
-        if (!mounted) return;
-        setState(() {
-          _view = isPremiumModel(id) ? _ViewMode.premium : _ViewMode.free;
-        });
-      });
+      _view = _ViewMode.free;
     }
   }
 
@@ -182,9 +166,6 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
   String get _statusLine {
     if (isCustomOcrConfigSet(widget.value)) return '当前使用自定义服务配置';
     if (_webRequiresKey) return '尚未配置 — Web 版需自备 API Key';
-    if (_view == _ViewMode.premium) {
-      return '当前使用高级模型 · 余额 ${widget.credits}';
-    }
     return '当前使用免费模型';
   }
 
@@ -226,7 +207,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
                         style: TextStyle(fontSize: 12, color: colors.muted),
                       ),
                     ),
-                    // 档位选择 —— Web 上没有内置 key，隐藏免费/高级。
+                    // 档位选择 —— Web 上没有内置 key，只留自定义。
                     if (!_webRequiresKey)
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -235,8 +216,6 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
                         child: Row(
                           children: [
                             _tierChip('免费', _ViewMode.free, colors),
-                            const SizedBox(width: Spacing.xs),
-                            _tierChip('高级', _ViewMode.premium, colors),
                             const SizedBox(width: Spacing.xs),
                             _tierChip('自定义', _ViewMode.custom, colors),
                           ],
@@ -250,7 +229,6 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
                         badgeBg: colors.surface,
                         costText: '无限次使用',
                       ),
-                    if (_view == _ViewMode.premium) ..._buildPremium(colors),
                     if (_view == _ViewMode.custom) ..._buildCustom(colors),
                     const SizedBox(height: Spacing.md),
                     _disclaimer(colors),
@@ -327,77 +305,6 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
         ),
       ),
     );
-  }
-
-  List<Widget> _buildPremium(AppColors colors) {
-    return [
-      _ModelInfoCard(
-        model: _premiumModel,
-        badge: '高级',
-        badgeColor: colors.gold,
-        badgeBg: colors.goldSoft,
-        costText: '每次识别扣除 ${_premiumModel.creditCost} 积分',
-      ),
-      Container(
-        margin: const EdgeInsets.only(top: Spacing.sm),
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm + 2,
-        ),
-        decoration: BoxDecoration(
-          color: colors.primarySoft,
-          borderRadius: BorderRadius.circular(Radii.control),
-          border: Border.all(color: colors.primary),
-        ),
-        child: Row(
-          children: [
-            Icon(AppIcons.wallet, size: 16, color: colors.primary),
-            const SizedBox(width: Spacing.xs),
-            Expanded(
-              child: Text(
-                '余额 ${widget.credits} 积分',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: colors.primary,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () =>
-                  Navigator.of(context).pop(const OcrSettingsOpenRecharge()),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.primary,
-                  borderRadius: BorderRadius.circular(Radii.full),
-                ),
-                child: Text(
-                  '充值',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: colors.background,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      if (widget.credits < _premiumModel.creditCost)
-        Padding(
-          padding: const EdgeInsets.only(top: 4, bottom: Spacing.xs),
-          child: Text(
-            '余额不足，充值后可使用高级识别',
-            style: TextStyle(fontSize: 11, color: colors.danger),
-          ),
-        ),
-    ];
   }
 
   List<Widget> _buildCustom(AppColors colors) {
@@ -704,9 +611,7 @@ class _OcrSettingsModalState extends State<_OcrSettingsModal> {
               textColor: colors.background,
               backgroundColor: colors.primary,
               onTap: () => Navigator.of(context).pop(
-                OcrSettingsSelectModel(
-                  _view == _ViewMode.premium ? _premiumModel.id : _freeModel.id,
-                ),
+                OcrSettingsSelectModel(_freeModel.id),
               ),
             ),
     );

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_update.dart';
-import '../services/credits.dart';
+import '../services/ocr_models.dart';
 import '../services/haptics.dart';
 import '../services/ocr.dart';
 import '../services/ocr_config.dart';
@@ -26,7 +26,6 @@ import '../widgets/app_slider.dart';
 import '../widgets/app_switch.dart';
 import '../widgets/ocr_settings_modal.dart';
 import '../widgets/tts_settings_modal.dart';
-import '../widgets/recharge_modal.dart';
 import '../widgets/update_dialog.dart';
 
 /// 设置页。对应 RN 版 src/screens/SettingsScreen.tsx。
@@ -173,7 +172,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final result = await showOcrSettingsModal(
       context,
       value: _customOcrConfig,
-      credits: _quota.credits,
     );
     if (!mounted || result == null) return;
 
@@ -190,28 +188,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
         await _quota.refresh();
 
-      // 选内置模型时清掉自定义配置，好让内置服务（免费/高级）真正生效。
+      // 选内置模型时清掉自定义配置，好让免费内置服务真正生效。
       case OcrSettingsSelectModel(modelId: final id):
         await saveSelectedModelId(id);
         setState(() => _customOcrConfig = null);
         await saveOcrProviderConfig(null);
         _toast.show('已切换到 ${getBuiltinModel(id).label}');
         await _quota.refresh();
-
-      case OcrSettingsOpenRecharge():
-        await _openRecharge();
     }
-  }
-
-  Future<void> _openRecharge() async {
-    await showRechargeModal(
-      context,
-      credits: _quota.credits,
-      onPurchase: (pack) async {
-        await _quota.recharge(pack);
-        _toast.show('已领取 +${pack.total} 积分');
-      },
-    );
   }
 
   Future<void> _handleClearTtsCache() async {
@@ -266,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
       final ok = await showAppUpdateDialog(context, info, manual: true);
-      if (!ok && mounted) _toast.show('打不开浏览器，已复制下载地址');
+      if (!ok && mounted) _toast.show('更新失败，已复制下载地址');
     } catch (_) {
       if (mounted) _toast.show('检查更新失败，请检查网络');
     } finally {
@@ -469,20 +453,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               label: '识别模型',
                               detail: ocrDetail,
                               onTap: _openOcrSettings,
-                            ),
-                            _divider(colors),
-                            _row(
-                              colors,
-                              icon: AppIcons.wallet,
-                              label: '积分余额',
-                              detail: '${quota.credits}',
-                            ),
-                            _divider(colors),
-                            _row(
-                              colors,
-                              icon: AppIcons.card,
-                              label: '领取演示积分',
-                              onTap: _openRecharge,
                             ),
                           ]),
                           _disclaimer(colors),

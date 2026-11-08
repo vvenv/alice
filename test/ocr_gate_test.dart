@@ -1,4 +1,4 @@
-import 'package:alice_dictation/services/credits.dart';
+import 'package:alice_dictation/services/ocr_models.dart';
 import 'package:alice_dictation/services/ocr_config.dart';
 import 'package:alice_dictation/services/prefs.dart';
 import 'package:flutter_test/flutter_test.dart';

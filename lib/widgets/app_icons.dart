@@ -27,7 +27,6 @@ class AppIcons {
   static const IconData checkmarkCircle = Icons.check_circle;
   static const IconData createOutline = Icons.edit_outlined;
   static const IconData infoOutline = Icons.info_outline;
-  static const IconData wallet = Icons.account_balance_wallet_outlined;
   static const IconData server = Icons.dns_outlined;
   static const IconData search = Icons.search;
   static const IconData play = Icons.play_arrow;
@@ -58,7 +57,6 @@ class AppIcons {
   static const IconData timer = Icons.timer_outlined;
   static const IconData trash = Icons.delete_outline;
   static const IconData scan = Icons.document_scanner_outlined;
-  static const IconData card = Icons.credit_card_outlined;
   static const IconData alertCircle = Icons.error;
   static const IconData pricetag = Icons.local_offer_outlined;
   static const IconData chatbox = Icons.chat_bubble_outline;

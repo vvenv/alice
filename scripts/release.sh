@@ -52,13 +52,26 @@ source "$ROOT/scripts/lib/version.sh"
 
 error() { echo "ERROR: $*" >&2; exit 1; }
 
+# 找本机 aapt / aapt2（优先 aapt2）。
+find_aapt() {
+  local tool path
+  for tool in aapt2 aapt; do
+    path="$(ls "$HOME"/Library/Android/sdk/build-tools/*/"$tool" 2>/dev/null | tail -1 || true)"
+    if [ -n "$path" ]; then
+      echo "$path"
+      return 0
+    fi
+  done
+  return 0
+}
+
 # 核对 APK 里 manifest 声明的启动 Activity 真的存在于 classes.dex。
 # 见 README「出包自检」：这一条错了只有真机启动时才看得出来。
 verify_launch_activity() {
   local apk="$1" aapt fqcn
-  aapt="$(ls "$HOME"/Library/Android/sdk/build-tools/*/aapt2 2>/dev/null | tail -1)"
+  aapt="$(find_aapt)"
   if [ -z "$aapt" ]; then
-    echo "  ⚠ 找不到 aapt2，跳过启动 Activity 自检" >&2
+    echo "  ⚠ 找不到 aapt/aapt2，跳过启动 Activity 自检" >&2
     return 0
   fi
   fqcn="$("$aapt" dump badging "$apk" | sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p")"
@@ -69,6 +82,18 @@ verify_launch_activity() {
     error "启动 Activity $fqcn 不在 classes.dex 里 —— 这个包装上去会闪退"
   fi
   echo "  启动 Activity: $fqcn ✓"
+}
+
+# 读 APK 真实 versionCode。`--split-per-abi` 会给 arm64 加上 ABI_VERSION*1000
+# （arm64-v8a → +2000），pubspec 里的 +N 不是手机上 PackageInfo.buildNumber。
+# version.json 必须写这个实值，否则应用内检查更新永远判「已是最新」。
+apk_version_code() {
+  local apk="$1" aapt code
+  aapt="$(find_aapt)"
+  [ -n "$aapt" ] || error "找不到 aapt/aapt2，无法读取 APK versionCode"
+  code="$("$aapt" dump badging "$apk" | sed -n "s/.*versionCode='\\([0-9][0-9]*\\)'.*/\\1/p" | head -1)"
+  [[ "$code" =~ ^[0-9]+$ ]] || error "读不到 $apk 的 versionCode"
+  echo "$code"
 }
 
 # --- args ---
@@ -152,7 +177,7 @@ TS="$(date +%Y%m%d-%H%M)"
 APK_NAME="alice-${VERSION}-${TS}.apk"
 APK_URL="$R2_PUBLIC_BASE/$APK_NAME"
 
-VERSION_CODE="$(get_current_version_code)"
+PUBSPEC_CODE="$(get_current_version_code)"
 
 # 更新说明：App 内的更新提示框里显示。没给就在终端问一句，留空也行。
 RELEASE_NOTES="${RELEASE_NOTES:-}"
@@ -162,6 +187,7 @@ fi
 
 echo "▶ Releasing Alice v$VERSION ($TS)"
 echo "  APK object: $R2_BUCKET/$APK_NAME"
+echo "  pubspec versionCode: $PUBSPEC_CODE（split APK 打完后以实值为准）"
 echo ""
 
 # --- 1. build APK ---
@@ -184,8 +210,10 @@ cp "$BUILT_APK" "$TMP_APK"
 # manifest 声明的启动 Activity 必须真的打进 dex —— 少了它编译期毫无征兆，
 # 装到手机上必然 ClassNotFoundException 闪退（0.6.2 就栽在这里）。
 verify_launch_activity "$TMP_APK"
+VERSION_CODE="$(apk_version_code "$TMP_APK")"
 
 echo "  built: $(du -h "$TMP_APK" | cut -f1) → $TMP_APK"
+echo "  APK versionCode: $VERSION_CODE（pubspec +$PUBSPEC_CODE；写入 version.json）"
 
 # --- 2. upload APK to Cloudflare R2 ---
 echo "▶ [2/6] Uploading APK to R2 bucket '$R2_BUCKET'..."
@@ -211,7 +239,8 @@ echo "▶ [3/6] Updating APK_URL in site.ts / llms.txt / version.json..."
 APK_URL="$APK_URL" perl -0777 -pi -e 's{(export const APK_URL\s*=\s*")[^"]+(")}{$1$ENV{APK_URL}$2}' "$SITE_TS"
 VERSION="$VERSION" perl -pi -e 's{(export const APP_VERSION\s*=\s*")[^"]+(")}{$1$ENV{VERSION}$2}' "$SITE_TS"
 APK_URL="$APK_URL" perl -pi -e 's{https://[^"\s]+/alice-[^"\s]+\.apk}{$ENV{APK_URL}}g' "$LLMS_TXT"
-# App 只比 build（versionCode）—— 「保持当前版本」重发时它不变，不会弹更新。
+# App 只比 build（APK 真实 versionCode，含 split-per-abi 的 ABI 偏移）。
+# 「保持当前版本」重发时它不变，不会弹更新。
 VERSION="$VERSION" VERSION_CODE="$VERSION_CODE" APK_URL="$APK_URL" \
   RELEASE_NOTES="$RELEASE_NOTES" node -e '
     const e = process.env;

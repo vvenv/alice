@@ -9,8 +9,8 @@ import 'package:image_picker/image_picker.dart';
 
 import 'abort.dart';
 import 'config.dart';
-import 'credits.dart';
 import 'ocr_config.dart';
+import 'ocr_models.dart';
 
 /// 拍照/选图的产物类型。OcrRunner 只 import 本文件，image_picker 是这里的
 /// 实现细节，所以把 XFile 顺带转出去。
@@ -39,17 +39,6 @@ const String kOcrDisclaimer = 'AI 识图可能存在误差，请核对识别结�
 
 /// 用户主动取消识别时的标记文案 —— 调用方据此不弹「失败」。
 const String kOcrCancelled = '已取消识别';
-
-/// 选中高级内置模型但余额不足时抛出。
-/// UI 捕获它来打开充值流程，而不是弹一个通用错误 toast。
-class InsufficientCreditsError implements Exception {
-  const InsufficientCreditsError(this.cost);
-
-  final int cost;
-
-  @override
-  String toString() => '积分不足，请充值后使用高级识别';
-}
 
 /// 进行中的阶段（顶栏）。终态文案在 OcrOutcomeMessages。
 enum OcrProgressPhase {
@@ -159,20 +148,16 @@ class _OcrRequestConfig {
     required this.baseUrl,
     required this.apiKey,
     required this.model,
-    required this.premiumCost,
   });
 
   final String baseUrl;
   final String apiKey;
   final String model;
-
-  /// 成功后要扣的 credits，免费/BYOK 为 0。
-  final int premiumCost;
 }
 
 /// 决定这一次识别用哪个服务：
-///  1. 完整的 BYOK 自定义配置优先（用户自己的 key —— 永不扣费）。
-///  2. 否则用选中的内置模型 + App 内置密钥。高级内置模型需要预先有余额。
+///  1. 完整的 BYOK 自定义配置优先（用户自己的 key）。
+///  2. 否则用选中的内置免费模型 + App 内置密钥。
 Future<_OcrRequestConfig> _resolveOcrRequest() async {
   final custom = await loadOcrProviderConfig();
   if (isCustomOcrConfigSet(custom)) {
@@ -180,7 +165,6 @@ Future<_OcrRequestConfig> _resolveOcrRequest() async {
       baseUrl: custom!.baseUrl.trim(),
       apiKey: custom.apiKey.trim(),
       model: custom.model.trim(),
-      premiumCost: 0,
     );
   }
 
@@ -192,24 +176,10 @@ Future<_OcrRequestConfig> _resolveOcrRequest() async {
   }
 
   final selected = getBuiltinModel(await loadSelectedModelId());
-  if (selected.tier == ModelTier.premium) {
-    final balance = await ensureCreditsLoaded();
-    if (balance < selected.creditCost) {
-      throw InsufficientCreditsError(selected.creditCost);
-    }
-    return _OcrRequestConfig(
-      baseUrl: AppConfig.zhipuBaseUrl,
-      apiKey: AppConfig.zhipuApiKey,
-      model: selected.model,
-      premiumCost: selected.creditCost,
-    );
-  }
-
   return _OcrRequestConfig(
     baseUrl: AppConfig.zhipuBaseUrl,
     apiKey: AppConfig.zhipuApiKey,
     model: selected.model,
-    premiumCost: 0,
   );
 }
 
@@ -287,12 +257,6 @@ Future<OcrResult> ocrWordsFromImage(
   if (response.statusCode < 200 || response.statusCode >= 300) {
     final detail = utf8.decode(response.bodyBytes, allowMalformed: true);
     throw Exception(detail.isNotEmpty ? '视觉识别失败: $detail' : '视觉识别服务异常');
-  }
-
-  // 只在 API 返回成功之后才扣 credits，失败/异常不消耗余额。
-  // 单飞（ocrBusy）保证不会并发扣费。
-  if (cfg.premiumCost > 0) {
-    await trySpendCredits(cfg.premiumCost);
   }
 
   final payload =

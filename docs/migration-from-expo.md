@@ -50,7 +50,7 @@ bash scripts/rn-golden/generate.sh rn-final   # 对齐迁移那一刻的实现
 | `lib/tts.ts` | `services/tts.dart` |
 | `lib/sound.ts` | `services/sound.dart` |
 | `lib/haptics.ts` | `services/haptics.dart` |
-| `lib/credits.ts` | `services/credits.dart` |
+| `lib/credits.ts`（模型表；积分已移除） | `services/ocr_models.dart` |
 | `lib/ocrConfig.ts` | `services/ocr_config.dart` |
 | `lib/ocr.ts` | `services/ocr.dart` |
 | `components/OcrSection.tsx` | `services/ocr_runner.dart`（RN 侧是个不渲染的 ref 组件，这里做成普通类） |

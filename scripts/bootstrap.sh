@@ -7,7 +7,7 @@
 #   - applicationId / bundleIdentifier 保持 com.vvenv.alice
 #     ★ 这一条是硬要求：包名变了就是另一个 app 沙箱，
 #       lib/services/legacy_migration_io.dart 将读不到老的 Expo 版
-#       AsyncStorage，老用户的错词本 / 历史 / 收藏 / Credits 会全部丢失。
+#       AsyncStorage，老用户的错词本 / 历史 / 收藏会全部丢失。
 #       （Expo 实现本身已经删了，见 tag rn-final；但用户手机上还装着它。）
 #   - 应用名「Alice 听写」
 #   - Android 权限：CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS /

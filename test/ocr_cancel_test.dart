@@ -47,7 +47,6 @@ void main() {
       onResult: results.add,
       onStateChange: (s) => busy.add(s.busy),
       onOutcome: outcomes.add,
-      onInsufficientCredits: () => outcomes.add('__credits__'),
       onNeedsOcrConfig: () => outcomes.add('__config__'),
       pickPhoto: pickPhoto ?? () async => XFile('fake.jpg'),
       editImage: editImage,
