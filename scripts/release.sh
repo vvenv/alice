@@ -187,7 +187,7 @@ fi
 
 echo "▶ Releasing Alice v$VERSION ($TS)"
 echo "  APK object: $R2_BUCKET/$APK_NAME"
-echo "  pubspec versionCode: $PUBSPEC_CODE（split APK 打完后以实值为准）"
+echo "  pubspec versionCode: ${PUBSPEC_CODE} (split APK 打完后以实值为准)"
 echo ""
 
 # --- 1. build APK ---
@@ -213,7 +213,7 @@ verify_launch_activity "$TMP_APK"
 VERSION_CODE="$(apk_version_code "$TMP_APK")"
 
 echo "  built: $(du -h "$TMP_APK" | cut -f1) → $TMP_APK"
-echo "  APK versionCode: $VERSION_CODE（pubspec +$PUBSPEC_CODE；写入 version.json）"
+echo "  APK versionCode: ${VERSION_CODE} (pubspec +${PUBSPEC_CODE}; 写入 version.json)"
 
 # --- 2. upload APK to Cloudflare R2 ---
 echo "▶ [2/6] Uploading APK to R2 bucket '$R2_BUCKET'..."
