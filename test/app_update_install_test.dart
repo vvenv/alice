@@ -33,7 +33,7 @@ void main() {
   const info = AppUpdateInfo(
     version: '0.10.2',
     build: 2025,
-    url: 'https://file.wenfu.dev/alice-0.10.2.apk',
+    url: 'https://alice.file.wenfu.dev/alice-0.10.2.apk',
     notes: 'test',
   );
 

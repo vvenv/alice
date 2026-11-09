@@ -15,7 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const apk = 'https://file.wenfu.dev/alice-0.9.1-20261019-1200.apk';
+  const apk = 'https://alice.file.wenfu.dev/alice-0.9.1-20261019-1200.apk';
 
   http.Client serve(Object body, {int status = 200}) => MockClient(
         (_) async => http.Response.bytes(

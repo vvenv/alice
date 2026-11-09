@@ -18,9 +18,9 @@ export const SITE_KEYWORDS = [
 export const GITHUB_URL = "https://github.com/vvenv/alice";
 export const APP_VERSION = "0.10.2";
 export const APK_URL =
-  "https://file.wenfu.dev/alice-0.10.2-20261108-1412.apk";
+  "https://alice.file.wenfu.dev/alice-0.10.2-20261108-1412.apk";
 /** App screenshots on Cloudflare R2 (`pnpm screenshots:upload`). */
-export const SCREENSHOTS_BASE = "https://file.wenfu.dev/screenshots";
+export const SCREENSHOTS_BASE = "https://alice.file.wenfu.dev/screenshots";
 export const SCREENSHOTS = {
   home: `${SCREENSHOTS_BASE}/home.7e301e7f.png`,
   library: `${SCREENSHOTS_BASE}/library.902244a9.png`,

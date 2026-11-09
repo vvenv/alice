@@ -1,6 +1,6 @@
 {
   "version": "0.10.2",
   "build": 2025,
-  "url": "https://file.wenfu.dev/alice-0.10.2-20261108-1412.apk",
+  "url": "https://alice.file.wenfu.dev/alice-0.10.2-20261108-1412.apk",
   "notes": "应用内直接下载并安装更新。\n修复检查更新误报「已是最新」。\n移除高级识别模型与积分，保留免费模型与自定义 OCR。"
 }
